@@ -1,0 +1,19 @@
+{
+  "name": "com.pixelrebels.fdb",
+  "author": "ze0nni",
+  "displayName": "FuryDB",
+  "description": "FuryDB -- Static database",
+  "version": "0.0.1",
+  "keywords": [
+    "config",
+    "db",
+    "database",
+    "editor",
+    "tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ze0nni/FuryDB.git"
+  },
+  "type": "tool"
+}

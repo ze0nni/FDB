@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -116,13 +113,15 @@ namespace FDB.Editor
         public readonly FieldInfo Field;
         public readonly Type ItemType;
         public readonly bool Primitive;
+        public readonly Aggregator Aggregator;
 
-        public ListHeaderState(string path, FieldInfo field, Type itemType, bool primitive, HeaderState[] headers)
+        public ListHeaderState(string path, Type ownerType, FieldInfo field, Type itemType, bool primitive, HeaderState[] headers)
             : base(path, field.Name, headers)
         {
             Field = field;
             ItemType = itemType;
             Primitive = primitive;
+            Aggregator = new Aggregator(ownerType, field);
         }
     }
 }

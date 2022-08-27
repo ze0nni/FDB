@@ -15,6 +15,9 @@ namespace FDB
         
         bool TryGet(string kind, out object model);
         void Add(object item);
+        void Insert(int index, object item);
+        void Swap(int i0, int i1);
+        void Remove(int index);
     }
 
     public sealed class Index<T> : Index where T : class
@@ -94,6 +97,26 @@ namespace FDB
         void Index.Add(object item)
         {
             _list.Add((T)item);
+            ((Index)this).SetDirty();
+        }
+
+        void Index.Insert(int index, object item)
+        {
+            _list.Insert(index, (T)item);
+            ((Index)this).SetDirty();
+        }
+
+        void Index.Swap(int i0, int i1)
+        {
+            var t = _list[i0];
+            _list[i0] = _list[i1];
+            _list[i1] = t;
+
+        }
+
+        void Index.Remove(int index)
+        {
+            _list.RemoveAt(index);
             ((Index)this).SetDirty();
         }
     }

@@ -240,6 +240,7 @@ namespace FDB
             }
             else
             {
+                var add = listType.GetMethod("Add");
                 while (reader.Read())
                 {
                     switch (reader.TokenType)
@@ -252,6 +253,7 @@ namespace FDB
                         case JsonToken.String:
                         case JsonToken.StartObject:
                             var value = ReadValue(resolver, reader, itemType);
+                            add.Invoke(list, new[] { value });
                             break;
 
                         case JsonToken.EndArray:

@@ -7,18 +7,6 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public class PageState
-    {
-        public string Title;
-        public Type IndexType;
-        public Type ModelType;
-        public Func<object, object> ResolveModel;
-        public Vector2 Position;
-        public HeaderState[] Headers;
-
-        public string Filter;
-    }
-    
     public partial class ModelInspector<T>
     {
         Exception _staticException;
@@ -74,8 +62,9 @@ namespace FDB.Editor
                     IndexType = fieldType,
                     ModelType = modelType,
                     ResolveModel = x => field.GetValue(x),
-                    Headers = GetHeaders(modelType, 0, field.Name, true).ToArray()
-                });
+                    Headers = GetHeaders(modelType, 0, field.Name, true).ToArray(),
+                    Aggregator = new Aggregator(typeof(T), field)
+            });
 
                 _indexes.Add(modelType, field);
             }
@@ -126,32 +115,32 @@ namespace FDB.Editor
                         var itemType = field.FieldType.GetGenericArguments()[0];
                         if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Ref<>))
                         {
-                            yield return new ListHeaderState(path, field, itemType, true,
+                            yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new RefFieldHeaderState(listRoot, itemType.GetGenericArguments()[0]) });
                         } else if (itemType.IsEnum)
                         {
-                            yield return new ListHeaderState(path, field, itemType, true,
+                            yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new EnumFieldHeaderState(listRoot, itemType) });
                         } else if (itemType == typeof(bool)) {
-                            yield return new ListHeaderState(path, field, itemType, true,
+                            yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new BoolFieldHeaderState(listRoot, null) });
                         }
                         else if (itemType == typeof(int))
                         {
-                            yield return new ListHeaderState(path, field, itemType, true,
+                            yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new IntFieldHeaderState(listRoot, null) });
                         }
                         else if (itemType == typeof(float))
                         {
-                            yield return new ListHeaderState(path, field, itemType, true,
+                            yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new FloatFieldHeaderState(listRoot, null) });
                         }
                         else if (itemType == typeof(string))
                         {
-                            yield return new ListHeaderState(path, field, itemType, true,
+                            yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new StringFieldHeaderState(listRoot, null) });
                         } else { 
-                            yield return new ListHeaderState(path, field, itemType, false,
+                            yield return new ListHeaderState(path, type, field, itemType, false,
                                 GetHeaders(itemType, depth + 1, listRoot, false).ToArray());
                         }
                     }

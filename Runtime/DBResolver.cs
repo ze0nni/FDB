@@ -76,14 +76,14 @@ namespace FDB
             refs.Add(refValue);
         }
 
-        public object Instantate(Type modelType)
+        public static object Instantate(Type modelType)
         {
             var model = Activator.CreateInstance(modelType);
             Instantate(model);
             return model;
         }
 
-        void Instantate(object model)
+        static void Instantate(object model)
         {
             foreach (var field in model.GetType().GetFields())
             {

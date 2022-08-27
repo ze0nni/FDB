@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections;
 
@@ -10,7 +9,9 @@ namespace FDB.Editor
     public partial class ModelInspector<T> : EditorWindow
     {
         public const int MenuSize = 25;
-        
+        public const int GroupSpace = 25;
+
+
         bool _isDirty;
 
         InputState _input;
@@ -52,6 +53,8 @@ namespace FDB.Editor
                     }
                     var page = _pageStates[_pageIndex];
 
+                    var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
+
                     using (new GUILayout.HorizontalScope())
                     {
                         GUI.SetNextControlName("SearchFilter");
@@ -69,8 +72,8 @@ namespace FDB.Editor
                         GUILayout.ExpandWidth(true),
                         GUILayout.ExpandHeight(true)))
                     {
-                        var model = page.ResolveModel(_state.Model);
-                        var changed = OnTableGui(0, page.Headers, page.IndexType, model, page.Filter);
+                        var index = page.ResolveModel(_state.Model);
+                        var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, page.Filter);
                         page.Position = scroll.scrollPosition;
 
                         if (changed)
@@ -128,11 +131,11 @@ namespace FDB.Editor
             }
         }
 
-        bool OnTableGui(int left, HeaderState[] headers, Type type, object model, string filter)
+        bool OnTableGui(int left, Aggregator aggregator, HeaderState[] headers, Type type, object model, string filter)
         {
             var changed = false;
             OnHeadersGui(left, headers);
-            changed |= OnItemsGui(left, headers, type, model, filter);
+            changed |= OnItemsGui(left, aggregator, headers, type, model, filter);
             OnPageActionsGui(left, headers, model);
             return changed;
         }
@@ -201,22 +204,41 @@ namespace FDB.Editor
                 }
             }
         }
+        
+        void OnAggregateGUI(int left, List<object> list, HeaderState[] headers)
+        {
+            using (new GUILayout.HorizontalScope())
+            {
+                GUILayout.Space(left);
+                foreach (var header in headers)
+                {
+                    Debug.Log(header);
+                }
+            }
+        }
 
-        bool OnItemsGui(int left, HeaderState[] headers, Type itemType, object collection, string filter)
+        bool OnItemsGui(int left, Aggregator aggregator, HeaderState[] headers, Type itemType, object collection, string filter)
         {
             var changed = false;
 
+            aggregator.Clear();
             var itemIndex = 0;
-
 
             switch (collection)
             {
                 case Index index:
                     foreach (var i in index.All())
                     {
+                        aggregator.Add(i, out var separate);
                         if (!string.IsNullOrEmpty(filter) && !Inspector.ApplyFilter(i, filter))
                         {
                             continue;
+                        }
+
+                        if (string.IsNullOrEmpty(filter) && separate)
+                        {
+                            aggregator.OnGUI(left);
+                            GUILayout.Space(GroupSpace);
                         }
 
                         changed |= OnModelGui(left, headers, i, index, itemIndex);
@@ -246,14 +268,22 @@ namespace FDB.Editor
                             var count = (int)countProp.GetValue(list);
                             for (itemIndex = 0; itemIndex < count; itemIndex++)
                             {
+                                indexParamas[0] = itemIndex;
+                                var value = itemProp.GetValue(list, indexParamas);
+
+                                aggregator.Add(value, out var separate);
+
+                                if (separate)
+                                {
+                                    aggregator.OnGUI(left);
+                                    GUILayout.Space(GroupSpace);
+                                }
+
                                 using (new GUILayout.HorizontalScope())
                                 {
+                                    var id = GUIUtility.GetControlID(value.GetHashCode(), FocusType.Passive);
                                     GUILayout.Space(left);
-
                                     OnIndexMenuGUI(list, itemIndex);
-
-                                    indexParamas[0] = itemIndex;
-                                    var value = itemProp.GetValue(list, indexParamas);
                                     var newValue = Inspector.Field(_state.Resolver, headers[0], value);
                                     if (!newValue.Equals(value))
                                     {
@@ -267,6 +297,14 @@ namespace FDB.Editor
                         {
                             foreach (var i in list)
                             {
+                                aggregator.Add(i, out var separate);
+
+                                if (separate)
+                                {
+                                    aggregator.OnGUI(left);
+                                    GUILayout.Space(GroupSpace);
+                                }
+
                                 changed |= OnModelGui(left, headers, i, list, itemIndex);
                                 itemIndex++;
                             }
@@ -276,7 +314,10 @@ namespace FDB.Editor
                 default:
                     GUILayout.Label(collection.GetType().ToString());
                     break;
-            }            
+            }
+
+            aggregator.OnGUI(left);
+
             return changed;
         }
 
@@ -308,6 +349,7 @@ namespace FDB.Editor
                             var list = listHeader.Field.GetValue(item);
                             changed |= OnItemsGui(
                                 left + header.Left,
+                                listHeader.Aggregator,
                                 listHeader.Headers,
                                 listHeader.ItemType, list, null);
                             OnPageActionsGui(left + header.Left, listHeader.Headers, list);
@@ -331,6 +373,7 @@ namespace FDB.Editor
 
             using (new GUILayout.HorizontalScope())
             {
+                var id = GUIUtility.GetControlID(item.GetHashCode(), FocusType.Passive);
                 GUILayout.Space(left);
 
                 OnIndexMenuGUI(collection, collectionIndex);
@@ -363,18 +406,61 @@ namespace FDB.Editor
             {
                 case Index index:
                     {
-                        menu.AddItem(new GUIContent("Insert above"), false, () => { });
-                        menu.AddItem(new GUIContent("Insert belove"), false, () => { });
-                        menu.AddItem(new GUIContent("Remove"), false, () => { });
+                        menu.AddItem(new GUIContent("Move up"), false, () => {
+                            index.Swap(itemIndex, itemIndex - 1);
+                            SetDirty();
+                        });
+                        menu.AddItem(new GUIContent("Move down"), false, () => {
+                            index.Swap(itemIndex, itemIndex + 1);
+                            SetDirty();
+                        });
+                        menu.AddSeparator("");
+                        menu.AddItem(new GUIContent("Insert above"), false, () => {
+                            var modelType = index.GetType().GetGenericArguments()[0];
+                            index.Insert(itemIndex, DBResolver.Instantate(modelType));
+                            SetDirty();
+                        });
+                        menu.AddItem(new GUIContent("Insert belove"), false, () => {
+                            var modelType = index.GetType().GetGenericArguments()[0];
+                            index.Insert(itemIndex + 1, DBResolver.Instantate(modelType));
+                            SetDirty();
+                        });
+                        menu.AddSeparator("");
+                        menu.AddItem(new GUIContent("Delete"), false, () => {
+                            index.Remove(itemIndex);
+                            SetDirty();
+                        });
                     }
                     break;
 
-                case IEnumerable _
+                case IEnumerable list
                     when
                     collectionType.IsGenericType
                     && collectionType.GetGenericTypeDefinition() == typeof(List<>):
                     {
-
+                        menu.AddItem(new GUIContent("Move up"), false, () => {
+                            ListActions.Swap(list, itemIndex, itemIndex - 1);
+                            SetDirty();
+                        });
+                        menu.AddItem(new GUIContent("Move down"), false, () => {
+                            ListActions.Swap(list, itemIndex, itemIndex + 1);
+                            SetDirty();
+                        });
+                        menu.AddSeparator("");
+                        menu.AddItem(new GUIContent("Insert above"), false, () => {
+                            var modelType = list.GetType().GetGenericArguments()[0];
+                            ListActions.Insert(list, itemIndex, DBResolver.Instantate(modelType));
+                            SetDirty();
+                        });
+                        menu.AddItem(new GUIContent("Insert belove"), false, () => {
+                            var modelType = list.GetType().GetGenericArguments()[0];
+                            ListActions.Insert(list, itemIndex + 1, DBResolver.Instantate(modelType));
+                            SetDirty();
+                        });
+                        menu.AddSeparator("");
+                        menu.AddItem(new GUIContent("Delete"), false, () => {
+                            ListActions.RemoveAt(list, itemIndex);
+                        });
                     }
                     break;
             }            
@@ -431,7 +517,7 @@ namespace FDB.Editor
                             case Index index:
                                 {
                                     var modelType = collectionType.GetGenericArguments()[0];
-                                    index.Add(_state.Resolver.Instantate(modelType));
+                                    index.Add(DBResolver.Instantate(modelType));
                                 }
                                 break;
 
@@ -441,10 +527,9 @@ namespace FDB.Editor
                                 && collectionType.GetGenericTypeDefinition() == typeof(List<>):
                                 {
                                     var modelType = collectionType.GetGenericArguments()[0];
-                                    var model = _state.Resolver.Instantate(modelType);
+                                    var model = DBResolver.Instantate(modelType);
                                     var add = collectionType.GetMethod("Add");
                                     add.Invoke(collection, new object[] { model });
-                                    Debug.Log(collection);
                                 }
                                 break;
                         }

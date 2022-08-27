@@ -5,10 +5,13 @@ namespace FDB
     [AttributeUsage(AttributeTargets.Class)]
     public class FuryDBAttribute : Attribute
     {
-        public readonly string Path;
-        public FuryDBAttribute(string path)
+        public readonly string SourcePath;
+        public readonly string CsPath;
+
+        public FuryDBAttribute(string sourcePath, string csPath)
         {
-            Path = path;
+            SourcePath = sourcePath;
+            CsPath = csPath;
         }
     }
 }

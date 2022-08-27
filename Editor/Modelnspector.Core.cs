@@ -3,7 +3,6 @@ using FDB;
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using UnityEditor;
 
 namespace FDB.Editor
 {
@@ -29,11 +28,11 @@ namespace FDB.Editor
 
             if (_state.Model == null)
             {
-                if (GUILayout.Button($"Load model from {MetaData().Path}"))
+                if (GUILayout.Button($"Load model from {MetaData().SourcePath}"))
                 {
                     Invoke("Load model", () => LoadModel());
                 }
-                if (GUILayout.Button($"New model at {MetaData().Path}"))
+                if (GUILayout.Button($"New model at {MetaData().SourcePath}"))
                 {
                     Invoke("New model", () => InitNewModel());
                 }
@@ -63,7 +62,7 @@ namespace FDB.Editor
 
 		void LoadModel()
         {
-            using (var reader = System.IO.File.OpenText(MetaData().Path))
+            using (var reader = System.IO.File.OpenText(MetaData().SourcePath))
             {
                 var model = DBResolver.Load<T>(reader, out var resolver);
                 _state.Model = model;
@@ -76,13 +75,16 @@ namespace FDB.Editor
             var serializer = new JsonSerializer();
             serializer.Formatting = Formatting.Indented;
 
-            using (var writer = System.IO.File.CreateText(MetaData().Path))
+            using (var writer = System.IO.File.CreateText(MetaData().SourcePath))
             {
                 using (var jsonWriter = new JsonTextWriter(writer))
                 {
                     serializer.Serialize(writer, _state.Model);
                 }
             }
+
+            GenerateCs(MetaData().CsPath, _state.Model);
+
             _isDirty = false;
         }
 

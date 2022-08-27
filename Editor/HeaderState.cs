@@ -46,7 +46,7 @@ namespace FDB.Editor
     {
         public readonly FieldInfo Field;
 
-        public FieldHeaderState(string path, FieldInfo field) : base(path, field.Name, null)
+        public FieldHeaderState(string path, FieldInfo field) : base(path, field?.Name ?? "Item", null)
         {
             Field = field;
         }
@@ -65,6 +65,11 @@ namespace FDB.Editor
         public readonly Type ModelType;
         public RefFieldHeaderState(string path, FieldInfo field) : base(path, field) {
             ModelType = field.FieldType.GetGenericArguments()[0];
+        }
+
+        public RefFieldHeaderState(string path, Type modelType) : base(path, null)
+        {
+            ModelType = modelType;
         }
     }
 
@@ -98,28 +103,26 @@ namespace FDB.Editor
             Values = field.FieldType.GetEnumValues();
             Names = field.FieldType.GetEnumNames();
         }
+
+        public EnumFieldHeaderState(string path, Type enumType) : base(path, null)
+        {
+            Values = enumType.GetEnumValues();
+            Names = enumType.GetEnumNames();
+        }
     }
 
     public sealed class ListHeaderState : HeaderState
     {
         public readonly FieldInfo Field;
         public readonly Type ItemType;
+        public readonly bool Primitive;
 
-        public ListHeaderState(string path, FieldInfo field, Type itemType)
-            : base(path, field.Name, new[] { new ListItemHeaderState(path, itemType) })
+        public ListHeaderState(string path, FieldInfo field, Type itemType, bool primitive, HeaderState[] headers)
+            : base(path, field.Name, headers)
         {
             Field = field;
             ItemType = itemType;
-        }
-    }
-
-    public sealed class ListItemHeaderState : HeaderState
-    {
-        public readonly Type ItemType;
-
-        public ListItemHeaderState(string path, Type itemType) : base(path, "List", null)
-        {
-            ItemType = itemType;
+            Primitive = primitive;
         }
     }
 }

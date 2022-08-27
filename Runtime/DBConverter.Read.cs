@@ -170,16 +170,6 @@ namespace FDB
 
                     return Activator.CreateInstance(type, reader.Value.ToString());
                 }
-                else if (genericType == typeof(Ref<>)) {
-                    switch (reader.TokenType) {
-                        case JsonToken.Undefined:
-                        case JsonToken.Null:
-                            return Activator.CreateInstance(type, string.Empty);
-                        case JsonToken.String:
-                            return Activator.CreateInstance(type, (string)reader.Value);
-                    }
-                    throw new ArgumentException($"Unexcepted token {reader.TokenType}");
-                }
                 else if (genericType == typeof(List<>))
                 {
                     return ReadList(resolver, reader, type, type.GetGenericArguments()[0]);
@@ -224,28 +214,55 @@ namespace FDB
                 return list;
             }
 
-            Contract.Assert(reader.TokenType == JsonToken.StartArray);
-            while(reader.Read())
+            if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Ref<>))
             {
-                switch (reader.TokenType)
+                var i = 0;
+                while (reader.Read())
                 {
-                    case JsonToken.Undefined:
-                    case JsonToken.Null:
-                    case JsonToken.Boolean:
-                    case JsonToken.Integer:
-                    case JsonToken.Float:
-                    case JsonToken.String:
-                    case JsonToken.StartObject:
-                        var value = ReadValue(resolver, reader, itemType);
-                        break;
+                    switch (reader.TokenType)
+                    {
+                        case JsonToken.Undefined:
+                        case JsonToken.Null:
+                            break;
 
-                    case JsonToken.EndArray:
-                        goto endArray;
+                        case JsonToken.String:
+                            resolver.AddListRef(list, (string)reader.Value);
+                            break;
+                        
+                       case JsonToken.EndArray:
+                            goto endArray;
 
-                    default:
-                        throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+                        default:
+                            throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+                    }
+                    i++;
                 }
             }
+            else
+            {
+                while (reader.Read())
+                {
+                    switch (reader.TokenType)
+                    {
+                        case JsonToken.Undefined:
+                        case JsonToken.Null:
+                        case JsonToken.Boolean:
+                        case JsonToken.Integer:
+                        case JsonToken.Float:
+                        case JsonToken.String:
+                        case JsonToken.StartObject:
+                            var value = ReadValue(resolver, reader, itemType);
+                            break;
+
+                        case JsonToken.EndArray:
+                            goto endArray;
+
+                        default:
+                            throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+                    }
+                }
+            }
+
             endArray:
             Contract.Assert(reader.TokenType == JsonToken.EndArray);
 

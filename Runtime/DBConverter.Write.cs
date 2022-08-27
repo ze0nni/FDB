@@ -69,9 +69,12 @@ namespace FDB
                     var collection = (IEnumerable)value;
 
                     writer.WriteStartArray();
-                    foreach (var i in collection)
+                    if (collection != null)
                     {
-                        WriteValue(writer, itemType, i);
+                        foreach (var i in collection)
+                        {
+                            WriteValue(writer, itemType, i);
+                        }
                     }
                     writer.WriteEndArray();
                 } else

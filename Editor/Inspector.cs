@@ -24,9 +24,9 @@ namespace FDB.Editor
             return false;
         }
 
-        public static object Field(DBResolver resolver, FieldHeaderState fieldHeader, object rawValue)
+        public static object Field(DBResolver resolver, HeaderState header, object rawValue)
         {
-            switch (fieldHeader)
+            switch (header)
             {
                 case KindFieldHeaderState kindHeader:
                     {
@@ -39,7 +39,7 @@ namespace FDB.Editor
                             GUI.color = Color.red;
                         }
 
-                        var newValue = EditorGUILayout.TextField(kind.Value, GUILayout.Width(fieldHeader.Width));
+                        var newValue = EditorGUILayout.TextField(kind.Value, GUILayout.Width(header.Width));
 
                         GUI.color = color;
 
@@ -56,22 +56,23 @@ namespace FDB.Editor
                             resolver,
                             refHeader.ModelType,
                             (Ref)rawValue,
-                            GUILayout.Width(fieldHeader.Width));
+                            header.Width);
                     }
 
                 case IntFieldHeaderState intHeader:
                     {
-                        return EditorGUILayout.IntField((int)rawValue, GUILayout.Width(fieldHeader.Width));
+                        return EditorGUILayout.IntField((int)rawValue, GUILayout.Width(header.Width));
                     }
 
                 case EnumFieldHeaderState enumHeader:
                     {
                         var index = Array.IndexOf(enumHeader.Values, rawValue);
-                        var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, GUILayout.Width(fieldHeader.Width));
+                        var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, GUILayout.Width(header.Width));
                         return enumHeader.Values.GetValue(newIndex);
                     }
+
                 default:
-                    GUILayout.Space(fieldHeader.Width);
+                    GUILayout.Box(header.GetType().Name, GUILayout.Width(header.Width));
                     return rawValue;
             }            
         }

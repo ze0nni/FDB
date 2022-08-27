@@ -14,7 +14,6 @@ namespace FDB
         IReadOnlyList<string> Warnings { get; }
         
         bool TryGet(string kind, out object model);
-        void Add();
         void Add(object item);
     }
 
@@ -90,13 +89,6 @@ namespace FDB
         IEnumerable Index.All()
         {
             return _list;
-        }
-
-        void Index.Add()
-        {
-            var item = Activator.CreateInstance<T>();
-            _list.Add(item);
-            ((Index)this).SetDirty();
         }
 
         void Index.Add(object item)

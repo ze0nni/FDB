@@ -122,7 +122,38 @@ namespace FDB.Editor
                     }
                     else if (fieldGenericType == typeof(List<>))
                     {
-                        yield return new ListHeaderState(path, field, field.FieldType.GetGenericArguments()[0]);
+                        var listRoot = $"{path}/{field.Name}";
+                        var itemType = field.FieldType.GetGenericArguments()[0];
+                        if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Ref<>))
+                        {
+                            yield return new ListHeaderState(path, field, itemType, true,
+                                new[] { new RefFieldHeaderState(listRoot, itemType.GetGenericArguments()[0]) });
+                        } else if (itemType.IsEnum)
+                        {
+                            yield return new ListHeaderState(path, field, itemType, true,
+                                new[] { new EnumFieldHeaderState(listRoot, itemType) });
+                        } else if (itemType == typeof(bool)) {
+                            yield return new ListHeaderState(path, field, itemType, true,
+                                new[] { new BoolFieldHeaderState(listRoot, null) });
+                        }
+                        else if (itemType == typeof(int))
+                        {
+                            yield return new ListHeaderState(path, field, itemType, true,
+                                new[] { new IntFieldHeaderState(listRoot, null) });
+                        }
+                        else if (itemType == typeof(float))
+                        {
+                            yield return new ListHeaderState(path, field, itemType, true,
+                                new[] { new FloatFieldHeaderState(listRoot, null) });
+                        }
+                        else if (itemType == typeof(string))
+                        {
+                            yield return new ListHeaderState(path, field, itemType, true,
+                                new[] { new StringFieldHeaderState(listRoot, null) });
+                        } else { 
+                            yield return new ListHeaderState(path, field, itemType, false,
+                                GetHeaders(itemType, depth + 1, listRoot, false).ToArray());
+                        }
                     }
                 }
                 else if (field.FieldType.IsEnum)

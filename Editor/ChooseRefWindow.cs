@@ -11,18 +11,16 @@ namespace FDB.Editor
         static bool _done = false;
         static Ref _currentField;
         static Rect _hoveredRect;
-
-        static ChooseRefWindow _window;
-
+        
         public static Ref Field(
             DBResolver resolver,
             Type modelType,
             Ref currentField,            
-            params GUILayoutOption[] options
+            float width
         ) {
             var id = GUIUtility.GetControlID(FocusType.Passive);
 
-            if (GUILayout.Button(currentField.Kind.Value, options))
+            if (GUILayout.Button(currentField.Kind.Value, GUILayout.Width(width)))
             {
                 _controlId = id;
                 PopupWindow.Show(_hoveredRect, new ChooseRefWindow(resolver, modelType, currentField));
@@ -105,7 +103,8 @@ namespace FDB.Editor
             if (GUILayout.Button("Ok"))
             {
                 _done = true;
-                
+                GUI.changed = true;
+                this.editorWindow.Close();
             }
         }
     }

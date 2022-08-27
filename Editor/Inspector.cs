@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace FDB.Editor
 {
@@ -84,6 +85,11 @@ namespace FDB.Editor
                 case StringFieldHeaderState stringHeader:
                     {
                         return EditorGUILayout.TextField((string)rawValue, GUILayout.Width(header.Width));
+                    }
+
+                case AssetReferenceFieldHeaderState assetRefHeader:
+                    {
+                        return AssetReferenceField.Field(rawValue as AssetReference, GUILayout.Width(header.Width));
                     }
 
                 default:

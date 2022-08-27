@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine.AddressableAssets;
 
 namespace FDB
 {
@@ -96,6 +97,15 @@ namespace FDB
             } else if (type == typeof(string))
             {
                 writer.WriteValue((string)value);
+            } else if (type == typeof(AssetReference)) {
+                var r = (AssetReference)value;
+                if (r != null && r.editorAsset != null)
+                {
+                    writer.WriteValue(r.AssetGUID);
+                } else
+                {
+                    writer.WriteNull();
+                }
             } else
             {
                 writer.WriteUndefined();

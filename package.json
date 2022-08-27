@@ -15,5 +15,8 @@
     "type": "git",
     "url": "https://github.com/ze0nni/FuryDB.git"
   },
-  "type": "tool"
+  "type": "tool",
+  "dependencies": {
+    "com.unity.addressables": "1.19.19"
+  }
 }

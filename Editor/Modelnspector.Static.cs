@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace FDB.Editor
 {
@@ -164,6 +165,9 @@ namespace FDB.Editor
                 else if (field.FieldType == typeof(string))
                 {
                     yield return new StringFieldHeaderState(path, field);
+                } else if (field.FieldType == typeof(AssetReference))
+                {
+                    yield return new AssetReferenceFieldHeaderState(path, field);
                 }
             }
 

@@ -36,6 +36,13 @@ namespace FDB
             }
         }
 
+        public static T FromResources<T>(string path)
+        {
+            var textAsset = Resources.Load<TextAsset>(path);
+            var db = Load<T>(new StreamReader(new MemoryStream(textAsset.bytes)), out _);
+            return db;
+        }
+
         private Dictionary<Type, Index> _indexByType = new Dictionary<Type, Index>();
         readonly List<(object Model, FieldInfo Field, string RefValue)> _fields = new List<(object, FieldInfo, string)>();
         readonly Dictionary<object, List<string>> _listRef = new Dictionary<object, List<string>>();

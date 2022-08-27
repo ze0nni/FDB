@@ -90,6 +90,11 @@ namespace FDB.Editor
         public StringFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
     }
 
+    public sealed class AssetReferenceFieldHeaderState : FieldHeaderState
+    {
+        public AssetReferenceFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+    }
+
     public sealed class EnumFieldHeaderState : FieldHeaderState
     {
         public readonly Array Values;

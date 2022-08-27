@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace FDB
 {
@@ -198,6 +199,19 @@ namespace FDB
             } else if (type == typeof(string))
             {
                 return (string)reader.Value;
+            } else if (type == typeof(AssetReference))
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.Undefined:
+                    case JsonToken.Null:
+                        return null;
+                    case JsonToken.String:
+                        return new AssetReference((string)reader.Value);
+                    default:
+                        throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+
+                }                
             }
 
             Debug.LogWarning($"Unknown field type {type.FullName}");

@@ -59,16 +59,31 @@ namespace FDB.Editor
                             header.Width);
                     }
 
-                case IntFieldHeaderState intHeader:
-                    {
-                        return EditorGUILayout.IntField((int)rawValue, GUILayout.Width(header.Width));
-                    }
-
                 case EnumFieldHeaderState enumHeader:
                     {
                         var index = Array.IndexOf(enumHeader.Values, rawValue);
                         var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, GUILayout.Width(header.Width));
                         return enumHeader.Values.GetValue(newIndex);
+                    }
+
+                case BoolFieldHeaderState boolField:
+                    {
+                        return EditorGUILayout.Toggle((bool)rawValue, GUILayout.Width(header.Width));
+                    }
+
+                case IntFieldHeaderState intHeader:
+                    {
+                        return EditorGUILayout.IntField((int)rawValue, GUILayout.Width(header.Width));
+                    }
+
+                case FloatFieldHeaderState floatHeader:
+                    {
+                        return EditorGUILayout.FloatField((float)rawValue, GUILayout.Width(header.Width));
+                    }
+
+                case StringFieldHeaderState stringHeader:
+                    {
+                        return EditorGUILayout.TextField((string)rawValue, GUILayout.Width(header.Width));
                     }
 
                 default:

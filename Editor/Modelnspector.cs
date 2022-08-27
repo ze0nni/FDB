@@ -478,7 +478,7 @@ namespace FDB.Editor
                 case FieldHeaderState fieldHeader:
                     var value = fieldHeader.Field.GetValue(item);
                     var newValue = Inspector.Field(_state.Resolver, fieldHeader, value);
-                    if (!newValue.Equals(value))
+                    if (!object.Equals(newValue, value))
                     {
                         fieldHeader.Field.SetValue(item, newValue);
                         changed |= true;

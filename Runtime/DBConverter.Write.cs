@@ -8,6 +8,13 @@ namespace FDB
 {
     public sealed partial class DBConverter<T>
     {
+
+#if !UNITY_EDITOR
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    {
+            throw new NotImplementedException();
+    }
+#else
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             writer.WriteStartObject();            
@@ -111,5 +118,6 @@ namespace FDB
                 writer.WriteUndefined();
             }
         }
+#endif
     }
 }

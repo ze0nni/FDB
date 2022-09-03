@@ -10,6 +10,7 @@ namespace FDB
         string Value { get; }
     }
 
+    [Serializable]
     [JsonConverter(typeof(KindJsonConverter))]
     public readonly struct Kind<T> : Kind, ISerializable
     {
@@ -25,12 +26,12 @@ namespace FDB
 
         public Kind(SerializationInfo info, StreamingContext context)
         {
-            Value = info.GetString("Value");
+            Value = info.GetString(nameof(Value));
         }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("Value", Value);
+            info.AddValue(nameof(Value), Value);
         }
     }
 

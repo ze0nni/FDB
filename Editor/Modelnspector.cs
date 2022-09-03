@@ -150,6 +150,10 @@ namespace FDB.Editor
 
                 foreach (var header in headers)
                 {
+                    if (header.Separate)
+                    {
+                        GUILayout.Space(GroupSpace);
+                    }
                     GUILayout.Box(header.Title, GUILayout.Width(header.Width));
                     var labelRect = GUILayoutUtility.GetLastRect();
                     var resizeRect = new Rect(labelRect.right - 5, labelRect.y, 10, labelRect.height);
@@ -380,6 +384,10 @@ namespace FDB.Editor
                 for (var i = 0; i < headers.Length; i++)
                 {
                     var h = headers[i];
+                    if (h.Separate)
+                    {
+                        GUILayout.Space(GroupSpace);
+                    }
                     changed |= OnFieldGui(h, i, item);
                 }
             }

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -8,16 +8,30 @@ namespace FDB.Editor
     public abstract class HeaderState
     {
         public readonly string Path;
-        public readonly string Title; 
+        public readonly string Title;
+        public readonly bool Separate;
         public readonly HeaderState[] Headers;
 
         public int Left;
 
-        public HeaderState(string path, string title, HeaderState[] headers)
+        public HeaderState(string path, Attribute[] attr, string title, HeaderState[] headers)
         {
             Path = path;
             Title = title;
             Headers = headers;
+
+            if (attr != null)
+            {
+                foreach (var a in attr)
+                {
+                    switch (a)
+                    {
+                        case SpaceAttribute _:
+                            Separate = true;
+                            break;
+                    }
+                }
+            }
         }
 
         private int _width = -1;
@@ -43,7 +57,7 @@ namespace FDB.Editor
     {
         public readonly FieldInfo Field;
 
-        public FieldHeaderState(string path, FieldInfo field) : base(path, field?.Name ?? "Item", null)
+        public FieldHeaderState(string path, FieldInfo field) : base(path, field?.GetCustomAttributes().ToArray(), field?.Name ?? "Item", null)
         {
             Field = field;
         }
@@ -121,7 +135,7 @@ namespace FDB.Editor
         public readonly Aggregator Aggregator;
 
         public ListHeaderState(string path, Type ownerType, FieldInfo field, Type itemType, bool primitive, HeaderState[] headers)
-            : base(path, field.Name, headers)
+            : base(path, null, field.Name, headers)
         {
             Field = field;
             ItemType = itemType;

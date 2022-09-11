@@ -140,7 +140,7 @@ namespace FDB.Editor
             Field = field;
             ItemType = itemType;
             Primitive = primitive;
-            Aggregator = new Aggregator(ownerType, field);
+            Aggregator = new Aggregator(ownerType, field, itemType);
         }
     }
 }

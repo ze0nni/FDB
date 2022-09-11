@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -10,7 +12,11 @@ namespace FDB.Editor
         readonly List<(string Name, MethodInfo Func, Type InitialType)> _aggregators = new List<(string, MethodInfo, Type)>();
         readonly List<object> _history = new List<object>();
 
-        public Aggregator(Type ownerType, FieldInfo field)
+        readonly FieldInfo groupByField;
+        readonly Regex groupByRegex;
+        readonly int groupByRegexGroup;
+
+        public Aggregator(Type ownerType, FieldInfo field, Type itemType)
         {
             
             foreach (var attr in field.GetCustomAttributes<AggregateAttribute>())
@@ -25,6 +31,19 @@ namespace FDB.Editor
                     _aggregators.Add((attr.Name, method, attr.InitialType));
                 }
             }
+            foreach (var attr in field.GetCustomAttributes<GroupByAttribute>())
+            {
+                groupByField = itemType.GetField(attr.Field);                
+                if (groupByField == null)
+                {
+                    Debug.LogWarning($"Field {attr.Field} not found in {itemType}");
+                }
+                if (attr.Regex != null)
+                {
+                    groupByRegex = new Regex(attr.Regex);
+                }
+                groupByRegexGroup = attr.RegexGroup;
+            }
         }
 
         public void Clear()
@@ -34,11 +53,23 @@ namespace FDB.Editor
 
         public void Add(object model, out bool separate)
         {
-            //if (_aggregators.Count > 0)
+            var prev = _history.Count == 0 ? null : _history.Last();
+            if (prev == null || groupByField == null)
             {
-                _history.Add(model);
+                separate = false;
+            } else
+            {                
+                string group0 = Inspector.ToString(groupByField.GetValue(prev));
+                string group1 = Inspector.ToString(groupByField.GetValue(model));
+                if (groupByRegex != null)
+                {
+                    group0 = groupByRegex.Match(group0).Groups[groupByRegexGroup].Value;
+                    group1 = groupByRegex.Match(group1).Groups[groupByRegexGroup].Value;
+                }
+                separate = group0 != group1;
             }
-            separate = false;
+
+            _history.Add(model);
         }
 
         public void OnGUI(float left)

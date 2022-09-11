@@ -132,7 +132,7 @@ namespace FDB.Editor
         }
 
         bool OnTableGui(int left, Aggregator aggregator, HeaderState[] headers, Type type, object model, string filter)
-        {
+        {            
             var changed = false;
             OnHeadersGui(left, headers);
             changed |= OnItemsGui(left, aggregator, headers, type, model, filter);
@@ -226,6 +226,7 @@ namespace FDB.Editor
             var changed = false;
 
             aggregator.Clear();
+
             var itemIndex = 0;
 
             switch (collection)

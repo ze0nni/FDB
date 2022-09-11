@@ -64,7 +64,7 @@ namespace FDB.Editor
                     ModelType = modelType,
                     ResolveModel = x => field.GetValue(x),
                     Headers = GetHeaders(modelType, 0, field.Name, true).ToArray(),
-                    Aggregator = new Aggregator(typeof(T), field)
+                    Aggregator = new Aggregator(typeof(T), field, modelType)
             });
 
                 _indexes.Add(modelType, field);

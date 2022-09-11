@@ -102,5 +102,20 @@ namespace FDB.Editor
         {
             return null;
         }
+
+        internal static string ToString(object obj)
+        {
+            switch (obj)
+            {
+                case bool _:
+                case int _:
+                case float _:
+                case string _:
+                    return obj.ToString();
+                case Kind kind:
+                    return kind.Value;
+            }
+            return obj.ToString();
+        }
     }
 }

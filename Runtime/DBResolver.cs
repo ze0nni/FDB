@@ -36,6 +36,18 @@ namespace FDB
             }
         }
 
+        public static T Load<T>()
+        {
+            var fdb = typeof(T).GetCustomAttribute<FuryDBAttribute>();
+            using (var fileReader = File.OpenRead(fdb.SourcePath))
+            {
+                using (var reader = new StreamReader(fileReader))
+                {
+                    return Load<T>(reader, out _);
+                }
+            }
+        }
+
         public static T FromResources<T>(string path)
         {
             var textAsset = Resources.Load<TextAsset>(path);

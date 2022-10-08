@@ -6,14 +6,15 @@ using System.Collections.Generic;
 
 namespace FDB.Editor
 {
-    public partial class ModelInspector<T>
+    public partial class DBInspector<T>
     {
         class State
         {
             public T Model;
             public DBResolver Resolver;
+            public UndoModel Undo;
             public readonly Queue<(string Name, Action Task)> Tasks = new Queue<(string, Action)>();
-            public readonly List<Tuple<string, bool, Exception>> TasksErrors = new List<Tuple<string, bool, Exception>>();
+            public readonly List<Tuple<string, bool, Exception>> TasksErrors = new List<Tuple<string, bool, Exception>>();            
         }
 
         State _state;
@@ -22,8 +23,7 @@ namespace FDB.Editor
         {
             if (_state == null)
             {
-                _state = new State();
-                Invoke("Load model", () => LoadModel());                
+                return;
             }
 
             if (_state.Model == null)
@@ -57,6 +57,7 @@ namespace FDB.Editor
             var model = DBResolver.New<T>(out var resolver);
             _state.Model = model;
             _state.Resolver = resolver;
+            _state.Undo = new UndoModel();
             SaveModel();
         }
 
@@ -64,9 +65,11 @@ namespace FDB.Editor
         {
             using (var reader = System.IO.File.OpenText(MetaData().SourcePath))
             {
-                var model = DBResolver.Load<T>(reader, out var resolver);
+                var model = DBResolver.LoadInternal<T>(reader, out var resolver);
                 _state.Model = model;
                 _state.Resolver = resolver;
+                _state.Undo = new UndoModel();
+                GUI.changed = true;                
             }
         }
 
@@ -74,8 +77,10 @@ namespace FDB.Editor
         {
             var serializer = new JsonSerializer();
             serializer.Formatting = Formatting.Indented;
+            var source = MetaData().SourcePath;
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(source));
 
-            using (var writer = System.IO.File.CreateText(MetaData().SourcePath))
+            using (var writer = System.IO.File.CreateText(source))
             {
                 using (var jsonWriter = new JsonTextWriter(writer))
                 {

@@ -6,11 +6,10 @@ using System.Collections;
 
 namespace FDB.Editor
 {
-    public partial class ModelInspector<T> : EditorWindow
+    public partial class DBInspector<T> : EditorWindow
     {
         public const int MenuSize = 25;
         public const int GroupSpace = 25;
-
 
         bool _isDirty;
 
@@ -18,6 +17,17 @@ namespace FDB.Editor
 
         int _pageIndex;
         Dictionary<object, int> _expandedItems = new Dictionary<object, int>();
+
+        void OnEnable()
+        {
+            if (_state != null && _state.Model != null)
+            {
+                return;
+            }
+
+            _state = new State();
+            Invoke("Load model", () => LoadModel());
+        }
 
         public void SetDirty()
         {
@@ -28,7 +38,10 @@ namespace FDB.Editor
 
         void OnGUI()
         {
-            InitStatic();
+            if (!InitStatic())
+            {
+                return;
+            }
             Invalidate();
 
             if (_state.Model == null)
@@ -115,7 +128,12 @@ namespace FDB.Editor
                 {
                     Invoke("Save", () => SaveModel());
                 }
-                GuiButton("Undo", false);
+
+                if (GuiButton("Undo", _state.Undo.CanUndo))
+                {
+                    _state.Undo.Undo();
+                    SetDirty();
+                }
                 GuiButton("Redo", false);
 
                 PushGuiColor(Color.red);
@@ -128,6 +146,18 @@ namespace FDB.Editor
                     });
                 }
                 PopGuiColor();
+            }
+
+            var e = Event.current;
+            if (e.type == EventType.KeyDown
+                && e.keyCode == KeyCode.Z
+                && e.modifiers == EventModifiers.Control)
+            {
+                if (_state.Undo.CanUndo)
+                {
+                    _state.Undo.Undo();
+                }
+                e.Use();
             }
         }
 
@@ -317,7 +347,7 @@ namespace FDB.Editor
                     }
                     break;
                 default:
-                    GUILayout.Label(collection.GetType().ToString());
+                    GUILayout.Label(collection?.GetType().ToString() ?? "Null");
                     break;
             }
 
@@ -487,8 +517,11 @@ namespace FDB.Editor
                 case FieldHeaderState fieldHeader:
                     var value = fieldHeader.Field.GetValue(item);
                     var newValue = Inspector.Field(_state.Resolver, fieldHeader, value);
+                    var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
+
                     if (!object.Equals(newValue, value))
                     {
+                        _state.Undo.Push(fieldId, item);
                         fieldHeader.Field.SetValue(item, newValue);
                         changed |= true;
                     }

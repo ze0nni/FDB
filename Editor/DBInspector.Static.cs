@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -8,33 +9,59 @@ using UnityEngine.AddressableAssets;
 
 namespace FDB.Editor
 {
-    public partial class ModelInspector<T>
+    public partial class DBInspector<T>
     {
         Exception _staticException;
         Type _loadedModelType;
+        FuryDBAttribute _fdbAttr;
+        JsonConverterAttribute _jsonAttr;
         string[] _pageNames;
         PageState[] _pageStates;
         Dictionary<Type, FieldInfo> _indexes = new Dictionary<Type, FieldInfo>();
 
-        void InitStatic()
+        bool InitStatic()
         {
+            var ok = true;
             if (_staticException != null)
             {
+                ok = false;
                 GUILayout.Label(_staticException.ToString(), GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             }
+
+            if (_fdbAttr == null)
+            {
+                ok = false;
+                GUILayout.Label("Add attribute");
+                GUILayout.TextField("[FuryDB(\"Assets/Resources/DB.json.txt\", \"Assets/Kinds.cs\")]");
+            }
+
+            if (_jsonAttr == null
+                || !_jsonAttr.ConverterType.IsGenericType
+                || _jsonAttr.ConverterType.GetGenericTypeDefinition() != typeof(DBConverter<>)
+                || _jsonAttr.ConverterType.GetGenericArguments()[0] != typeof(T))
+            {
+                ok = false;
+                GUILayout.Label("Add attribute");
+                GUILayout.TextField("[JsonConverter(typeof(DBConverter<" + typeof(T).Name + ">))]");
+            }
+
             if (_loadedModelType == typeof(T))
             {
-                return;
+                return ok;
             }
 
             try
             {
                 InitStaticInternal();
                 _loadedModelType = typeof(T);
+                _fdbAttr = _loadedModelType.GetCustomAttribute<FuryDBAttribute>();
+                _jsonAttr = _loadedModelType.GetCustomAttribute<JsonConverterAttribute>();
             } catch (Exception exc)
             {
                 _staticException = exc;
+                return false;
             }
+            return true;
         }
         
         void InitStaticInternal()

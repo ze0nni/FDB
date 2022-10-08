@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -21,8 +20,9 @@ namespace FDB
             if (resolver == null)
             {
                 throw new InvalidOperationException($"Use {nameof(DBResolver)} for instantiate model");
-            } 
-            var model = Activator.CreateInstance<T>();            
+            }
+
+            var model = (T)DBResolver.Instantate(typeof(T));
 
             Contract.Assert(reader.TokenType == JsonToken.StartObject);            
 
@@ -184,7 +184,8 @@ namespace FDB
             }
             else if (type.IsEnum)
             {
-                return Enum.Parse(type, reader.Value.ToString());
+                Enum.TryParse(type, reader.Value.ToString(), out var result);
+                return result;
             } else if (type == typeof(bool))
             {
                 return (bool)reader.Value;

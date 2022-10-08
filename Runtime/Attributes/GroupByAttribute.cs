@@ -10,7 +10,7 @@ namespace FDB
         public readonly String Regex;
         public readonly int RegexGroup;
 
-        public GroupByAttribute(string field = null, string regex = null, int regexGroup = 0)
+        public GroupByAttribute(string field = null, string regex = null, int regexGroup = 1)
         {
             Field = field;
             Regex = regex;

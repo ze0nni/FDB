@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace FDB
@@ -15,10 +16,10 @@ namespace FDB
 
         public static T New<T>(out DBResolver resolver)
         {
-            return Load<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), out resolver);
+            return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), out resolver);
         }
 
-        public static T Load<T>(StreamReader reader, out DBResolver resolver)
+        public static T LoadInternal<T>(StreamReader reader, out DBResolver resolver)
         {
             var serializer = new JsonSerializer();
 
@@ -36,22 +37,35 @@ namespace FDB
             }
         }
 
-        public static T Load<T>()
+        public static T LoadInternal<T>()
         {
             var fdb = typeof(T).GetCustomAttribute<FuryDBAttribute>();
             using (var fileReader = File.OpenRead(fdb.SourcePath))
             {
                 using (var reader = new StreamReader(fileReader))
                 {
-                    return Load<T>(reader, out _);
+                    return LoadInternal<T>(reader, out _);
                 }
             }
         }
 
-        public static T FromResources<T>(string path)
+        public static T Load<T>()
+        {
+            var fdb = typeof(T).GetCustomAttribute<FuryDBAttribute>();
+            var fullPath = fdb.SourcePath;
+            var pattern = new Regex(@"[\\\/]Resources[\\\/](.+?)\.txt");
+            var match = pattern.Match(fullPath);
+            if (!match.Success)
+            {
+                throw new IOException("DB not constraint in Resources folder");
+            }
+            return Load<T>(match.Groups[1].Value);
+        }
+
+        public static T Load<T>(string path)
         {
             var textAsset = Resources.Load<TextAsset>(path);
-            var db = Load<T>(new StreamReader(new MemoryStream(textAsset.bytes)), out _);
+            var db = LoadInternal<T>(new StreamReader(new MemoryStream(textAsset.bytes)), out _);
             return db;
         }
 
@@ -118,6 +132,15 @@ namespace FDB
                         {
                             Instantate(i);
                         }
+                    }
+                }
+
+                if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(Index<>))
+                {
+                    var index = field.GetValue(model);
+                    if (index == null)
+                    {
+                        field.SetValue(model, Activator.CreateInstance(field.FieldType));
                     }
                 }
             }

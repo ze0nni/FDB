@@ -1,6 +1,6 @@
 ﻿namespace FDB.Editor
 {
-    public partial class ModelInspector<T>
+    public partial class DBInspector<T>
     {
         struct InputState
         {

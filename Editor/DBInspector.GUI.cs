@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace FDB.Editor
 {    
-    public partial class ModelInspector<T>
+    public partial class DBInspector<T>
     {
         readonly Stack<bool> _guiEnabledStack = new Stack<bool>();
         readonly Stack<Color> _guiColorStack = new Stack<Color>();

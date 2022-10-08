@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public partial class ModelInspector<T> : EditorWindow
+    public partial class DBInspector<T> : EditorWindow
     {
         public static void GenerateCs(string path, T db)
         {
@@ -14,11 +14,14 @@ namespace FDB.Editor
             var dbType = typeof(T);
 
             sb.AppendLine("using FDB;");
-            sb.AppendLine($"namespace {dbType.Namespace}");
-            sb.AppendLine("{");
+            if (!string.IsNullOrEmpty(dbType.Namespace))
+            {
+                sb.AppendLine($"namespace {dbType.Namespace}");
+                sb.AppendLine("{");
+            }
 
             {
-                sb.AppendLine($"\tpublic static class Kinds");
+                sb.AppendLine($"\tpublic static partial class Kinds");
                 sb.AppendLine("\t{");
                 foreach (var field in dbType.GetFields())
                 {
@@ -50,7 +53,10 @@ namespace FDB.Editor
                 sb.AppendLine("\t}");
             }
 
-            sb.AppendLine("}");
+            if (!string.IsNullOrEmpty(dbType.Namespace))
+            {
+                sb.AppendLine("}");
+            }
 
             File.WriteAllText(path, sb.ToString());
         }

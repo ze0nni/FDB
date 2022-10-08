@@ -14,7 +14,7 @@ namespace FDB.Editor
 
         internal static AssetReference Field(AssetReference inputValue, params GUILayoutOption[] options)
         {
-            var title = inputValue == null ? $"({nameof(AssetReference)})" : inputValue.editorAsset.name;
+            var title = inputValue == null || inputValue.editorAsset == null ? $"({nameof(AssetReference)})" : inputValue.editorAsset.name;
 
             var id = GUIUtility.GetControlID(FocusType.Passive);
             GUILayout.Box(title, GuiTextField, options);

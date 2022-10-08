@@ -102,7 +102,7 @@ And fill database with data. Don't forget press **Save**
 ![Weapons](./Doc/4.png)
 ![Text](./Doc/5.png)
 
-Now you can load load database in your code
+Now you can load database in your code
 
 ```Boot.cs
 var db = DBResolver.Load<DB>();

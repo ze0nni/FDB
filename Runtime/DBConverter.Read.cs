@@ -104,7 +104,8 @@ namespace FDB
 
         object ReadObject(DBResolver resolver, JsonReader reader, Type type)
         {
-            var obj = Activator.CreateInstance(type);
+            var obj = DBResolver.Instantate(type);
+            
             if (reader.TokenType == JsonToken.Null || reader.TokenType == JsonToken.Undefined)
             {
                 return obj;
@@ -213,6 +214,9 @@ namespace FDB
                         throw new ArgumentException($"Unexcepted token {reader.TokenType}");
 
                 }                
+            } else if (type.IsClass)
+            {
+                return ReadObject(resolver, reader, type);
             }
 
             Debug.LogWarning($"Unknown field type {type.FullName}");
@@ -275,6 +279,7 @@ namespace FDB
                             goto endArray;
 
                         default:
+                            Debug.Log(reader.Value);
                             throw new ArgumentException($"Unexcepted token {reader.TokenType}");
                     }
                 }

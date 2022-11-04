@@ -42,6 +42,11 @@ namespace FDB
         public bool TryGet(Kind<T> kind, out T e)
         {
             Invalidate();
+            if (kind.Value == null)
+            {
+                e = default;
+                return false;
+            }
             return _map.TryGetValue(kind.Value, out e);
         }
 

@@ -109,14 +109,14 @@ namespace FDB
             refs.Add(refValue);
         }
 
-        public static object Instantate(Type modelType)
+        public static object Instantate(Type modelType, bool asNew)
         {
             var model = Activator.CreateInstance(modelType);
-            Instantate(model);
+            Instantate(model, asNew);
             return model;
         }
 
-        static void Instantate(object model)
+        static void Instantate(object model, bool asNew)
         {
             foreach (var field in model.GetType().GetFields())
             {
@@ -130,7 +130,7 @@ namespace FDB
                     {
                         foreach (var i in (IEnumerable)list)
                         {
-                            Instantate(i);
+                            Instantate(i, asNew);
                         }
                     }
                 }
@@ -141,6 +141,19 @@ namespace FDB
                     if (index == null)
                     {
                         field.SetValue(model, Activator.CreateInstance(field.FieldType));
+                    }
+                }
+
+                if (field.FieldType == typeof(AnimationCurve) && field.GetValue(model) == null)
+                {
+                    field.SetValue(model, new AnimationCurve());
+                }
+
+                if (asNew)
+                {
+                    if (field.FieldType == typeof(Color))
+                    {
+                        field.SetValue(model, Color.black);
                     }
                 }
             }
@@ -181,7 +194,7 @@ namespace FDB
             {
                 foreach (var m in index.All())
                 {
-                    Instantate(m);
+                    Instantate(m, false);
                 }
             }
         }

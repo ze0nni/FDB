@@ -91,6 +91,14 @@ namespace FDB.Editor
                     {
                         return AssetReferenceField.Field(rawValue as AssetReference, GUILayout.Width(header.Width));
                     }
+                case ColorFieldHeaderState colorHeader:
+                    {
+                        return EditorGUILayout.ColorField((Color)rawValue, GUILayout.Width(header.Width));
+                    }
+                case AnimationCurveFieldHeaderState _:
+                    {
+                        return EditorGUILayout.CurveField((AnimationCurve)rawValue, GUILayout.Width(header.Width));
+                    }
 
                 default:
                     GUILayout.Box(header.GetType().Name, GUILayout.Width(header.Width));

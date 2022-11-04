@@ -22,7 +22,7 @@ namespace FDB
                 throw new InvalidOperationException($"Use {nameof(DBResolver)} for instantiate model");
             }
 
-            var model = (T)DBResolver.Instantate(typeof(T));
+            var model = (T)DBResolver.Instantate(typeof(T), false);
 
             Contract.Assert(reader.TokenType == JsonToken.StartObject);            
 
@@ -104,7 +104,7 @@ namespace FDB
 
         object ReadObject(DBResolver resolver, JsonReader reader, Type type)
         {
-            var obj = DBResolver.Instantate(type);
+            var obj = DBResolver.Instantate(type, false);
             
             if (reader.TokenType == JsonToken.Null || reader.TokenType == JsonToken.Undefined)
             {
@@ -193,7 +193,7 @@ namespace FDB
             }
             else if (type == typeof(int))
             {
-                return Convert.ToInt32(reader.Value);                
+                return Convert.ToInt32(reader.Value);
             }
             else if (type == typeof(float))
             {
@@ -213,7 +213,51 @@ namespace FDB
                     default:
                         throw new ArgumentException($"Unexcepted token {reader.TokenType}");
 
-                }                
+                }
+            } else if (type == typeof(Color)) {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.Undefined:
+                    case JsonToken.Null:
+                        return Color.black;
+                    case JsonToken.StartConstructor:
+                        Contract.Assert((string)reader.Value == "Color", "Unknown constructor Color");
+                        var r = (float)reader.ReadAsDouble();
+                        var g = (float)reader.ReadAsDouble();
+                        var b = (float)reader.ReadAsDouble();
+                        var a = (float)reader.ReadAsDouble();
+                        reader.Read();
+                        Contract.Assert(reader.TokenType == JsonToken.EndConstructor, "Excepted end of constructor");
+
+                        return new Color(r, g, b, a);
+                }
+            } else if (type == typeof(AnimationCurve)) {
+                Contract.Assert(reader.TokenType == JsonToken.StartArray);
+                var keys = new List<Keyframe>();
+                while (reader.Read())
+                {
+                    switch (reader.TokenType)
+                    {
+                        case JsonToken.StartConstructor:
+                            Contract.Assert((string)reader.Value == "Key", "Unknown constructor Key");
+                            keys.Add(new Keyframe(
+                                ReadFloat(reader),
+                                ReadFloat(reader),
+                                ReadFloat(reader),
+                                ReadFloat(reader),
+                                ReadFloat(reader),
+                                ReadFloat(reader)));
+                            reader.Read();
+                            Contract.Assert(reader.TokenType == JsonToken.EndConstructor, "Excepted end of constructor");
+                            break;
+
+                        case JsonToken.EndArray:
+                            return new AnimationCurve(keys.ToArray());
+
+                        default:
+                            throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+                    }
+                }
             } else if (type.IsClass)
             {
                 return ReadObject(resolver, reader, type);
@@ -289,6 +333,30 @@ namespace FDB
             Contract.Assert(reader.TokenType == JsonToken.EndArray);
 
             return list;
+        }
+
+        float ReadFloat(JsonReader reader)
+        {
+            reader.Read();
+            switch (reader.TokenType)
+            {
+                case JsonToken.Integer:
+                    return (int)reader.Value;
+                case JsonToken.Float:
+                    var d = (double)reader.Value;
+                    return (float)d;
+                case JsonToken.String:
+                    switch ((string)reader.Value)
+                    {
+                        case "Infinity": return float.PositiveInfinity;
+                        case "-Infinity": return float.NegativeInfinity;
+                        default: throw new ArgumentException($"Unexcepted float value {reader.Value}");
+
+                    }
+
+                default:
+                    throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+            }
         }
     }
 }

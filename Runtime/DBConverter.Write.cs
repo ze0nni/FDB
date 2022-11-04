@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 
 namespace FDB
@@ -113,6 +114,31 @@ namespace FDB
                 {
                     writer.WriteNull();
                 }
+            } else if (type == typeof(Color)) {
+                var color = (Color)value;
+                writer.WriteStartConstructor("Color");
+                writer.WriteValue(color.r);
+                writer.WriteValue(color.g);
+                writer.WriteValue(color.b);
+                writer.WriteValue(color.a);
+                writer.WriteEndConstructor();
+            } else if (type == typeof(AnimationCurve))
+            {
+                var curve = (AnimationCurve)value;
+                writer.WriteStartArray();
+                for (var i = 0; i < curve.length; i++)
+                {
+                    var key = curve.keys[i];
+                    writer.WriteStartConstructor("Key");
+                    writer.WriteValue(key.time);
+                    writer.WriteValue(key.value);
+                    writer.WriteValue(key.inTangent);
+                    writer.WriteValue(key.outTangent);
+                    writer.WriteValue(key.inWeight);
+                    writer.WriteValue(key.outWeight);
+                    writer.WriteEndConstructor();
+                }
+                writer.WriteEndArray();
             } else if (type.IsClass)
             {
                 WriteObject(writer, value);

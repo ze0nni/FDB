@@ -35,6 +35,7 @@ namespace FDB.Editor
             if (_done && _controlId == id)
             {
                 _done = false;
+                GUI.changed = true;
                 return _currentField;
             }
             

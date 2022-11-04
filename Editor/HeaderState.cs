@@ -109,6 +109,16 @@ namespace FDB.Editor
         public AssetReferenceFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
     }
 
+    public sealed class ColorFieldHeaderState : FieldHeaderState
+    {
+        public ColorFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+    }
+
+    public sealed class AnimationCurveFieldHeaderState : FieldHeaderState
+    {
+        public AnimationCurveFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+    }
+
     public sealed class EnumFieldHeaderState : FieldHeaderState
     {
         public readonly Array Values;

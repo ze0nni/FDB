@@ -456,12 +456,12 @@ namespace FDB.Editor
                         menu.AddSeparator("");
                         menu.AddItem(new GUIContent("Insert above"), false, () => {
                             var modelType = index.GetType().GetGenericArguments()[0];
-                            index.Insert(itemIndex, DBResolver.Instantate(modelType));
+                            index.Insert(itemIndex, DBResolver.Instantate(modelType, true));
                             SetDirty();
                         });
                         menu.AddItem(new GUIContent("Insert belove"), false, () => {
                             var modelType = index.GetType().GetGenericArguments()[0];
-                            index.Insert(itemIndex + 1, DBResolver.Instantate(modelType));
+                            index.Insert(itemIndex + 1, DBResolver.Instantate(modelType, true));
                             SetDirty();
                         });
                         menu.AddSeparator("");
@@ -488,12 +488,12 @@ namespace FDB.Editor
                         menu.AddSeparator("");
                         menu.AddItem(new GUIContent("Insert above"), false, () => {
                             var modelType = list.GetType().GetGenericArguments()[0];
-                            ListActions.Insert(list, itemIndex, DBResolver.Instantate(modelType));
+                            ListActions.Insert(list, itemIndex, DBResolver.Instantate(modelType, true));
                             SetDirty();
                         });
                         menu.AddItem(new GUIContent("Insert belove"), false, () => {
                             var modelType = list.GetType().GetGenericArguments()[0];
-                            ListActions.Insert(list, itemIndex + 1, DBResolver.Instantate(modelType));
+                            ListActions.Insert(list, itemIndex + 1, DBResolver.Instantate(modelType, true));
                             SetDirty();
                         });
                         menu.AddSeparator("");
@@ -515,11 +515,14 @@ namespace FDB.Editor
 
             switch (header) {
                 case FieldHeaderState fieldHeader:
+
+                    EditorGUI.BeginChangeCheck();
+
                     var value = fieldHeader.Field.GetValue(item);
                     var newValue = Inspector.Field(_state.Resolver, fieldHeader, value);
                     var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
 
-                    if (!object.Equals(newValue, value))
+                    if (EditorGUI.EndChangeCheck())
                     {
                         _state.Undo.Push(fieldId, item);
                         fieldHeader.Field.SetValue(item, newValue);
@@ -559,7 +562,7 @@ namespace FDB.Editor
                             case Index index:
                                 {
                                     var modelType = collectionType.GetGenericArguments()[0];
-                                    index.Add(DBResolver.Instantate(modelType));
+                                    index.Add(DBResolver.Instantate(modelType, true));
                                 }
                                 break;
 
@@ -569,7 +572,7 @@ namespace FDB.Editor
                                 && collectionType.GetGenericTypeDefinition() == typeof(List<>):
                                 {
                                     var modelType = collectionType.GetGenericArguments()[0];
-                                    var model = DBResolver.Instantate(modelType);
+                                    var model = DBResolver.Instantate(modelType, true);
                                     var add = collectionType.GetMethod("Add");
                                     add.Invoke(collection, new object[] { model });
                                 }

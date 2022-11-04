@@ -125,6 +125,8 @@ var rogue = db.Units.Get(Kinds.Units.rogue);
 - float
 - string
 - enum
+- Color
+- AnimationCurve
 - List<>
 - Ref<>
 - AssetReference

@@ -196,6 +196,14 @@ namespace FDB.Editor
                 {
                     yield return new AssetReferenceFieldHeaderState(path, field);
                 }
+                else if (field.FieldType == typeof(Color))
+                {
+                    yield return new ColorFieldHeaderState(path, field);
+                }
+                else if (field.FieldType == typeof(AnimationCurve))
+                {
+                    yield return new AnimationCurveFieldHeaderState(path, field);
+                }
             }
 
             if (requestKind && !kindResolved)

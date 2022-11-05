@@ -10,6 +10,7 @@ namespace FDB.Editor
         static int _controlId;
         static bool _done = false;
         static Ref _currentField;
+        static (float Time, Ref Field) _clickTime;
         static Rect _hoveredRect;
         
         public static Ref Field(
@@ -93,14 +94,29 @@ namespace FDB.Editor
                     {
                         _currentField = (Ref)Activator.CreateInstance(_currentField.GetType(), _resolver, model);
                         GUI.changed = true;
+                        if (_clickTime.Field != null && _clickTime.Field.Model == _currentField.Model && Time.realtimeSinceStartup - _clickTime.Time < 0.3f)
+                        {
+                            _done = true;
+                            GUI.changed = true;
+                            this.editorWindow.Close();
+                        } else
+                        {
+                            _clickTime = (Time.realtimeSinceStartup, _currentField);
+                        }
                     }
-
                     GUI.color = color;
                 }
 
                 _scrollPos = scroll.scrollPosition;
             }
 
+            if (GUILayout.Button("Clear"))
+            {
+                _done = true;
+                _currentField = null;
+                GUI.changed = true;
+                this.editorWindow.Close();
+            }
             if (GUILayout.Button("Ok"))
             {
                 _done = true;

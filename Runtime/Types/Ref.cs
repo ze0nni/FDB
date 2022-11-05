@@ -35,6 +35,16 @@ namespace FDB
         Kind Ref.Kind => Kind;
         object Ref.Model => Model;
 
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Ref other))
+            {
+                return false;
+            }
+            return Kind.GetType() == other.Kind.GetType()
+                && Kind.Value == other.Kind.Value;
+        }
+
         public bool Equals(Ref other)
         {
             switch (other)
@@ -43,6 +53,16 @@ namespace FDB
                     return this.Model == otherT.Model;
             }
             return false;
+        }
+
+        public static bool operator ==(Ref<T> a, Ref<T> b)
+        {
+            return a.Kind == b.Kind;
+        }
+
+        public static bool operator !=(Ref<T> a, Ref<T> b)
+        {
+            return a.Kind != b.Kind;
         }
 
         public override string ToString()

@@ -24,6 +24,16 @@ namespace FDB
             return $"{nameof(Kind)}<{typeof(T).Name}>({Value})";
         }
 
+        public static bool operator ==(Kind<T> a, Kind<T> b)
+        {
+            return a.Value == b.Value;
+        }
+
+        public static bool operator !=(Kind<T> a, Kind<T> b)
+        {
+            return a.Value != b.Value;
+        }
+
         public Kind(SerializationInfo info, StreamingContext context)
         {
             Value = info.GetString(nameof(Value));

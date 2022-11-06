@@ -166,7 +166,7 @@ namespace FDB.Editor
                         else if (itemType == typeof(string))
                         {
                             yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new StringFieldHeaderState(listRoot, null) });
+                                new[] { new StringFieldHeaderState(listRoot, null, null) });
                         } else { 
                             yield return new ListHeaderState(path, type, field, itemType, false,
                                 GetHeaders(itemType, depth + 1, listRoot, false).ToArray());
@@ -191,7 +191,7 @@ namespace FDB.Editor
                 }
                 else if (field.FieldType == typeof(string))
                 {
-                    yield return new StringFieldHeaderState(path, field);
+                    yield return new StringFieldHeaderState(path, type, field);
                 } else if (field.FieldType == typeof(AssetReference))
                 {
                     yield return new AssetReferenceFieldHeaderState(path, field);

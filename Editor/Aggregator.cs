@@ -88,7 +88,13 @@ namespace FDB.Editor
                 GUILayout.Space(left);
                 foreach (var a in _aggregators)
                 {
-                    GUILayout.Label($"{a.Name} = {Compute(_history, a.Func, a.InitialType)}");
+                    if (a.InitialType == null)
+                    {
+                        GUILayout.Label($"{a.Name} = {Compute(_history, a.Func, a.InitialType)}");
+                    } else
+                    {
+                        GUILayout.Label($"{Compute(_history, a.Func, a.InitialType)}");
+                    }
                 }
             }
 

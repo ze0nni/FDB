@@ -272,7 +272,7 @@ namespace FDB.Editor
 
                         if (string.IsNullOrEmpty(filter) && separate)
                         {
-                            aggregator.OnGUI(left);
+                            aggregator.OnGUI(left + MenuSize);
                             GUILayout.Space(GroupSpace);
                         }
 
@@ -310,7 +310,7 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left);
+                                    aggregator.OnGUI(left + MenuSize);
                                     GUILayout.Space(GroupSpace);
                                 }
 
@@ -319,7 +319,7 @@ namespace FDB.Editor
                                     var id = GUIUtility.GetControlID(value.GetHashCode(), FocusType.Passive);
                                     GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
-                                    var newValue = Inspector.Field(_state.Resolver, headers[0], value);
+                                    var newValue = Inspector.Field(_state.Resolver, headers[0], null, value);
                                     if (!newValue.Equals(value))
                                     {
                                         itemProp.SetValue(list, newValue, indexParamas);
@@ -336,7 +336,7 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left);
+                                    aggregator.OnGUI(left + MenuSize);
                                     GUILayout.Space(GroupSpace);
                                 }
 
@@ -351,7 +351,7 @@ namespace FDB.Editor
                     break;
             }
 
-            aggregator.OnGUI(left);
+            aggregator.OnGUI(left + MenuSize);
 
             return changed;
         }
@@ -509,7 +509,7 @@ namespace FDB.Editor
             GUI.changed = true;
         }
 
-        bool OnFieldGui(HeaderState header, int headerIndex, object item)
+        bool OnFieldGui(HeaderState header, int headerIndex, object owner)
         {
             var changed = false;
 
@@ -518,14 +518,14 @@ namespace FDB.Editor
 
                     EditorGUI.BeginChangeCheck();
 
-                    var value = fieldHeader.Field.GetValue(item);
-                    var newValue = Inspector.Field(_state.Resolver, fieldHeader, value);
+                    var value = fieldHeader.Field.GetValue(owner);
+                    var newValue = Inspector.Field(_state.Resolver, fieldHeader, owner, value);
                     var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        _state.Undo.Push(fieldId, item);
-                        fieldHeader.Field.SetValue(item, newValue);
+                        _state.Undo.Push(fieldId, owner);
+                        fieldHeader.Field.SetValue(owner, newValue);
                         changed |= true;
                     }
                     break;
@@ -533,7 +533,7 @@ namespace FDB.Editor
                 case ListHeaderState listHeader:
                     if (GUILayout.Button("[...]", GUILayout.Width(header.Width)))
                     {
-                        ToggleExpandedState(item, headerIndex);
+                        ToggleExpandedState(owner, headerIndex);
                     }
                     break;                
             }

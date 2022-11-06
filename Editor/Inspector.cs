@@ -25,7 +25,7 @@ namespace FDB.Editor
             return false;
         }
 
-        public static object Field(DBResolver resolver, HeaderState header, object rawValue)
+        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue)
         {
             switch (header)
             {
@@ -84,7 +84,14 @@ namespace FDB.Editor
 
                 case StringFieldHeaderState stringHeader:
                     {
-                        return EditorGUILayout.TextField((string)rawValue, GUILayout.Width(header.Width));
+                        if (stringHeader.IsMultiline(owner, out var minLines, out var maxLines))
+                        {
+                            return EditorGUILayout.TextArea((string)rawValue, GUILayout.Width(header.Width), GUILayout.MinHeight(minLines * 16), GUILayout.MaxHeight(maxLines * 16));
+                        }
+                        else
+                        {
+                            return EditorGUILayout.TextField((string)rawValue, GUILayout.Width(header.Width));
+                        }
                     }
 
                 case AssetReferenceFieldHeaderState assetRefHeader:

@@ -20,6 +20,7 @@ namespace FDB
         {
             Name = aggregateFuncName;
             AggregateFuncName = aggregateFuncName;
+            InitialType = initialType;
         }
     }
 }

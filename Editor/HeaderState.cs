@@ -101,7 +101,43 @@ namespace FDB.Editor
 
     public sealed class StringFieldHeaderState : FieldHeaderState
     {
-        public StringFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+        private int _minLines;
+        private int _maxLines;
+        private MethodInfo _condition;
+
+        public StringFieldHeaderState(string path, Type ownerType, FieldInfo field) : base(path, field) {
+            if (field != null)
+            {
+                var multilineAttr = field.GetCustomAttribute<MultilineText>();
+                if (multilineAttr != null)
+                {
+                    _minLines = multilineAttr.MinLines;
+                    _maxLines = Math.Max(_minLines, multilineAttr.MaxLines);
+                    if (ownerType != null && !string.IsNullOrEmpty(multilineAttr.Condition))
+                    {
+                        _condition = ownerType.GetMethod(multilineAttr.Condition, BindingFlags.Static | BindingFlags.NonPublic);
+                    }
+                }
+            }
+        }
+
+        public static object[] _conditionArgs = new object[1];
+        public bool IsMultiline(object owner, out int minLines, out int maxLines)
+        {
+            minLines = _minLines;
+            maxLines = _maxLines;
+            if (_condition == null)
+            {
+                return false;
+            }
+
+            if (minLines > 1 && _condition == null)
+            {
+                return true;
+            }
+            _conditionArgs[0] = owner;
+            return (bool)_condition.Invoke(null, _conditionArgs);
+        }
     }
 
     public sealed class AssetReferenceFieldHeaderState : FieldHeaderState

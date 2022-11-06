@@ -67,7 +67,8 @@ namespace FDB.Editor
                                 AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out var guid, out long _);                 
                                 var entry = settings.FindAssetEntry(guid);
                                 if (entry != null)
-                                {                                    
+                                {
+                                    GUI.changed = true;
                                     return new AssetReference(guid);
                                 }
                             }

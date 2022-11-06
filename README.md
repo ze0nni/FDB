@@ -1,3 +1,5 @@
+[![openupm](https://img.shields.io/npm/v/com.pixelrebels.fdb?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.pixelrebels.fdb/)
+
 # FuryDB
 
 Static structured database for Unity. I create this project inspired by [CastleDB](http://castledb.org/).

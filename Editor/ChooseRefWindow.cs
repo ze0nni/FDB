@@ -94,7 +94,7 @@ namespace FDB.Editor
                     {
                         _currentField = (Ref)Activator.CreateInstance(_currentField.GetType(), _resolver, model);
                         GUI.changed = true;
-                        if (_clickTime.Field != null && _clickTime.Field.Model == _currentField.Model && Time.realtimeSinceStartup - _clickTime.Time < 0.3f)
+                        if (_clickTime.Field != null && _clickTime.Field.Config == _currentField.Config && Time.realtimeSinceStartup - _clickTime.Time < 0.3f)
                         {
                             _done = true;
                             GUI.changed = true;

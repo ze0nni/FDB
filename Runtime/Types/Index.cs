@@ -27,7 +27,7 @@ namespace FDB
 
         readonly List<string> _warnings = new List<string>();
         readonly HashSet<string> _duplicates = new HashSet<string>();
-        
+
         public IReadOnlyList<T> All()
         {
             return _list;
@@ -49,6 +49,10 @@ namespace FDB
             }
             return _map.TryGetValue(kind.Value, out e);
         }
+
+        public int Count => _list.Count;
+        public T this[int index] => _list[index];
+        public T this[Kind<T> kind] => _map[kind.Value];
 
         void Invalidate()
         {

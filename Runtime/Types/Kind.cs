@@ -12,7 +12,7 @@ namespace FDB
 
     [Serializable]
     [JsonConverter(typeof(KindJsonConverter))]
-    public readonly struct Kind<T> : Kind, ISerializable
+    public readonly struct Kind<T> : Kind
     {
         public readonly string Value;
         public Kind(string value) => Value = value;
@@ -32,16 +32,6 @@ namespace FDB
         public static bool operator !=(Kind<T> a, Kind<T> b)
         {
             return a.Value != b.Value;
-        }
-
-        public Kind(SerializationInfo info, StreamingContext context)
-        {
-            Value = info.GetString(nameof(Value));
-        }
-
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            info.AddValue(nameof(Value), Value);
         }
     }
 

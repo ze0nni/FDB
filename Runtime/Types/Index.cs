@@ -9,6 +9,7 @@ namespace FDB
     {
         IEnumerable All();
         void SetDirty();
+        void Invalidate();
 
         bool IsDuplicateKind(string kind);
         IReadOnlyList<string> Warnings { get; }
@@ -53,7 +54,7 @@ namespace FDB
         public T this[int index] => _list[index];
         public T this[Kind<T> kind] => Get(kind);
 
-        void Invalidate()
+        public void Invalidate()
         {
             if (_map.Count > 0)
                 return;

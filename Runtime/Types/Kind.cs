@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
@@ -18,7 +19,7 @@ namespace FDB
         public Kind(string value) => Value = value;
 
         string Kind.Value => Value ?? string.Empty;
-        
+
         public override string ToString()
         {
             return $"{nameof(Kind)}<{typeof(T).Name}>({Value})";
@@ -32,6 +33,24 @@ namespace FDB
         public static bool operator !=(Kind<T> a, Kind<T> b)
         {
             return a.Value != b.Value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Kind<T>))
+            {
+                return false;
+            }
+
+            var kind = (Kind<T>)obj;
+            return Value == kind.Value;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = 1637693444;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Value);
+            return hashCode;
         }
     }
 

@@ -3,6 +3,7 @@ using FDB;
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEditor;
 
 namespace FDB.Editor
 {
@@ -89,6 +90,7 @@ namespace FDB.Editor
             }
 
             GenerateCs(MetaData().CsPath, _state.Model);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
             _isDirty = false;
         }

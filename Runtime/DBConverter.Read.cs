@@ -96,8 +96,9 @@ namespace FDB
                         throw new ArgumentException($"Unexcepted token {reader.TokenType}");
                 }
             }
-            endArray:
+        endArray:
             Contract.Assert(reader.TokenType == JsonToken.EndArray);
+            index.Invalidate();
 
             return index;
         }

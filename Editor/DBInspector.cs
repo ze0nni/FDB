@@ -299,7 +299,6 @@ namespace FDB.Editor
 
                                 using (new GUILayout.HorizontalScope())
                                 {
-                                    var id = GUIUtility.GetControlID(value.GetHashCode(), FocusType.Passive);
                                     GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
                                     var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value);

@@ -113,12 +113,12 @@ namespace FDB.Editor
                     Invoke("Save", () => EditorDB<T>.Save());
                 }
 
-                if (GuiButton("Undo", Undo.CanUndo))
-                {
-                    Undo.Undo();
-                    SetDirty();
-                }
-                GuiButton("Redo", false);
+                //if (GuiButton("Undo", Undo.CanUndo))
+                //{
+                //    Undo.Undo();
+                //    SetDirty();
+                //}
+                //GuiButton("Redo", false);
 
                 PushGuiColor(Color.red);
                 if (GuiButton("Reset", true))

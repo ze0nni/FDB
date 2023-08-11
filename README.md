@@ -31,19 +31,14 @@ public class DBWindow : DBInspector<DB>
     [MenuItem("Game/DB")]
     public static void Open()
     {
-        var window = CreateWindow<DBWindow>();
-        window.title = "DB";
+        var window = GetWindow<DBWindow>("DB");
         window.Show();
     }
 }
 
 ```
 
-Then open **Game -> DB** and look at window
-
-![New window](./Doc/1.png)
-
-Press **New model**. Now you have empty database
+Then open **Game -> DB** and look at window. Now you have empty database.
 
 ![New window](./Doc/2.png)
 

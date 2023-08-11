@@ -113,6 +113,8 @@ var db = DBResolver.Load<DB>();
 var rogue = db.Units.Get(Kinds.Units.rogue);
 ```
 
+For read and edit database from editor use `EditorDB<DB>`
+
 ## Supported types
 
 - bool

@@ -109,7 +109,7 @@ namespace FDB.Editor
                 index = default;
                 return false;
             }
-            index = field.GetValue(_state.Model) as Index;
+            index = field.GetValue(EditorDB<T>.DB) as Index;
             return index != null;
         }
 

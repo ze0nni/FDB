@@ -11,29 +11,16 @@ namespace FDB.Editor
         public const int MenuSize = 25;
         public const int GroupSpace = 25;
 
-        bool _isDirty;
-
         InputState _input;
 
         int _pageIndex;
         Dictionary<object, int> _expandedItems = new Dictionary<object, int>();
 
-        void OnEnable()
-        {
-            if (_state != null && _state.Model != null)
-            {
-                return;
-            }
-
-            _state = new State();
-            Invoke("Load model", () => LoadModel());
-        }
-
         public void SetDirty()
         {
-            _isDirty = true;
+            EditorDB<T>.SetDirty();
             GUI.changed = true;
-            _state?.Resolver?.SetDirty();
+            EditorDB<T>.SetDirty();
         }
 
         void OnGUI()
@@ -42,78 +29,67 @@ namespace FDB.Editor
             {
                 return;
             }
-            Invalidate();
 
-            if (_state.Model == null)
+            OnToolbarGui();
+
+            if (_pageStates == null || _pageStates.Length == 0)
             {
-                PushGuiColor(Color.red);
-
-                GUILayout.Label("Model not loaded");
-
-                PopGuiColor();
+                GUILayout.Label("No indexes", GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             } else
             {
-                OnToolbarGui();
-
-                if (_pageStates == null || _pageStates.Length == 0)
+                if (_pageIndex < 0 || _pageIndex >= _pageStates.Length)
                 {
-                    GUILayout.Label("No indexes", GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-                } else
+                    _pageIndex = 0;
+                }
+                var page = _pageStates[_pageIndex];
+
+                var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
+
+                using (new GUILayout.HorizontalScope())
                 {
-                    if (_pageIndex < 0 || _pageIndex >= _pageStates.Length)
+                    GUI.SetNextControlName("SearchFilter");
+                    page.Filter = EditorGUILayout.TextField(page.Filter ?? string.Empty, GUILayout.ExpandWidth(true));
+
+                    var e = Event.current;
+                    if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F && e.modifiers == EventModifiers.Control)
                     {
-                        _pageIndex = 0;
-                    }
-                    var page = _pageStates[_pageIndex];
-
-                    var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
-
-                    using (new GUILayout.HorizontalScope())
-                    {
-                        GUI.SetNextControlName("SearchFilter");
-                        page.Filter = EditorGUILayout.TextField(page.Filter ?? string.Empty, GUILayout.ExpandWidth(true));
-
-                        var e = Event.current;
-                        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F && e.modifiers == EventModifiers.Control)
-                        {
-                            GUI.FocusControl("SearchFilter");
-                            GUI.changed = true;
-                        }
-                    }
-
-                    using (var scroll = new GUILayout.ScrollViewScope(page.Position,
-                        GUILayout.ExpandWidth(true),
-                        GUILayout.ExpandHeight(true)))
-                    {
-                        var index = page.ResolveModel(_state.Model);
-                        var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, page.Filter);
-                        page.Position = scroll.scrollPosition;
-
-                        if (changed)
-                        {
-                            SetDirty();
-                        }
-                    }
-                    using (new GUILayout.VerticalScope())
-                    {
-                        var color = GUI.color;
-                        GUI.color = Color.yellow;
-
-                        foreach (var w in _state.Resolver.GetIndex(page.ModelType).Warnings)
-                        {
-                            GUILayout.Label(w);
-                        }
-
-                        GUI.color = color;
-                    }
-
-                    var newPageIndex = GUILayout.Toolbar(_pageIndex, _pageNames);
-                    if (_pageIndex != newPageIndex)
-                    {
-                        _pageIndex = newPageIndex;
-                        GUI.FocusControl(null);
+                        GUI.FocusControl("SearchFilter");
                         GUI.changed = true;
                     }
+                }
+
+                using (var scroll = new GUILayout.ScrollViewScope(page.Position,
+                    GUILayout.ExpandWidth(true),
+                    GUILayout.ExpandHeight(true)))
+                {
+                    var index = page.ResolveModel(EditorDB<T>.DB);
+                    var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, page.Filter);
+                    page.Position = scroll.scrollPosition;
+
+                    if (changed)
+                    {
+                        SetDirty();
+                    }
+                }
+                using (new GUILayout.VerticalScope())
+                {
+                    var color = GUI.color;
+                    GUI.color = Color.yellow;
+
+                    foreach (var w in EditorDB<T>.Resolver.GetIndex(page.ModelType).Warnings)
+                    {
+                        GUILayout.Label(w);
+                    }
+
+                    GUI.color = color;
+                }
+
+                var newPageIndex = GUILayout.Toolbar(_pageIndex, _pageNames);
+                if (_pageIndex != newPageIndex)
+                {
+                    _pageIndex = newPageIndex;
+                    GUI.FocusControl(null);
+                    GUI.changed = true;
                 }
             }
             OnActionsGui();
@@ -123,15 +99,14 @@ namespace FDB.Editor
         {
             using (new GUILayout.HorizontalScope())
             {
-
-                if (GuiButton("Save", _isDirty))
+                if (GuiButton("Save", EditorDB<T>.IsDirty))
                 {
-                    Invoke("Save", () => SaveModel());
+                    Invoke("Save", () => EditorDB<T>.Save());
                 }
 
-                if (GuiButton("Undo", _state.Undo.CanUndo))
+                if (GuiButton("Undo", Undo.CanUndo))
                 {
-                    _state.Undo.Undo();
+                    Undo.Undo();
                     SetDirty();
                 }
                 GuiButton("Redo", false);
@@ -141,8 +116,7 @@ namespace FDB.Editor
                 {
                     Invoke("Load", () =>
                     {
-                        LoadModel();
-                        _isDirty = false;
+                        EditorDB<T>.Load();
                     });
                 }
                 PopGuiColor();
@@ -153,9 +127,9 @@ namespace FDB.Editor
                 && e.keyCode == KeyCode.Z
                 && e.modifiers == EventModifiers.Control)
             {
-                if (_state.Undo.CanUndo)
+                if (Undo.CanUndo)
                 {
-                    _state.Undo.Undo();
+                    //_state.Undo.Undo();
                 }
                 e.Use();
             }
@@ -319,7 +293,7 @@ namespace FDB.Editor
                                     var id = GUIUtility.GetControlID(value.GetHashCode(), FocusType.Passive);
                                     GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
-                                    var newValue = Inspector.Field(_state.Resolver, headers[0], null, value);
+                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value);
                                     if (!newValue.Equals(value))
                                     {
                                         itemProp.SetValue(list, newValue, indexParamas);
@@ -519,12 +493,12 @@ namespace FDB.Editor
                     EditorGUI.BeginChangeCheck();
 
                     var value = fieldHeader.Field.GetValue(owner);
-                    var newValue = Inspector.Field(_state.Resolver, fieldHeader, owner, value);
+                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value);
                     var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        _state.Undo.Push(fieldId, owner);
+                        Undo.Push(fieldId, owner);
                         fieldHeader.Field.SetValue(owner, newValue);
                         changed |= true;
                     }

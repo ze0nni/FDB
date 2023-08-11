@@ -14,6 +14,6 @@ namespace FDB.Editor
         public string Filter;
         public Aggregator Aggregator;
 
-        public HeaderState[] Headers;        
+        public HeaderState[] Headers;
     }
 }

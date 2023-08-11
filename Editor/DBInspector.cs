@@ -13,14 +13,23 @@ namespace FDB.Editor
 
         InputState _input;
 
+        long _dbVersion;
         int _pageIndex;
         Dictionary<object, int> _expandedItems = new Dictionary<object, int>();
 
         public void SetDirty()
         {
-            EditorDB<T>.SetDirty();
             GUI.changed = true;
             EditorDB<T>.SetDirty();
+        }
+
+        private void Update()
+        {
+            if (_dbVersion != EditorDB<T>.Version)
+            {
+                _dbVersion = EditorDB<T>.Version;
+                Repaint();
+            }
         }
 
         void OnGUI()
@@ -315,6 +324,7 @@ namespace FDB.Editor
                                 }
 
                                 changed |= OnModelGui(left, headers, i, list, itemIndex);
+                                changed |= OnExpandedGui(0, headers, i);
                                 itemIndex++;
                             }
                         }
@@ -505,11 +515,11 @@ namespace FDB.Editor
                     break;
 
                 case ListHeaderState listHeader:
-                    if (GUILayout.Button("[...]", GUILayout.Width(header.Width)))
+                    if (GUILayout.Button($"[...]", GUILayout.Width(header.Width)))
                     {
                         ToggleExpandedState(owner, headerIndex);
                     }
-                    break;                
+                    break;
             }
             return changed;
         }

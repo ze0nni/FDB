@@ -137,14 +137,6 @@ namespace FDB.Editor {
                         sb.AppendLine($"\t\t\tpublic static Kind<{modelType.Name}> {kind.Value} = new Kind<{modelType.Name}>(\"{kind.Value}\");");
                     }
                     sb.AppendLine("\t\t}");
-                    sb.AppendLine($"\t\tpublic static Kind<{modelType.Name}>[] {field.Name}All = new Kind<{modelType.Name}>[]");
-                    sb.AppendLine("\t\t{");
-                    foreach (var model in index.All())
-                    {
-                        var kind = (Kind)kindField.GetValue(model);
-                        sb.AppendLine($"\t\t\tnew Kind<{modelType.Name}>(\"{kind.Value}\"),");
-                    }
-                    sb.AppendLine("\t\t};");
 
                 }
                 sb.AppendLine("\t}");

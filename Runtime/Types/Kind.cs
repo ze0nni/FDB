@@ -13,7 +13,7 @@ namespace FDB
 
     [Serializable]
     [JsonConverter(typeof(KindJsonConverter))]
-    public readonly struct Kind<T> : Kind
+    public readonly struct Kind<T> : Kind , IEquatable<Kind<T>>
     {
         public readonly string Value;
         public Kind(string value) => Value = value;
@@ -33,6 +33,11 @@ namespace FDB
         public static bool operator !=(Kind<T> a, Kind<T> b)
         {
             return a.Value != b.Value;
+        }
+
+        public bool Equals(Kind<T> other)
+        {
+            return this.Value.Equals(other.Value);
         }
 
         public override bool Equals(object obj)

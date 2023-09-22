@@ -100,17 +100,27 @@ And fill database with data. Don't forget press **Save**
 Now you can load database in your code
 
 ```Boot.cs
-var db = DBResolver.Load<DB>();
-foreach (var unit in db.Units.All()) {
-    Debug.Log(unit.Kind);
+class Boot {
+    public static DB DB { get; private set; }
+    void Awake() {
+        DB = DBResolver.Load<DB>();
+        foreach (var unit in DB.Units.All()) {
+            Debug.Log(unit.Kind);
+        }
+    }
 }
 ```
 
 You also can access for db items using `Kinds.cs`:
 
 ```Boot.cs
-var db = DBResolver.Load<DB>();
-var rogue = db.Units.Get(Kinds.Units.rogue);
+class Boot {
+    public static DB DB { get; private set; }
+    void Awake() {
+        DB = DBResolver.Load<DB>();
+        var rogue = DB.Units.Get(Kinds.Units.rogue);
+    }
+}
 ```
 
 For read and edit database from editor use `EditorDB<DB>`
@@ -243,3 +253,28 @@ public class TextConfig
 ```
 
 ![Text](./Doc/9.png)
+
+## TextComponentBase
+
+For convenient work with localization take TextComponentBase:
+
+```TextComponent.cs
+class TextComponent : TextComponentBase<DB, TextConfig> {
+    [SerializeField] Text _textUIComponent;
+
+    // Path to database with TextConfig
+    protected override Index<TextConfig> Index => Boot.DB.Texts;
+    // The function of choosing localization
+    protected override string GetText(TextConfig config) => config.Ru;
+
+    protected override void Render(string text)
+    {
+        if (_textUIComponent)
+            _textUIComponent.text = text;
+    }
+}
+```
+
+![Text](./Doc/10.png)
+
+![Text](./Doc/11.png)

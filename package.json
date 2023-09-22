@@ -3,14 +3,16 @@
   "author": "ze0nni",
   "displayName": "FuryDB",
   "description": "FuryDB -- Static database",
-  "version": "0.4.1",
-  "keywords": [
-    "config",
-    "db",
-    "database",
-    "editor",
-    "tools"
-  ],
+  "version": "0.4.2",
+    "keywords": [
+        "config",
+        "db",
+        "database",
+        "editor",
+        "tools",
+        "text",
+        "localization"
+    ],
   "repository": {
     "type": "git",
     "url": "https://github.com/ze0nni/FuryDB.git"

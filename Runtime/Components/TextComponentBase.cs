@@ -70,9 +70,9 @@ namespace FDB.Components
             SetDirty();
         }
 
-        void Awake()
+        private void OnEnable()
         {
-            SetDirty();
+            StartRender();
         }
 
 #if UNITY_EDITOR
@@ -95,7 +95,16 @@ namespace FDB.Components
             {
                 return;
             }
+            StartRender();
+        }
+
+        void StartRender()
+        {
             _isDirty = true;
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
             if (_render == null)
             {
                 _render = new RenderTask(this);
@@ -105,7 +114,7 @@ namespace FDB.Components
             StartCoroutine(_render);
         }
 
-        private void Render()
+        void Render()
         {
             _isDirty = false;
 

@@ -171,7 +171,7 @@ namespace FDB
                     types = (refType, modelType);
                     _modelRefTypes[i.Field] = types;
                 }
-                var value = (Ref)Activator.CreateInstance(types.RefType, this, GetModel(types.ModelType, i.RefValue));
+                var value = (Ref)Activator.CreateInstance(types.RefType, this, GetConfig(types.ModelType, i.RefValue));
                 i.Field.SetValue(i.Model, value);
             }
             _fields.Clear();
@@ -181,10 +181,10 @@ namespace FDB
                 var refType = list.GetType().GetGenericArguments()[0];
                 var modelType = refType.GetGenericArguments()[0];
                 var refs = _listRef[list];
-                var add = list.GetType().GetMethod("Add");                
+                var add = list.GetType().GetMethod("Add");
                 foreach (var r in refs)
                 {
-                    var value = (Ref)Activator.CreateInstance(refType, this, GetModel(modelType, r));
+                    var value = (Ref)Activator.CreateInstance(refType, this, GetConfig(modelType, r));
                     add.Invoke(list, new[] { value });
                 }
             }
@@ -204,10 +204,15 @@ namespace FDB
             return _indexByType[indexType];
         }
 
-        public object GetModel(Type modelType, string kind)
+        public object GetConfig<T>(string kind)
         {
-            _indexByType[modelType].TryGet(kind, out var model);
-            return model;
+            return GetConfig(typeof(T), kind);
+        }
+
+        public object GetConfig(Type configType, string kind)
+        {
+            _indexByType[configType].TryGet(kind, out var config);
+            return config;
         }
 
         public void SetDirty()

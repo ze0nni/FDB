@@ -17,7 +17,7 @@ namespace FDB.Editor
         int _pageIndex;
         Dictionary<object, int> _expandedItems = new Dictionary<object, int>();
 
-        public void SetDirty()
+        public void MakeDirty()
         {
             GUI.changed = true;
             EditorDB<T>.SetDirty();
@@ -77,7 +77,7 @@ namespace FDB.Editor
 
                     if (changed)
                     {
-                        SetDirty();
+                        MakeDirty();
                     }
                 }
                 using (new GUILayout.VerticalScope())
@@ -169,13 +169,13 @@ namespace FDB.Editor
                     }
                     GUILayout.Box(header.Title, GUILayout.Width(header.Width));
                     var labelRect = GUILayoutUtility.GetLastRect();
-                    var resizeRect = new Rect(labelRect.right - 5, labelRect.y, 10, labelRect.height);
+                    var resizeRect = new Rect(labelRect.xMax - 5, labelRect.y, 10, labelRect.height);
                     EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeHorizontal);
 
                     int id = GUIUtility.GetControlID(FocusType.Passive);
 
                     if (e.type == EventType.Repaint)
-                        header.Left = (int)labelRect.left;
+                        header.Left = (int)labelRect.xMin;
 
                     switch (_input.Type)
                     {
@@ -430,27 +430,27 @@ namespace FDB.Editor
                     {
                         menu.AddItem(new GUIContent("Move up"), false, () => {
                             index.Swap(itemIndex, itemIndex - 1);
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddItem(new GUIContent("Move down"), false, () => {
                             index.Swap(itemIndex, itemIndex + 1);
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddSeparator("");
                         menu.AddItem(new GUIContent("Insert above"), false, () => {
                             var modelType = index.GetType().GetGenericArguments()[0];
                             index.Insert(itemIndex, DBResolver.Instantate(modelType, true));
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddItem(new GUIContent("Insert belove"), false, () => {
                             var modelType = index.GetType().GetGenericArguments()[0];
                             index.Insert(itemIndex + 1, DBResolver.Instantate(modelType, true));
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddSeparator("");
                         menu.AddItem(new GUIContent("Delete"), false, () => {
                             index.Remove(itemIndex);
-                            SetDirty();
+                            MakeDirty();
                         });
                     }
                     break;
@@ -462,22 +462,22 @@ namespace FDB.Editor
                     {
                         menu.AddItem(new GUIContent("Move up"), false, () => {
                             ListActions.Swap(list, itemIndex, itemIndex - 1);
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddItem(new GUIContent("Move down"), false, () => {
                             ListActions.Swap(list, itemIndex, itemIndex + 1);
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddSeparator("");
                         menu.AddItem(new GUIContent("Insert above"), false, () => {
                             var modelType = list.GetType().GetGenericArguments()[0];
                             ListActions.Insert(list, itemIndex, DBResolver.Instantate(modelType, true));
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddItem(new GUIContent("Insert belove"), false, () => {
                             var modelType = list.GetType().GetGenericArguments()[0];
                             ListActions.Insert(list, itemIndex + 1, DBResolver.Instantate(modelType, true));
-                            SetDirty();
+                            MakeDirty();
                         });
                         menu.AddSeparator("");
                         menu.AddItem(new GUIContent("Delete"), false, () => {
@@ -561,7 +561,7 @@ namespace FDB.Editor
                                 }
                                 break;
                         }
-                        SetDirty();
+                        MakeDirty();
                     });
                 }
             }

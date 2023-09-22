@@ -16,7 +16,7 @@ namespace FDB.Editor
         public static Ref Field(
             DBResolver resolver,
             Type modelType,
-            Ref currentField,            
+            Ref currentField,
             float width
         ) {
             var id = GUIUtility.GetControlID(FocusType.Passive);
@@ -27,7 +27,7 @@ namespace FDB.Editor
                 PopupWindow.Show(_hoveredRect, new ChooseRefWindow(resolver, modelType, currentField));
             }
 
-            var fieldRect = GUILayoutUtility.GetLastRect();            
+            var fieldRect = GUILayoutUtility.GetLastRect();
             if (Event.current.type == EventType.Repaint && fieldRect.Contains(Event.current.mousePosition))
             {
                 _hoveredRect = fieldRect;
@@ -50,7 +50,7 @@ namespace FDB.Editor
             _kindField = modelType.GetField("Kind");
             _currentField = currentField;
             _filter = "";
-            _scrollPos = Vector2.zero;            
+            _scrollPos = Vector2.zero;
         }
 
         DBResolver _resolver;

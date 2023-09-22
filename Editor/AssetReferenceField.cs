@@ -37,7 +37,7 @@ namespace FDB.Editor
                         if (rect.Contains(e.mousePosition))
                         {
                             if (DragAndDrop.objectReferences.Length != 1)
-                            {                                
+                            {
                                 DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
                             } else
                             {

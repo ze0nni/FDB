@@ -65,6 +65,11 @@ namespace FDB
             return a.Kind != b.Kind;
         }
 
+        public override int GetHashCode()
+        {
+            return Kind.Value == null ? 0 : Kind.Value.GetHashCode();
+        }
+
         public override string ToString()
         {
             return $"Ref<{typeof(T).Name}>({((Ref)this).Kind.Value})";

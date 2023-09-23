@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace FDB
 {
-    public sealed class DBResolver
+    public sealed partial class DBResolver
     {
         internal static DBResolver Current;
 
@@ -72,10 +72,11 @@ namespace FDB
         private Dictionary<Type, Index> _indexByType = new Dictionary<Type, Index>();
         readonly List<(object Model, FieldInfo Field, string RefValue)> _fields = new List<(object, FieldInfo, string)>();
         readonly Dictionary<object, List<string>> _listRef = new Dictionary<object, List<string>>();
-        public object Model { get; private set; }
+        public object DB { get; private set; }
 
         internal void SetDB(object db)
         {
+            DB = db;
             foreach (var field in db.GetType().GetFields())
             {
                 if (field.FieldType.IsGenericType
@@ -111,8 +112,12 @@ namespace FDB
 
         public static object Instantate(Type modelType, bool asNew)
         {
-            var model = Activator.CreateInstance(modelType);
+            var model = Activator.CreateInstance(Wrap(modelType));
             Instantate(model, asNew);
+            if (asNew)
+            {
+                Invalidate(model);
+            }
             return model;
         }
 

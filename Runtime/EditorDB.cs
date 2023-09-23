@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Text;
 using UnityEditor;
+using UnityEngine;
 
 namespace FDB.Editor {
     public class EditorDB<T>
@@ -89,6 +90,7 @@ namespace FDB.Editor {
             var source = MetaData.SourcePath;
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(source));
 
+            DBConverter<T>.HasChanges = false;
             using (var writer = System.IO.File.CreateText(source))
             {
                 using (var jsonWriter = new JsonTextWriter(writer))
@@ -103,6 +105,12 @@ namespace FDB.Editor {
 
             Version++;
             IsDirty = false;
+
+            if (DBConverter<T>.HasChanges)
+            {
+                Debug.Log(123);
+                Load();
+            }
         }
 
         public static void GenerateCs(string path, T db)

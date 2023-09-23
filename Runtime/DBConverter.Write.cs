@@ -16,9 +16,11 @@ namespace FDB
             throw new NotImplementedException();
     }
 #else
+        public static bool HasChanges = false;
+
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            writer.WriteStartObject();            
+            writer.WriteStartObject();
 
             var type = value.GetType();
             foreach (var field in type.GetFields())
@@ -48,8 +50,16 @@ namespace FDB
             writer.WriteEndArray();
         }
 
-        void WriteObject(JsonWriter writer, object model)
+        void WriteObject(JsonWriter writer, object originModel)
         {
+            var model = DBResolver.WrapObj(originModel);
+            var changed = DBResolver.Invalidate(model);
+
+            if (model != originModel || changed)
+            {
+                HasChanges = true;
+            }
+
             writer.WriteStartObject();
 
             foreach (var field in model.GetType().GetFields())

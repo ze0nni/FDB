@@ -120,6 +120,11 @@ namespace FDB.Editor
             {
                 var path = $"{rootPath}/{field.Name}";
 
+                if (field.Name == DBResolver.__GUID)
+                {
+                    continue;
+                }
+
                 if (field.FieldType.IsGenericType)
                 {
                     var fieldGenericType = field.FieldType.GetGenericTypeDefinition();

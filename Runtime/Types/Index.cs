@@ -105,6 +105,7 @@ namespace FDB
 
         void Index.Add(object item)
         {
+            item = DBResolver.WrapObj(item);
             _list.Add((T)item);
             ((Index)this).SetDirty();
         }

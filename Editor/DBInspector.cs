@@ -14,7 +14,6 @@ namespace FDB.Editor
         InputState _input;
 
         long _dbVersion;
-        Dictionary<object, int> _expandedItems = new Dictionary<object, int>();
 
         public void MakeDirty()
         {
@@ -135,6 +134,8 @@ namespace FDB.Editor
                     });
                 }
                 PopGuiColor();
+
+                GUILayout.FlexibleSpace();
             }
 
             var e = Event.current;
@@ -345,26 +346,61 @@ namespace FDB.Editor
             return changed;
         }
 
-        void ToggleExpandedState(object item, int index)
+        void ToggleExpandedState(object item, HeaderState header)
         {
-            if (_expandedItems.TryGetValue(item, out var storedIndex) && storedIndex == index)
+            if (!DBResolver.GetGUID(item, out var guid))
             {
-                _expandedItems.Remove(item);
+                return;
+            }
+
+            if (_expandedFields.TryGetValue(guid, out var storedField) && storedField == header.Title)
+            {
+                _expandedFields.Remove(guid);
+                _expandedOrder.Remove(guid);
             }
             else
             {
-                _expandedItems[item] = index;
+                _expandedFields[guid] = header.Title;
+                _expandedOrder.Remove(guid);
+                _expandedOrder.Add(guid);
+            }
+
+            while (_expandedOrder.Count > MaxExpandedHistory)
+            {
+                _expandedFields.Remove(_expandedOrder[0]);
+                _expandedOrder.RemoveAt(0);
             }
 
             GUI.changed = true;
         }
 
+        bool TryGetExpandedHeader(object item, HeaderState[] headers, out HeaderState header)
+        {
+            if (!DBResolver.GetGUID(item, out var guid)
+                || !_expandedFields.TryGetValue(guid, out var field))
+            {
+                header = null;
+                return false;
+            }
+
+            foreach (var h in headers)
+            {
+                if (h.Title == field)
+                {
+                    header = h;
+                    return true;
+                }
+            }
+
+            header = null;
+            return false;
+        }
+
         bool OnExpandedGui(int left, HeaderState[] headers, object item)
         {
             var changed = false;
-            if (_expandedItems.TryGetValue(item, out var expandIndex))
+            if (TryGetExpandedHeader(item, headers, out var header))
             {
-                var header = headers[expandIndex];
                 switch (header)
                 {
                     case ListHeaderState listHeader:
@@ -522,7 +558,7 @@ namespace FDB.Editor
                 case ListHeaderState listHeader:
                     if (GUILayout.Button($"[...]", GUILayout.Width(header.Width)))
                     {
-                        ToggleExpandedState(owner, headerIndex);
+                        ToggleExpandedState(owner, header);
                     }
                     break;
             }

@@ -10,7 +10,11 @@ namespace FDB.Editor
         [SerializeField] string _selectedPageName;
         int _pageIndex;
 
-        [SerializeField] List<PersistantPageState> _persistantPageStates;
+        [SerializeField] List<PersistantPageState> _persistantPageStates = new List<PersistantPageState>();
+        [SerializeField] List<PersistantExpendedField> _persistantExpendedFields = new List<PersistantExpendedField>();
+        Dictionary<string, string> _expandedFields = new Dictionary<string, string>();
+        List<string> _expandedOrder = new List<string>();
+        const int MaxExpandedHistory = 128;
 
         public void OnAfterDeserialize()
         {
@@ -26,11 +30,30 @@ namespace FDB.Editor
                     Name = name
                 };
             }).ToList();
+
+            _expandedOrder = _persistantExpendedFields
+                .Select(x => x.GUID)
+                .ToList();
+            _expandedFields = _persistantExpendedFields
+                .ToDictionary(x => x.GUID, x => x.Field);
         }
 
         public void OnBeforeSerialize()
         {
-            
+            _persistantExpendedFields = _expandedOrder
+                .Select(guid =>
+                {
+                    _expandedFields.TryGetValue(guid, out var field);
+                    return (GUID: guid, Field: field);
+                })
+                .Where(x => x.Field != null)
+                .Select(x => new PersistantExpendedField
+                {
+                    GUID = x.GUID,
+                    Field = x.Field
+                })
+                .ToList();
+
         }
 
         int PageIndex
@@ -49,5 +72,12 @@ namespace FDB.Editor
         public string Name;
         public string Filter;
         public Vector2 Position;
+    }
+
+    [Serializable]
+    class PersistantExpendedField
+    {
+        public string GUID;
+        public string Field;
     }
 }

@@ -17,6 +17,7 @@ namespace FDB.Editor
         readonly Action _makeDirty;
         readonly Action<Ref> _updateRef;
 
+        readonly string _linkedKind;
         readonly string _targetKind;
         Vector2 _scrollPosition;
 
@@ -40,7 +41,7 @@ namespace FDB.Editor
             _makeDirty = makeDirty;
             _updateRef = updateRef;
 
-            _targetKind = autoRef.GetKind(owner);
+            _targetKind = autoRef == null ? null : autoRef.GetKind(owner);
         }
 
         public override Vector2 GetWindowSize()
@@ -52,12 +53,33 @@ namespace FDB.Editor
 
         public override void OnGUI(Rect rect)
         {
+            if (_currentRef.Config != null)
+            {
+                OnConfigGUI(_currentRef.Config, true);
+                return;
+            }
+
+            if (_autoRef == null)
+            {
+                return;
+            }
+
+            OnAutoRefGUI(out var config);
+            if (config != null) {
+                OnConfigGUI(config, _targetKind == _currentRef.Kind.Value);
+            }
+        }
+
+        void OnAutoRefGUI(out object resolvedConfig)
+        {
             if (_targetKind == null)
             {
                 GUILayout.Label("Can't resolve kind");
+                resolvedConfig = default;
                 return;
             }
-            var resolvedConfig = _resolver.GetConfig(_modelType, _targetKind);
+            resolvedConfig =
+                _resolver.GetConfig(_modelType, _targetKind);
 
             using (new GUILayout.HorizontalScope())
             {
@@ -86,15 +108,13 @@ namespace FDB.Editor
                     }
                 }
             }
+        }
 
-            if (resolvedConfig == null)
-            {
-                return;
-            }
-
+        void OnConfigGUI(object config, bool enabled)
+        {
             using (var scrollView = new GUILayout.ScrollViewScope(_scrollPosition))
             {
-                using (new EditorGUI.DisabledScope(_currentRef.Config != resolvedConfig))
+                using (new EditorGUI.DisabledScope(!enabled))
                 {
                     foreach (var header in _modelHeaders)
                     {
@@ -109,11 +129,11 @@ namespace FDB.Editor
                             using (new GUILayout.HorizontalScope())
                             {
                                 GUILayout.Label(header.Title, GUILayout.Width(_width / 2));
-                                var value = fieldHeader.Field.GetValue(resolvedConfig);
-                                var newValue = Inspector.Field(_resolver, header, resolvedConfig, value, _makeDirty);
+                                var value = fieldHeader.Field.GetValue(config);
+                                var newValue = Inspector.Field(_resolver, header, config, value, true, _makeDirty);
                                 if (!value.Equals(newValue))
                                 {
-                                    fieldHeader.Field.SetValue(resolvedConfig, newValue);
+                                    fieldHeader.Field.SetValue(config, newValue);
                                     GUI.changed = true;
                                     _makeDirty?.Invoke();
                                 }

@@ -22,20 +22,16 @@ namespace FDB.Editor
             AutoRefAttribute autoRef,
             Ref currentField,
             float width,
+            GUILayoutOption layoutWidth,
+            bool isPopup,
             Action makeDirty
         ) {
             _makeDirty = makeDirty;
 
             int id;
-            using (new GUILayout.HorizontalScope(GUILayout.Width(width)))
+            using (new GUILayout.HorizontalScope(layoutWidth))
             {
                 id = GUIUtility.GetControlID(FocusType.Passive);
-
-                var buttonWidth = width;
-                if (autoRef != null)
-                {
-                    buttonWidth -= EditorGUIUtility.singleLineHeight * 2;
-                }
 
                 if (GUILayout.Button(currentField.Kind.Value))
                 {
@@ -49,8 +45,7 @@ namespace FDB.Editor
                     _hoveredRect = fieldRect;
                 }
 
-
-                if (autoRef != null)
+                if (!isPopup && (autoRef != null || currentField.Config != null))
                 {
                     if (GUILayout.Button("*", GUILayout.ExpandWidth(false)))
                     {

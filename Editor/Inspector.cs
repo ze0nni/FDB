@@ -24,7 +24,7 @@ namespace FDB.Editor
             return false;
         }
 
-        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue, Action makeDirty)
+        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue, bool isPopup, Action makeDirty)
         {
             var layoutWidth = header.ExpandWidth
                 ? GUILayout.ExpandWidth(true)
@@ -62,6 +62,8 @@ namespace FDB.Editor
                             refHeader.AutoRef,
                             (Ref)rawValue,
                             header.Width,
+                            layoutWidth,
+                            isPopup,
                             makeDirty);
                     }
 

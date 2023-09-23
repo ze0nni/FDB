@@ -345,7 +345,7 @@ namespace FDB.Editor
                                 {
                                     GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
-                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, _makeDirty);
+                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, false, _makeDirty);
                                     if (!newValue.Equals(value))
                                     {
                                         itemProp.SetValue(list, newValue, indexParamas);
@@ -581,7 +581,7 @@ namespace FDB.Editor
                     EditorGUI.BeginChangeCheck();
 
                     var value = fieldHeader.Field.GetValue(owner);
-                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value, _makeDirty);
+                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value, false, _makeDirty);
                     var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
 
                     if (EditorGUI.EndChangeCheck())

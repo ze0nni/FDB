@@ -6,6 +6,6 @@ namespace FDB.Components
     public class TextValue<TDB, TConfig>
     {
         public bool Translate = true;
-        public string Value = string.Empty;
+        public string Value = "Text";
     }
 }

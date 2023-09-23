@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEditor;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -38,6 +36,6 @@ namespace FDB.Editor
             var result = GUILayout.Button(text);
             PopGuiEnabled();
             return result;
-        }        
+        }
     }
 }

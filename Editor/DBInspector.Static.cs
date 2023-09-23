@@ -19,7 +19,7 @@ namespace FDB.Editor
         PageState[] _pageStates;
         Dictionary<Type, FieldInfo> _indexes = new Dictionary<Type, FieldInfo>();
 
-        bool InitStatic()
+        bool OnValidateGUI()
         {
             var ok = true;
             if (_staticException != null)
@@ -45,61 +45,60 @@ namespace FDB.Editor
                 GUILayout.TextField("[JsonConverter(typeof(DBConverter<" + typeof(T).Name + ">))]");
             }
 
-            if (_loadedModelType == typeof(T))
+            if (_loadedModelType != typeof(T))
             {
-                return ok;
+                ok = false;
             }
-
+            return ok;
+        }
+        
+        void InitStatic()
+        {
             try
             {
-                InitStaticInternal();
                 _loadedModelType = typeof(T);
                 _fdbAttr = _loadedModelType.GetCustomAttribute<FuryDBAttribute>();
                 _jsonAttr = _loadedModelType.GetCustomAttribute<JsonConverterAttribute>();
-            } catch (Exception exc)
+
+                _indexes.Clear();
+                var indexList = new List<PageState>();
+
+                foreach (var field in typeof(T).GetFields())
+                {
+                    var fieldType = field.FieldType;
+                    if (!fieldType.IsGenericType)
+                    {
+                        continue;
+                    }
+                    var genericType = fieldType.GetGenericTypeDefinition();
+                    if (genericType != typeof(Index<>))
+                    {
+                        continue;
+                    }
+
+                    var modelType = fieldType.GetGenericArguments()[0];
+
+                    indexList.Add(new PageState
+                    {
+                        Title = field.Name,
+                        IndexType = fieldType,
+                        ModelType = modelType,
+                        ResolveModel = x => field.GetValue(x),
+                        Headers = GetHeaders(modelType, 0, field.Name, true).ToArray(),
+                        Aggregator = new Aggregator(typeof(T), field, modelType)
+                    });
+
+                    _indexes.Add(modelType, field);
+                }
+
+                _pageNames = indexList.Select(x => x.Title).ToArray();
+                _pageStates = indexList.ToArray();
+            }
+            catch (Exception exc)
             {
                 _staticException = exc;
-                return false;
             }
-            return true;
-        }
-        
-        void InitStaticInternal()
-        {
-            _indexes.Clear();
-            var indexList = new List<PageState>();
-
-            foreach (var field in typeof(T).GetFields())
-            {
-                var fieldType = field.FieldType;
-                if (!fieldType.IsGenericType)
-                {
-                    continue;
-                }
-                var genericType = fieldType.GetGenericTypeDefinition();
-                if (genericType != typeof(Index<>))
-                {
-                    continue;
-                }
-
-                var modelType = fieldType.GetGenericArguments()[0];
-
-                indexList.Add(new PageState
-                {
-                    Title = field.Name,
-                    IndexType = fieldType,
-                    ModelType = modelType,
-                    ResolveModel = x => field.GetValue(x),
-                    Headers = GetHeaders(modelType, 0, field.Name, true).ToArray(),
-                    Aggregator = new Aggregator(typeof(T), field, modelType)
-            });
-
-                _indexes.Add(modelType, field);
-            }
-
-            _pageNames = indexList.Select(x => x.Title).ToArray();
-            _pageStates = indexList.ToArray();
-        }
+}
 
         public bool TryResolveIndex(Type type, out Index index)
         {

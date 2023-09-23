@@ -14,13 +14,22 @@ namespace FDB.Editor
         InputState _input;
 
         long _dbVersion;
-        int _pageIndex;
         Dictionary<object, int> _expandedItems = new Dictionary<object, int>();
 
         public void MakeDirty()
         {
             GUI.changed = true;
             EditorDB<T>.SetDirty();
+        }
+
+        void OnEnable()
+        {
+            InitStatic();
+        }
+
+        void OnDisable()
+        {
+            
         }
 
         private void Update()
@@ -34,7 +43,7 @@ namespace FDB.Editor
 
         void OnGUI()
         {
-            if (!InitStatic())
+            if (!OnValidateGUI())
             {
                 return;
             }
@@ -46,18 +55,15 @@ namespace FDB.Editor
                 GUILayout.Label("No indexes", GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             } else
             {
-                if (_pageIndex < 0 || _pageIndex >= _pageStates.Length)
-                {
-                    _pageIndex = 0;
-                }
-                var page = _pageStates[_pageIndex];
+                var page = _pageStates[PageIndex];
+                var pagePersist = _persistantPageStates[PageIndex];
 
                 var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
 
                 using (new GUILayout.HorizontalScope())
                 {
                     GUI.SetNextControlName("SearchFilter");
-                    page.Filter = EditorGUILayout.TextField(page.Filter ?? string.Empty, GUILayout.ExpandWidth(true));
+                    pagePersist.Filter = EditorGUILayout.TextField(pagePersist.Filter ?? string.Empty, GUILayout.ExpandWidth(true));
 
                     var e = Event.current;
                     if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F && e.modifiers == EventModifiers.Control)
@@ -67,13 +73,13 @@ namespace FDB.Editor
                     }
                 }
 
-                using (var scroll = new GUILayout.ScrollViewScope(page.Position,
+                using (var scroll = new GUILayout.ScrollViewScope(pagePersist.Position,
                     GUILayout.ExpandWidth(true),
                     GUILayout.ExpandHeight(true)))
                 {
                     var index = page.ResolveModel(EditorDB<T>.DB);
-                    var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, page.Filter);
-                    page.Position = scroll.scrollPosition;
+                    var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, pagePersist.Filter);
+                    pagePersist.Position = scroll.scrollPosition;
 
                     if (changed)
                     {
@@ -93,10 +99,10 @@ namespace FDB.Editor
                     GUI.color = color;
                 }
 
-                var newPageIndex = GUILayout.Toolbar(_pageIndex, _pageNames);
-                if (_pageIndex != newPageIndex)
+                var newPageIndex = GUILayout.Toolbar(PageIndex, _pageNames);
+                if (PageIndex != newPageIndex)
                 {
-                    _pageIndex = newPageIndex;
+                    PageIndex = newPageIndex;
                     GUI.FocusControl(null);
                     GUI.changed = true;
                 }

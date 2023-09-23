@@ -28,7 +28,18 @@ namespace FDB.Editor
 
         void OnDisable()
         {
-            
+            if (_autoSave && EditorDB<T>.IsDirty)
+            {
+                EditorDB<T>.Save();
+            }
+        }
+
+        private void OnProjectChange()
+        {
+            if (_autoSave && EditorDB<T>.IsDirty)
+            {
+                EditorDB<T>.Save();
+            }
         }
 
         private void Update()
@@ -145,6 +156,8 @@ namespace FDB.Editor
                 PopGuiColor();
 
                 GUILayout.FlexibleSpace();
+
+                _autoSave = GUILayout.Toggle(_autoSave, "Auto save"); ;
             }
 
             var e = Event.current;

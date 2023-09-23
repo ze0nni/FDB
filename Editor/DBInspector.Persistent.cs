@@ -10,6 +10,8 @@ namespace FDB.Editor
         [SerializeField] string _selectedPageName;
         int _pageIndex;
 
+        [SerializeField] bool _autoSave = true;
+
         [SerializeField] List<PersistantPageState> _persistantPageStates = new List<PersistantPageState>();
         [SerializeField] List<PersistantExpendedField> _persistantExpendedFields = new List<PersistantExpendedField>();
         Dictionary<string, string> _expandedFields = new Dictionary<string, string>();
@@ -54,6 +56,10 @@ namespace FDB.Editor
                 })
                 .ToList();
 
+            if (_autoSave && EditorDB<T>.IsDirty)
+            {
+                EditorDB<T>.Save();
+            }
         }
 
         int PageIndex

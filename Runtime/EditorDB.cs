@@ -85,6 +85,12 @@ namespace FDB.Editor {
 
         public static void Save()
         {
+            if (_db == null)
+            {
+                Debug.LogWarning($"Database {typeof(T)} not loaded");
+                return;
+            }
+
             var serializer = new JsonSerializer();
             serializer.Formatting = Formatting.Indented;
             var source = MetaData.SourcePath;
@@ -101,14 +107,14 @@ namespace FDB.Editor {
 
             GenerateCs(MetaData.CsPath, _db);
 
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(source, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(MetaData.CsPath, ImportAssetOptions.ForceUpdate);
 
             Version++;
             IsDirty = false;
 
             if (DBConverter<T>.HasChanges)
             {
-                Debug.Log(123);
                 Load();
             }
         }

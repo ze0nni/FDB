@@ -121,6 +121,19 @@ namespace FDB
             return model;
         }
 
+        public static object Instantate(Type modelType, string kindValue)
+        {
+            var model = Activator.CreateInstance(Wrap(modelType));
+            Instantate(model, true);
+
+            var kindType = typeof(Kind<>).MakeGenericType(modelType);
+            var kind = (Kind)Activator.CreateInstance(kindType, new object[] { kindValue });
+            var kindField = modelType.GetField("Kind");
+            kindField.SetValue(model, kind);
+
+            return model;
+        }
+
         public static T Instantate<T>()
         {
             var type = Wrap(typeof(T));
@@ -170,6 +183,12 @@ namespace FDB
                     }
                 }
             }
+        }
+
+        public static Ref CreateRef(DBResolver resolver, Type configType, object config)
+        {
+            var refType = typeof(Ref<>).MakeGenericType(configType);
+            return (Ref)Activator.CreateInstance(refType, new object[] { resolver, config });
         }
 
         internal void Resolve()

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -25,8 +24,11 @@ namespace FDB.Editor
             return false;
         }
 
-        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue)
+        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue, Action makeDirty)
         {
+            var layoutWidth = header.ExpandWidth
+                ? GUILayout.ExpandWidth(true)
+                : GUILayout.Width(header.Width);
             switch (header)
             {
                 case KindFieldHeaderState kindHeader:
@@ -40,7 +42,7 @@ namespace FDB.Editor
                             GUI.color = Color.red;
                         }
 
-                        var newValue = EditorGUILayout.TextField(kind.Value, GUILayout.Width(header.Width));
+                        var newValue = EditorGUILayout.TextField(kind.Value, layoutWidth);
 
                         GUI.color = color;
 
@@ -54,61 +56,64 @@ namespace FDB.Editor
                 case RefFieldHeaderState refHeader:
                     {
                         return ChooseRefWindow.Field(
+                            owner,
                             resolver,
                             refHeader.ModelType,
+                            refHeader.AutoRef,
                             (Ref)rawValue,
-                            header.Width);
+                            header.Width,
+                            makeDirty);
                     }
 
                 case EnumFieldHeaderState enumHeader:
                     {
                         var index = Array.IndexOf(enumHeader.Values, rawValue);
-                        var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, GUILayout.Width(header.Width));
+                        var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, layoutWidth);
                         return enumHeader.Values.GetValue(newIndex);
                     }
 
                 case BoolFieldHeaderState boolField:
                     {
-                        return EditorGUILayout.Toggle((bool)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.Toggle((bool)rawValue, layoutWidth);
                     }
 
                 case IntFieldHeaderState intHeader:
                     {
-                        return EditorGUILayout.IntField((int)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.IntField((int)rawValue, layoutWidth);
                     }
 
                 case FloatFieldHeaderState floatHeader:
                     {
-                        return EditorGUILayout.FloatField((float)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.FloatField((float)rawValue, layoutWidth);
                     }
 
                 case StringFieldHeaderState stringHeader:
                     {
                         if (stringHeader.IsMultiline(owner, out var minLines, out var maxLines))
                         {
-                            return EditorGUILayout.TextArea((string)rawValue, GUILayout.Width(header.Width), GUILayout.MinHeight(minLines * 16), GUILayout.MaxHeight(maxLines * 16));
+                            return EditorGUILayout.TextArea((string)rawValue, layoutWidth, GUILayout.MinHeight(minLines * 16), GUILayout.MaxHeight(maxLines * 16));
                         }
                         else
                         {
-                            return EditorGUILayout.TextField((string)rawValue, GUILayout.Width(header.Width));
+                            return EditorGUILayout.TextField((string)rawValue, layoutWidth);
                         }
                     }
 
                 case AssetReferenceFieldHeaderState assetRefHeader:
                     {
-                        return AssetReferenceField.Field(rawValue as AssetReference, GUILayout.Width(header.Width));
+                        return AssetReferenceField.Field(rawValue as AssetReference, layoutWidth);
                     }
                 case ColorFieldHeaderState colorHeader:
                     {
-                        return EditorGUILayout.ColorField((Color)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.ColorField((Color)rawValue, layoutWidth);
                     }
                 case AnimationCurveFieldHeaderState _:
                     {
-                        return EditorGUILayout.CurveField((AnimationCurve)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.CurveField((AnimationCurve)rawValue, layoutWidth);
                     }
 
                 default:
-                    GUILayout.Box(header.GetType().Name, GUILayout.Width(header.Width));
+                    GUILayout.Box(header.GetType().Name, layoutWidth);
                     return rawValue;
             }            
         }

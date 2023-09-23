@@ -10,27 +10,67 @@ namespace FDB.Editor
         static int _controlId;
         static bool _done = false;
         static Ref _currentField;
+        static float _width;
         static (float Time, Ref Field) _clickTime;
         static Rect _hoveredRect;
-        
+        static Action _makeDirty;
+
         public static Ref Field(
+            object owner,
             DBResolver resolver,
             Type modelType,
+            AutoRefAttribute autoRef,
             Ref currentField,
-            float width
+            float width,
+            Action makeDirty
         ) {
-            var id = GUIUtility.GetControlID(FocusType.Passive);
+            _makeDirty = makeDirty;
 
-            if (GUILayout.Button(currentField.Kind.Value, GUILayout.Width(width)))
+            int id;
+            using (new GUILayout.HorizontalScope(GUILayout.Width(width)))
             {
-                _controlId = id;
-                PopupWindow.Show(_hoveredRect, new ChooseRefWindow(resolver, modelType, currentField));
-            }
+                id = GUIUtility.GetControlID(FocusType.Passive);
 
-            var fieldRect = GUILayoutUtility.GetLastRect();
-            if (Event.current.type == EventType.Repaint && fieldRect.Contains(Event.current.mousePosition))
-            {
-                _hoveredRect = fieldRect;
+                var buttonWidth = width;
+                if (autoRef != null)
+                {
+                    buttonWidth -= EditorGUIUtility.singleLineHeight * 2;
+                }
+
+                if (GUILayout.Button(currentField.Kind.Value))
+                {
+                    _controlId = id;
+                    PopupWindow.Show(_hoveredRect, new ChooseRefWindow(resolver, modelType, currentField, width));
+                }
+
+                var fieldRect = GUILayoutUtility.GetLastRect();
+                if (Event.current.type == EventType.Repaint && fieldRect.Contains(Event.current.mousePosition))
+                {
+                    _hoveredRect = fieldRect;
+                }
+
+
+                if (autoRef != null)
+                {
+                    if (GUILayout.Button("*", GUILayout.ExpandWidth(false)))
+                    {
+                        _controlId = id;
+                        PopupWindow.Show(_hoveredRect, new AutoRefWindow(
+                            resolver,
+                            owner,
+                            modelType,
+                            autoRef,
+                            currentField,
+                            width,
+                            makeDirty,
+                            UpdateRef(_controlId)));
+                    }
+                    var autoRefRect = GUILayoutUtility.GetLastRect();
+                    if (Event.current.type == EventType.Repaint && autoRefRect.Contains(Event.current.mousePosition))
+                    {
+                        _hoveredRect = fieldRect;
+                    }
+                }
             }
 
             if (_done && _controlId == id)
@@ -39,16 +79,32 @@ namespace FDB.Editor
                 GUI.changed = true;
                 return _currentField;
             }
-            
+
             return currentField;
         }
 
-        private ChooseRefWindow(DBResolver resolver, Type modelType, Ref currentField)
+        private static Action<Ref> UpdateRef(int controlId)
+        {
+            return newRef =>
+            {
+                if (_controlId != controlId)
+                {
+                    return;
+                }
+                _currentField = newRef;
+                _done = true;
+                GUI.changed = true;
+                _makeDirty?.Invoke();
+            };
+        }
+
+        private ChooseRefWindow(DBResolver resolver, Type modelType, Ref currentField, float width)
         {
             _resolver = resolver;
             _modelType = modelType;
             _kindField = modelType.GetField("Kind");
             _currentField = currentField;
+            _width = width;
             _filter = "";
             _scrollPos = Vector2.zero;
         }
@@ -58,6 +114,13 @@ namespace FDB.Editor
         FieldInfo _kindField;
         string _filter;
         Vector2 _scrollPos;
+
+        public override Vector2 GetWindowSize()
+        {
+            var size = base.GetWindowSize();
+            size.x = _width;
+            return size;
+        }
 
         public override void OnGUI(Rect rect)
         {

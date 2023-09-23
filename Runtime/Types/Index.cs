@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace FDB
@@ -128,6 +129,17 @@ namespace FDB
         {
             _list.RemoveAt(index);
             ((Index)this).SetDirty();
+        }
+    }
+
+    public static class IndexExtentions
+    {
+        public static IEnumerable<string> GetKinds(this Index index)
+        {
+            var itemType = index.GetType().GetGenericArguments()[0];
+            var kindField = itemType.GetField("Kind");
+
+            return index.All().Cast<object>().Select(x => ((Kind)kindField.GetValue(x)).Value);
         }
     }
 }

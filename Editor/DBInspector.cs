@@ -14,15 +14,19 @@ namespace FDB.Editor
         InputState _input;
 
         long _dbVersion;
+        bool _needRepaint;
 
+        Action _makeDirty;
         public void MakeDirty()
         {
+            _needRepaint = true;
             GUI.changed = true;
             EditorDB<T>.SetDirty();
         }
 
         void OnEnable()
         {
+            _makeDirty = MakeDirty;
             InitStatic();
         }
 
@@ -44,9 +48,20 @@ namespace FDB.Editor
 
         private void Update()
         {
+            var changed = false;
             if (_dbVersion != EditorDB<T>.Version)
             {
                 _dbVersion = EditorDB<T>.Version;
+                changed = true;
+            }
+            if (_needRepaint)
+            {
+                _needRepaint = false;
+                changed = true;
+            }
+
+            if (changed)
+            {
                 Repaint();
             }
         }
@@ -330,7 +345,7 @@ namespace FDB.Editor
                                 {
                                     GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
-                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value);
+                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, _makeDirty);
                                     if (!newValue.Equals(value))
                                     {
                                         itemProp.SetValue(list, newValue, indexParamas);
@@ -566,7 +581,7 @@ namespace FDB.Editor
                     EditorGUI.BeginChangeCheck();
 
                     var value = fieldHeader.Field.GetValue(owner);
-                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value);
+                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value, _makeDirty);
                     var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
 
                     if (EditorGUI.EndChangeCheck())

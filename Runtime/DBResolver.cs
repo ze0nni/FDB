@@ -121,6 +121,14 @@ namespace FDB
             return model;
         }
 
+        public static T Instantate<T>()
+        {
+            var type = Wrap(typeof(T));
+            var model = (T)Activator.CreateInstance(type);
+            Instantate(model, true);
+            return model;
+        }
+
         static void Instantate(object model, bool asNew)
         {
             foreach (var field in model.GetType().GetFields())

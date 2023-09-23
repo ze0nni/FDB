@@ -142,8 +142,9 @@ namespace FDB
 
         internal static object WrapObj(object origin) => origin;
 
-        internal static void Invalidate(object obj)
+        internal static bool Invalidate(object obj)
         {
+            return false;
         }
     }
 }

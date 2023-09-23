@@ -78,7 +78,11 @@ namespace FDB.Editor
                 {
                     var index = page.ResolveModel(EditorDB<T>.DB);
                     var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, pagePersist.Filter);
-                    pagePersist.Position = scroll.scrollPosition;
+
+                    if (page.IsPaintedOnce)
+                    {
+                        pagePersist.Position = scroll.scrollPosition;
+                    }
 
                     if (changed)
                     {
@@ -104,6 +108,11 @@ namespace FDB.Editor
                     PageIndex = newPageIndex;
                     GUI.FocusControl(null);
                     GUI.changed = true;
+                }
+
+                if (Event.current.type == EventType.Repaint)
+                {
+                    page.IsPaintedOnce = true;
                 }
             }
             OnActionsGui();

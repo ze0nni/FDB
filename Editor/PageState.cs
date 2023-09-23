@@ -12,5 +12,6 @@ namespace FDB.Editor
         public Aggregator Aggregator;
 
         public HeaderState[] Headers;
+        public bool IsPaintedOnce;
     }
 }

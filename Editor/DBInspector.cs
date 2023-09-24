@@ -154,8 +154,8 @@ namespace FDB.Editor
                         {
                             text = s.Title,
                             image =
-                                s.Errors.Count > 0 ? EditorIcons.ErrorIcon
-                                : index.Warnings.Count > 0 ? EditorIcons.ConflictIcon
+                                s.Errors.Count > 0 ? FDBEditorIcons.ErrorIcon
+                                : index.Warnings.Count > 0 ? FDBEditorIcons.ConflictIcon
                                 : null
                         };
                     }).ToArray();

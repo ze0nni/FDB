@@ -63,7 +63,7 @@ namespace FDB.Editor
                 }
             }
 
-            if (GUI.Button(refRect, currentField.Kind.Value))
+            if (EditorGUI.DropdownButton(refRect,new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), FocusType.Passive))
             {
                 _controlId = id;
                 PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));
@@ -71,7 +71,7 @@ namespace FDB.Editor
 
             if ((autoRef != null || currentField.Config != null))
             {
-                if (GUI.Button(viewRect, "View"))
+                if (GUI.Button(viewRect, new GUIContent("View", FDBEditorIcons.ViewIcon)))
                 {
                     _controlId = id;
                     PopupWindow.Show(_hoveredRect, new AutoRefWindow<TNestLevel>(

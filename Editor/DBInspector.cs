@@ -561,7 +561,7 @@ namespace FDB.Editor
         {
             var originIconsSize = EditorGUIUtility.GetIconSize();
             EditorGUIUtility.SetIconSize(Vector2.one * 16);
-            GUILayout.Label(FDBEditorIcons.RowAction, GUILayout.Width(MenuSize));
+            GUILayout.Label(FDBEditorIcons.RowAction, GUILayout.Width(MenuSize - 5));
             EditorGUIUtility.SetIconSize(originIconsSize);
 
             var menuRect = GUILayoutUtility.GetLastRect();
@@ -667,9 +667,20 @@ namespace FDB.Editor
                     break;
 
                 case ListHeaderState listHeader:
-                    if (GUILayout.Button($"[...]", GUILayout.Width(header.Width)))
                     {
-                        ToggleExpandedState(owner, header);
+                        DBResolver.GetGUID(owner, out var guid);
+                        _expandedFields.TryGetValue(guid, out var fieldName);
+                        var isExpanded = fieldName == header.Title;
+
+                        var list = (IList)listHeader.Field.GetValue(owner);
+                        if (GUILayout.Button(
+                            isExpanded 
+                                ? " [...]" 
+                                : $"[ {list.Count} : {listHeader.ItemType.Name} ]",
+                            GUILayout.Width(header.Width)))
+                        {
+                            ToggleExpandedState(owner, header);
+                        }
                     }
                     break;
             }

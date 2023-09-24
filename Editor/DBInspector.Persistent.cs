@@ -21,6 +21,9 @@ namespace FDB.Editor
 
         void InitPersistanceData()
         {
+            _persistantPageStates = _persistantPageStates ?? new List<PersistantPageState>();
+            _persistantExpendedFields = _persistantExpendedFields ?? new List<PersistantExpendedField>();
+
             var stateByName = _persistantPageStates.ToDictionary(x => x.Name, x => x);
             _persistantPageStates = _pageNames.Select(name =>
             {

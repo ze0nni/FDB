@@ -241,7 +241,8 @@ namespace FDB
 
         public Index GetIndex(Type indexType)
         {
-            return _indexByType[indexType];
+            _indexByType.TryGetValue(indexType, out var index);
+            return index;
         }
 
         public object GetConfig<T>(string kind)
@@ -251,7 +252,11 @@ namespace FDB
 
         public object GetConfig(Type configType, string kind)
         {
-            _indexByType[configType].TryGet(kind, out var config);
+            if (!_indexByType.TryGetValue(configType, out var index))
+            {
+                return null;
+            }
+            index.TryGet(kind, out var config);
             return config;
         }
 

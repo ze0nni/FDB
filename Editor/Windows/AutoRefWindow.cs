@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace FDB.Editor
         readonly object _owner;
         readonly DBResolver _resolver;
         readonly Type _modelType;
+        readonly List<string> _errors;
         readonly HeaderState[] _modelHeaders;
         readonly AutoRefAttribute _autoRef;
         Ref _currentRef;
@@ -36,7 +38,8 @@ namespace FDB.Editor
             _owner = owner;
             _resolver = resolver;
             _modelType = modelType;
-            _modelHeaders = HeaderState.Of(_modelType, 0, "", true).ToArray();
+            _errors = new List<string>();
+            _modelHeaders = HeaderState.Of(_modelType, 0, "", true, _errors.Add).ToArray();
             _autoRef = autoRef;
             _currentRef = currentField;
             _width = width;
@@ -60,6 +63,15 @@ namespace FDB.Editor
 
         public override void OnGUI(Rect rect)
         {
+            if (_errors.Count != 0)
+            {
+                foreach (var e in _errors)
+                {
+                    EditorGUILayout.HelpBox(e, MessageType.Error);
+                }
+                return;
+            }
+
             if (_currentRef.Config != null)
             {
                 OnConfigGUI(_currentRef.Config, true);

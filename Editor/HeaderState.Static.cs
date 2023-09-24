@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,7 +8,7 @@ namespace FDB.Editor
 {
     public abstract partial class HeaderState
     {
-        public static IEnumerable<HeaderState> Of(Type type, int depth, string rootPath, bool requestKind)
+        public static IEnumerable<HeaderState> Of(Type type, int depth, string rootPath, bool requestKind, Action<string> addError)
         {
             var kindResolved = false;
 
@@ -75,7 +74,7 @@ namespace FDB.Editor
                         else
                         {
                             yield return new ListHeaderState(path, type, field, itemType, false,
-                                Of(itemType, depth + 1, listRoot, false).ToArray());
+                                Of(itemType, depth + 1, listRoot, false, addError).ToArray());
                         }
                     }
                 }
@@ -115,7 +114,7 @@ namespace FDB.Editor
 
             if (requestKind && !kindResolved)
             {
-                throw new ArgumentException($"Model {type.Name} must containst field Kind<{type.Name}>");
+                addError($"Model {type.Name} must containst field Kind<{type.Name}>");
             }
         }
     }

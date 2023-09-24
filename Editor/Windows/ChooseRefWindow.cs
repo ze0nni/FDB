@@ -144,12 +144,19 @@ namespace FDB.Editor
                 return;
             }
 
+            var index = _resolver.GetIndex(_modelType);
+            if (index == null)
+            {
+                EditorGUILayout.HelpBox($"{_modelType.Name} not in Index", MessageType.Error);
+                return;
+            }
+
             GUI.SetNextControlName("SearchFilter");
             _filter = GUILayout.TextField(_filter, EditorStyles.toolbarSearchField, GUILayout.ExpandWidth(true));
 
             using (var scroll = new GUILayout.ScrollViewScope(_scrollPos, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true)))
             {
-                foreach (var model in _resolver.GetIndex(_modelType).All())
+                foreach (var model in index.All())
                 {
                     if (!String.IsNullOrEmpty(_filter) && !Inspector.ApplyFilter(model, _filter))
                     {

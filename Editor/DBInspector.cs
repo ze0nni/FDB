@@ -84,48 +84,81 @@ namespace FDB.Editor
                 var page = _pageStates[PageIndex];
                 var pagePersist = _persistantPageStates[PageIndex];
 
-                var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
-
-                using (var scroll = new GUILayout.ScrollViewScope(pagePersist.Position,
-                    GUILayout.ExpandWidth(true),
-                    GUILayout.ExpandHeight(true)))
+                if (page.Errors.Count > 0)
                 {
-                    var index = page.ResolveModel(EditorDB<T>.DB);
-                    var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, pagePersist.Filter);
-
-                    if (page.IsPaintedOnce)
+                    foreach (var w in page.Errors)
                     {
-                        pagePersist.Position = scroll.scrollPosition;
+                        EditorGUILayout.HelpBox(w, MessageType.Error);
                     }
-
-                    if (changed)
-                    {
-                        MakeDirty();
-                    }
+                    GUILayout.FlexibleSpace();
                 }
-                var hasWarnings = EditorDB<T>.Resolver.Indexes.Any(i => i.Warnings.Count > 0);
-                if (hasWarnings)
+                else
                 {
-                    using (new GUILayout.VerticalScope(GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight * 5)))
+                    var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
+
+                    using (var scroll = new GUILayout.ScrollViewScope(pagePersist.Position,
+                        GUILayout.ExpandWidth(true),
+                        GUILayout.ExpandHeight(true)))
                     {
-                        using (var scrollView = new GUILayout.ScrollViewScope(_warningsScrollPosition))
+                        var index = page.ResolveModel(EditorDB<T>.DB);
+                        var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, pagePersist.Filter);
+
+                        if (page.IsPaintedOnce)
                         {
-                            var color = GUI.color;
-                            GUI.color = Color.yellow;
-                            foreach (var index in EditorDB<T>.Resolver.Indexes)
+                            pagePersist.Position = scroll.scrollPosition;
+                        }
+
+                        if (changed)
+                        {
+                            MakeDirty();
+                        }
+                    }
+                    var hasWarnings =
+                        EditorDB<T>.Resolver.Indexes.Any(i => i.Warnings.Count > 0)
+                        || _pageStates.Any(s => s.Errors.Count > 0);
+                    if (hasWarnings)
+                    {
+                        using (new GUILayout.VerticalScope(GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight * 5)))
+                        {
+                            using (var scrollView = new GUILayout.ScrollViewScope(_warningsScrollPosition))
                             {
-                                foreach (var w in index.Warnings)
+                                foreach (var s in _pageStates)
                                 {
-                                    GUILayout.Label($"[{index.ConfigType.Name}] {w}");
+                                    foreach (var e in s.Errors)
+                                    {
+                                        EditorGUILayout.HelpBox(e, MessageType.Error);
+                                    }
                                 }
+
+                                var color = GUI.color;
+                                GUI.color = Color.yellow;
+                                foreach (var index in EditorDB<T>.Resolver.Indexes)
+                                {
+                                    foreach (var w in index.Warnings)
+                                    {
+                                        GUILayout.Label($"[{index.ConfigType.Name}] {w}");
+                                    }
+                                }
+                                GUI.color = color;
+                                _warningsScrollPosition = scrollView.scrollPosition;
                             }
-                            GUI.color = color;
-                            _warningsScrollPosition = scrollView.scrollPosition;
                         }
                     }
                 }
 
-                var newPageIndex = GUILayout.Toolbar(PageIndex, _pageNames);
+                var pages = _pageStates
+                    .Select(s =>
+                    {
+                        return new GUIContent
+                        {
+                            text = s.Title,
+                            image = s.Errors.Count == 0
+                                ? null
+                                : EditorGUIUtility.FindTexture("CollabConflict"),
+                        };
+                    }).ToArray();
+
+                var newPageIndex = GUILayout.Toolbar(PageIndex, pages);
                 if (PageIndex != newPageIndex)
                 {
                     PageIndex = newPageIndex;

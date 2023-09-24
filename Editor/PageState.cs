@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace FDB.Editor
 {
@@ -12,6 +13,7 @@ namespace FDB.Editor
         public Aggregator Aggregator;
 
         public HeaderState[] Headers;
+        public List<string> Errors;
         public bool IsPaintedOnce;
     }
 }

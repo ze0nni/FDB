@@ -77,13 +77,17 @@ namespace FDB.Editor
 
                     var modelType = fieldType.GetGenericArguments()[0];
 
+                    var errors = new List<string>();
+                    var headers = HeaderState.Of(modelType, 0, field.Name, true, errors.Add).ToArray();
+
                     indexList.Add(new PageState
                     {
                         Title = field.Name,
                         IndexType = fieldType,
                         ModelType = modelType,
                         ResolveModel = x => field.GetValue(x),
-                        Headers = HeaderState.Of(modelType, 0, field.Name, true).ToArray(),
+                        Headers = headers,
+                        Errors = errors,
                         Aggregator = new Aggregator(typeof(T), field, modelType)
                     });
 

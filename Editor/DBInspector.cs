@@ -103,7 +103,7 @@ namespace FDB.Editor
                         var index = page.ResolveModel(EditorDB<T>.DB);
                         var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, pagePersist.Filter);
 
-                        if (page.IsPaintedOnce)
+                        if (page.IsPaintedOnce && _input.Type != InputState.Target.ResizeHeader)
                         {
                             pagePersist.Position = scroll.scrollPosition;
                         }
@@ -290,6 +290,10 @@ namespace FDB.Editor
                                     };
                                     e.Use();
                                 }
+                                if (e.type == EventType.ContextClick && labelRect.Contains(e.mousePosition))
+                                {
+                                    ShowHeaderContextMenu(header);
+                                }
                             }
                             break;
                         case InputState.Target.ResizeHeader:
@@ -298,6 +302,7 @@ namespace FDB.Editor
                                 {
                                     switch (e.GetTypeForControl(id)) {
                                         case EventType.MouseDrag:
+                                        case EventType.DragUpdated:
                                             {
                                                 var delta = e.mousePosition.x - _input.ResizeStartX;
                                                 header.Width = (int)Math.Max(20, _input.ResizeStartWidth + delta);
@@ -306,8 +311,12 @@ namespace FDB.Editor
                                             }
                                             break;
                                         case EventType.MouseUp:
+                                        case EventType.MouseDown:
+                                        case EventType.MouseLeaveWindow:
+                                        case EventType.DragExited:
                                             {
                                                 _input = default;
+                                                GUI.changed = true;
                                                 e.Use();
                                             }
                                             break;
@@ -698,6 +707,27 @@ namespace FDB.Editor
                     });
                 }
             }
+        }
+
+        void ShowHeaderContextMenu(HeaderState header)
+        {
+            var menu = new GenericMenu();
+            var persistanceState = _persistantPageStates[PageIndex];
+
+            menu.AddItem(new GUIContent("Reset size"), false, () => {
+                var delta = 150 - header.Width;
+                header.Width = 150;
+                persistanceState.Position.x += delta;
+                GUI.changed = true;
+            });
+            menu.AddItem(new GUIContent("Expand"), false, () => {
+                var delta = header.Width;
+                header.Width *= 2;
+                persistanceState.Position.x += delta;
+                GUI.changed = true;
+            });
+
+            menu.ShowAsContext();
         }
     }
 }

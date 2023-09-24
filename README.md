@@ -331,4 +331,4 @@ class UserConfig {
 }
 ```
 
-Field automatic fill value
+Field automatic fill value GUID value

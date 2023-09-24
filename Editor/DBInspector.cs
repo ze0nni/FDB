@@ -149,12 +149,14 @@ namespace FDB.Editor
                 var pages = _pageStates
                     .Select(s =>
                     {
+                        var index = EditorDB<T>.Resolver.GetIndex(s.ModelType);
                         return new GUIContent
                         {
                             text = s.Title,
-                            image = s.Errors.Count == 0
-                                ? null
-                                : EditorGUIUtility.FindTexture("CollabConflict"),
+                            image =
+                                s.Errors.Count > 0 ? EditorIcons.ErrorIcon
+                                : index.Warnings.Count > 0 ? EditorIcons.ConflictIcon
+                                : null
                         };
                     }).ToArray();
 

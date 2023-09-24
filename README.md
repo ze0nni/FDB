@@ -4,6 +4,17 @@
 
 Static structured database for Unity. I create this project inspired by [CastleDB](http://castledb.org/).
 
+- [Install](./Doc/Install/README.md)
+- [How to use](#how-to-use)
+- [Supported types](#supported-types)
+- Attributes
+    - [Space](#space-attribute)
+    - [GroupBy](#groupby-attribute)
+    - [Aggregate](#aggregate-attribute)
+    - [MultilineText](#multilinetext-attribute)
+    - [AutoRef](#autoref-attribute)
+- [__GUID field](#__guid-field)
+
 # How to use
 
 First [Install FDB](./Doc/Install/README.md). Create your database class `DB.cs`:
@@ -91,6 +102,9 @@ public class TextConfig
 }
 ```
 
+> [!IMPORTANT]  
+> Every class in Index must contains field `Kind`
+
 And fill database with data. Don't forget press **Save**
 
 ![Units](./Doc/3.png)
@@ -124,6 +138,9 @@ class Boot {
 ```
 
 For read and edit database from editor use `EditorDB<DB>`
+
+> [!WARNING]  
+> EditorDB available only in `UNITY_EDITOR`
 
 ## Supported types
 
@@ -254,6 +271,30 @@ public class TextConfig
 
 ![Text](./Doc/9.png)
 
+## AutoRef Attribute
+
+You have a way to quickly create links to other tables:
+
+```
+public class UnitConfig
+{
+    public Kind<UnitConfig> Kind;
+
+    [AutoRef(Prefix = "unit_name_")]
+    public Ref<TextConfig> Name;
+
+    ...
+}
+```
+
+![Text](./Doc/12.png)
+
+Press "Create" and start edit TextConfg-record
+
+![Text](./Doc/13.png)
+
+![Text](./Doc/14.png)
+
 ## TextComponentBase
 
 For convenient work with localization take TextComponentBase:
@@ -278,3 +319,16 @@ class TextComponent : TextComponentBase<DB, TextConfig> {
 ![Text](./Doc/10.png)
 
 ![Text](./Doc/11.png)
+
+## __GUID field
+
+You can declare filed `__GUID` in any object.
+
+```DB.cs
+class UserConfig {
+    public string __GUID;
+    public Kind<UserConfig> Kind;
+}
+```
+
+Field automatic fill value

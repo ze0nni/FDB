@@ -21,6 +21,10 @@ namespace FDB.Editor
 
         void InitPersistanceData()
         {
+            if (_pageNames == null)
+            {
+                return;
+            }
             _persistantPageStates = _persistantPageStates ?? new List<PersistantPageState>();
             _persistantExpendedFields = _persistantExpendedFields ?? new List<PersistantExpendedField>();
 
@@ -64,11 +68,6 @@ namespace FDB.Editor
                     Field = x.Field
                 })
                 .ToList();
-
-            if (_autoSave && EditorDB<T>.IsDirty)
-            {
-                EditorDB<T>.Save();
-            }
         }
 
         int PageIndex

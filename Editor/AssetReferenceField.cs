@@ -31,7 +31,7 @@ namespace FDB.Editor
 
             var originIconSize = EditorGUIUtility.GetIconSize();
             EditorGUIUtility.SetIconSize(Vector2.one * 14);
-            GUILayout.Label(new GUIContent(title, icon), EditorStyles.objectField, options);
+            GUILayout.Label(new GUIContent(title, icon), EditorStyles.objectFieldThumb, options);
             EditorGUIUtility.SetIconSize(originIconSize);
 
             var rect = GUILayoutUtility.GetLastRect();

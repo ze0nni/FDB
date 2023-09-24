@@ -52,7 +52,7 @@ namespace FDB.Editor
             var viewRect = new Rect();
             if (autoRef != null || currentField.Config != null)
             {
-                var viewWidth = EditorGUIUtility.singleLineHeight * 3;
+                var viewWidth = EditorGUIUtility.singleLineHeight * 2;
                 refRect.width -= viewWidth;
                 if (refRect.width > 0)
                 {
@@ -64,17 +64,17 @@ namespace FDB.Editor
             }
 
             var originIconSize = EditorGUIUtility.GetIconSize();
-            EditorGUIUtility.SetIconSize(Vector2.one * 14);
-            if (GUI.Button(refRect,new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), EditorStyles.objectField))
+            EditorGUIUtility.SetIconSize(Vector2.one * 16);
+
+            if (GUI.Button(refRect,new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), EditorStyles.objectFieldThumb))
             {
                 _controlId = id;
                 PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));
             }
-            EditorGUIUtility.SetIconSize(originIconSize);
 
             if ((autoRef != null || currentField.Config != null))
             {
-                if (GUI.Button(viewRect, new GUIContent("View", FDBEditorIcons.ViewIcon)))
+                if (GUI.Button(viewRect, new GUIContent("", FDBEditorIcons.ViewIcon)))
                 {
                     _controlId = id;
                     PopupWindow.Show(_hoveredRect, new AutoRefWindow<TNestLevel>(
@@ -89,7 +89,8 @@ namespace FDB.Editor
                         UpdateRef(_controlId)));
                 }
             }
-            
+
+            EditorGUIUtility.SetIconSize(originIconSize);
 
             if (_done && _controlId == id)
             {

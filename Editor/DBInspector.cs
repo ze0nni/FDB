@@ -9,7 +9,7 @@ namespace FDB.Editor
 {
     public partial class DBInspector<T> : EditorWindow
     {
-        public const int MenuSize = 25;
+        public const int MenuSize = 35;
         public const int GroupSpace = 25;
 
         InputState _input;
@@ -243,8 +243,12 @@ namespace FDB.Editor
             }
         }
 
+        private int _pageRowsCounter = 0;
+
         bool OnTableGui(int left, Aggregator aggregator, HeaderState[] headers, Type type, object model, string filter)
-        {            
+        {
+            _pageRowsCounter = 0;
+
             var changed = false;
             OnHeadersGui(left, headers);
             changed |= OnItemsGui(left, aggregator, headers, type, model, filter);
@@ -407,9 +411,8 @@ namespace FDB.Editor
                                     GUILayout.Space(GroupSpace);
                                 }
 
-                                using (new GUILayout.HorizontalScope())
+                                using (new TableRowGUILayout(this, left))
                                 {
-                                    GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
                                     EditorGUI.BeginChangeCheck();
                                     var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, 0, _makeDirty);
@@ -535,10 +538,9 @@ namespace FDB.Editor
         {
             var changed = false;
 
-            using (new GUILayout.HorizontalScope())
+            using (new TableRowGUILayout(this, left))
             {
                 var id = GUIUtility.GetControlID(item.GetHashCode(), FocusType.Passive);
-                GUILayout.Space(left);
 
                 OnIndexMenuGUI(collection, collectionIndex);
                 for (var i = 0; i < headers.Length; i++)
@@ -557,8 +559,13 @@ namespace FDB.Editor
 
         void OnIndexMenuGUI(object collection, int itemIndex)
         {
-            GUILayout.Label("...", GUILayout.Width(MenuSize));
+            var originIconsSize = EditorGUIUtility.GetIconSize();
+            EditorGUIUtility.SetIconSize(Vector2.one * 16);
+            GUILayout.Label(FDBEditorIcons.RowAction, GUILayout.Width(MenuSize));
+            EditorGUIUtility.SetIconSize(originIconsSize);
+
             var menuRect = GUILayoutUtility.GetLastRect();
+
             EditorGUIUtility.AddCursorRect(menuRect, MouseCursor.SplitResizeUpDown);
 
             var e = Event.current;
@@ -732,6 +739,35 @@ namespace FDB.Editor
             });
 
             menu.ShowAsContext();
+        }
+
+        private struct TableRowGUILayout : IDisposable
+        {
+            readonly DBInspector<T> _inspector;
+            readonly int _rowIndex;
+
+            readonly GUILayout.HorizontalScope _scope;
+            readonly GUILayout.HorizontalScope _innerScope;
+
+            public TableRowGUILayout(DBInspector<T> inspector, float left)
+            {
+                _inspector = inspector;
+                _rowIndex = _inspector._pageRowsCounter++;
+                var style =
+                    _rowIndex % 2 == 0
+                    ? FDBEditorStyles.EvenRowStyle
+                    : FDBEditorStyles.OddRowStyle;
+               
+                _scope = new GUILayout.HorizontalScope();
+                GUILayout.Space(left);
+                _innerScope = new GUILayout.HorizontalScope(style);
+            }
+
+            public void Dispose()
+            {
+                _innerScope.Dispose();
+                _scope.Dispose();
+            }
         }
     }
 }

@@ -7,6 +7,8 @@ namespace FDB
 {
     public interface Index
     {
+        Type ConfigType { get; }
+
         IEnumerable All();
         void SetDirty();
         void Invalidate();
@@ -30,6 +32,9 @@ namespace FDB
 
         readonly List<string> _warnings = new List<string>();
         readonly HashSet<string> _duplicates = new HashSet<string>();
+
+        public Type ConfigType => typeof(T);
+
         public IReadOnlyList<T> All()
         {
             return _list;

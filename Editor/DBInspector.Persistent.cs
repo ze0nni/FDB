@@ -9,6 +9,7 @@ namespace FDB.Editor
     {
         [SerializeField] string _selectedPageName;
         int _pageIndex;
+        [SerializeField] Vector2 _warningsScrollPosition;
 
         [SerializeField] bool _autoSave = true;
 

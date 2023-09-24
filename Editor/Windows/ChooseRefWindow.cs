@@ -145,7 +145,7 @@ namespace FDB.Editor
             }
 
             GUI.SetNextControlName("SearchFilter");
-            _filter = GUILayout.TextField(_filter, GUILayout.ExpandWidth(true));
+            _filter = GUILayout.TextField(_filter, EditorStyles.toolbarSearchField, GUILayout.ExpandWidth(true));
 
             using (var scroll = new GUILayout.ScrollViewScope(_scrollPos, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true)))
             {

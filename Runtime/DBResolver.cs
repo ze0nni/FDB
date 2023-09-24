@@ -69,10 +69,12 @@ namespace FDB
             return db;
         }
 
+        private List<Index> _indexes = new List<Index>();
         private Dictionary<Type, Index> _indexByType = new Dictionary<Type, Index>();
         readonly List<(object Model, FieldInfo Field, string RefValue)> _fields = new List<(object, FieldInfo, string)>();
         readonly Dictionary<object, List<string>> _listRef = new Dictionary<object, List<string>>();
         public object DB { get; private set; }
+        public IReadOnlyList<Index> Indexes => _indexes;
 
         internal void SetDB(object db)
         {
@@ -91,6 +93,7 @@ namespace FDB
 
                     var modelType = field.FieldType.GetGenericArguments()[0];
                     _indexByType[modelType] = index;
+                    _indexes.Add(index);
                 }
             }
         }

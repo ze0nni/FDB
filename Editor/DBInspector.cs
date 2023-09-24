@@ -3,6 +3,7 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 
 namespace FDB.Editor
 {
@@ -102,17 +103,26 @@ namespace FDB.Editor
                         MakeDirty();
                     }
                 }
-                using (new GUILayout.VerticalScope())
+                var hasWarnings = EditorDB<T>.Resolver.Indexes.Any(i => i.Warnings.Count > 0);
+                if (hasWarnings)
                 {
-                    var color = GUI.color;
-                    GUI.color = Color.yellow;
-
-                    foreach (var w in EditorDB<T>.Resolver.GetIndex(page.ModelType).Warnings)
+                    using (new GUILayout.VerticalScope(GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight * 5)))
                     {
-                        GUILayout.Label(w);
+                        using (var scrollView = new GUILayout.ScrollViewScope(_warningsScrollPosition))
+                        {
+                            var color = GUI.color;
+                            GUI.color = Color.yellow;
+                            foreach (var index in EditorDB<T>.Resolver.Indexes)
+                            {
+                                foreach (var w in index.Warnings)
+                                {
+                                    GUILayout.Label($"[{index.ConfigType.Name}] {w}");
+                                }
+                            }
+                            GUI.color = color;
+                            _warningsScrollPosition = scrollView.scrollPosition;
+                        }
                     }
-
-                    GUI.color = color;
                 }
 
                 var newPageIndex = GUILayout.Toolbar(PageIndex, _pageNames);

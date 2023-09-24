@@ -10,25 +10,43 @@ namespace FDB
 
     public struct Ref<T> : Ref where T : class
     {
-        public readonly T Config;
+        readonly T _config;
         private DBResolver _resolver;
 
         public Ref(DBResolver resolver, T config)
         {
-            Config = config;
+            _config = config;
             _resolver = resolver;
+        }
+
+        public T Config
+        {
+            get
+            {
+#if UNITY_EDITOR
+                if (_config == null)
+                {
+                    return null;
+                }
+                var index = _resolver.GetIndex(typeof(T));
+                return index.Contains(_config) ? _config : null;
+#else
+                return _config;
+#endif
+            }
         }
 
         public Kind<T> Kind
         {
             get
             {
-                if (Config == null)
+                var cfg = Config;
+                if (cfg == null)
                 {
                     return new Kind<T>(String.Empty);
                 }
                 var kindField = typeof(T).GetField("Kind");
-                return (Kind<T>)kindField.GetValue(Config);
+                return (Kind<T>)kindField.GetValue(cfg);
             }
         }
 
@@ -41,8 +59,7 @@ namespace FDB
             {
                 return false;
             }
-            return Kind.GetType() == other.Kind.GetType()
-                && Kind.Value == other.Kind.Value;
+            return Config == other.Config;
         }
 
         public bool Equals(Ref other)
@@ -50,7 +67,7 @@ namespace FDB
             switch (other)
             {
                 case Ref<T> otherT:
-                    return this.Config == otherT.Config;
+                    return this._config == otherT._config;
             }
             return false;
         }

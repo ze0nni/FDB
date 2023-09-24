@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace FDB
 {
@@ -15,7 +14,8 @@ namespace FDB
         bool IsDuplicateKind(string kind);
         IReadOnlyList<string> Warnings { get; }
         
-        bool TryGet(string kind, out object model);
+        bool TryGet(string kind, out object config);
+        bool Contains(object config);
         void Add(object item);
         void Insert(int index, object item);
         void Swap(int i0, int i1);
@@ -26,6 +26,7 @@ namespace FDB
     {
         readonly List<T> _list = new List<T>();
         readonly Dictionary<string, T> _map = new Dictionary<string, T>();
+        readonly HashSet<T> _configs = new HashSet<T>();
 
         readonly List<string> _warnings = new List<string>();
         readonly HashSet<string> _duplicates = new HashSet<string>();
@@ -64,22 +65,25 @@ namespace FDB
 
             var kindField = typeof(T).GetField("Kind");
 
-            foreach (var i in _list)
+            foreach (var config in _list)
             {
-                var kind = kindField.GetValue(i) as Kind;
+                var kind = kindField.GetValue(config) as Kind;
 
                 if (_map.ContainsKey(kind.Value))
                 {
-                    _warnings.Add($"Duplicate kind={kind.Value}");
+                    _warnings.Add($"Duplicate kind='{kind.Value}'");
                     _duplicates.Add(kind.Value);
                 }
-                _map[kind.Value] = i;
+
+                _map[kind.Value] = config;
+                _configs.Add(config);
             }
         }
 
         void Index.SetDirty()
         {
             _map.Clear();
+            _configs.Clear();
         }
 
         IReadOnlyList<string> Index.Warnings => _warnings;
@@ -97,6 +101,12 @@ namespace FDB
             var result = _map.TryGetValue(kind, out var outModel);
             model = outModel;
             return result;
+        }
+
+        bool Index.Contains(object config)
+        {
+            Invalidate();
+            return _configs.Contains(config);
         }
 
         IEnumerable Index.All()

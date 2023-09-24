@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -119,6 +120,8 @@ namespace FDB.Editor {
             }
         }
 
+        static Regex KindPatter = new Regex(@"^[a-zA-Z][\w_]*$");
+
         public static void GenerateCs(string path, T db)
         {
             var sb = new StringBuilder();
@@ -146,10 +149,22 @@ namespace FDB.Editor {
                     sb.AppendLine("\t\t{");
                     var modelType = index.GetType().GetGenericArguments()[0];
                     var kindField = modelType.GetField("Kind");
-                    foreach (var model in index.All())
+                    foreach (var config in index.All())
                     {
-                        var kind = (Kind)kindField.GetValue(model);
-                        sb.AppendLine($"\t\t\tpublic static Kind<{modelType.Name}> {kind.Value} = new Kind<{modelType.Name}>(\"{kind.Value}\");");
+                        var kind = (Kind)kindField.GetValue(config);
+                        if (!KindPatter.IsMatch(kind.Value))
+                        {
+                            sb.AppendLine($"\t\t\t// Skip kind '{kind.Value}'");
+                        }
+                        else if (index.IsDuplicateKind(kind.Value))
+                        {
+                            sb.AppendLine($"\t\t\t// Skip duplicate '{kind.Value}'");
+                            Debug.LogWarning($"Skip duplicate kind='{kind.Value}' of {modelType.Name}");
+                        }
+                        else
+                        {
+                            sb.AppendLine($"\t\t\tpublic static Kind<{modelType.Name}> {kind.Value} = new Kind<{modelType.Name}>(\"{kind.Value}\");");
+                        }
                     }
                     sb.AppendLine("\t\t}");
 

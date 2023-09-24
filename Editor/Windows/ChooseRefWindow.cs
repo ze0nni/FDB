@@ -63,13 +63,14 @@ namespace FDB.Editor
                 }
             }
 
+            var originIconSize = EditorGUIUtility.GetIconSize();
             EditorGUIUtility.SetIconSize(Vector2.one * 14);
-
             if (GUI.Button(refRect,new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), EditorStyles.objectField))
             {
                 _controlId = id;
                 PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));
             }
+            EditorGUIUtility.SetIconSize(originIconSize);
 
             if ((autoRef != null || currentField.Config != null))
             {

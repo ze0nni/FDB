@@ -28,8 +28,12 @@ namespace FDB.Editor
                     : AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(inputValue.editorAsset));
 
             var id = GUIUtility.GetControlID(FocusType.Passive);
+
+            var originIconSize = EditorGUIUtility.GetIconSize();
             EditorGUIUtility.SetIconSize(Vector2.one * 14);
             GUILayout.Label(new GUIContent(title, icon), EditorStyles.objectField, options);
+            EditorGUIUtility.SetIconSize(originIconSize);
+
             var rect = GUILayoutUtility.GetLastRect();
 
             if (resetId == id)

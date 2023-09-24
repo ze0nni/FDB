@@ -149,8 +149,10 @@ namespace FDB.Editor
                             {
                                 GUILayout.Label(header.Title, GUILayout.Width(_width / 2));
                                 var value = fieldHeader.Field.GetValue(config);
+
+                                EditorGUI.BeginChangeCheck();
                                 var newValue = Inspector.Field(_resolver, header, config, value, _nestLevel + 1, _makeDirty);
-                                if (!value.Equals(newValue))
+                                if (EditorGUI.EndChangeCheck())
                                 {
                                     fieldHeader.Field.SetValue(config, newValue);
                                     GUI.changed = true;

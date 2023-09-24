@@ -345,13 +345,12 @@ namespace FDB.Editor
         {
             var changed = false;
 
-            aggregator.Clear();
-
             var itemIndex = 0;
 
             switch (collection)
             {
                 case Index index:
+                    aggregator.Clear();
                     foreach (var i in index.All())
                     {
                         aggregator.Add(i, out var separate);
@@ -362,7 +361,7 @@ namespace FDB.Editor
 
                         if (string.IsNullOrEmpty(filter) && separate)
                         {
-                            aggregator.OnGUI(left + MenuSize);
+                            aggregator.OnGUI(left + MenuSize, false);
                             GUILayout.Space(GroupSpace);
                         }
 
@@ -370,6 +369,7 @@ namespace FDB.Editor
                         changed |= OnExpandedGui(left, headers, i);
                         itemIndex++;
                     }
+                    aggregator.OnGUI(left + MenuSize, true);
                     if (changed)
                     {
                         index.SetDirty();
@@ -391,6 +391,8 @@ namespace FDB.Editor
                             var itemProp = list.GetType().GetProperty("Item");
 
                             var count = (int)countProp.GetValue(list);
+
+                            aggregator.Clear();
                             for (itemIndex = 0; itemIndex < count; itemIndex++)
                             {
                                 indexParamas[0] = itemIndex;
@@ -400,7 +402,7 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left + MenuSize);
+                                    aggregator.OnGUI(left + MenuSize, false);
                                     GUILayout.Space(GroupSpace);
                                 }
 
@@ -408,14 +410,16 @@ namespace FDB.Editor
                                 {
                                     GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
+                                    EditorGUI.BeginChangeCheck();
                                     var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, 0, _makeDirty);
-                                    if (!newValue.Equals(value))
+                                    if (EditorGUI.EndChangeCheck())
                                     {
                                         itemProp.SetValue(list, newValue, indexParamas);
                                         changed |= true;
                                     }
                                 }
                             }
+                            aggregator.OnGUI(left + MenuSize, true);
                         }
                         else
                         {
@@ -425,7 +429,7 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left + MenuSize);
+                                    aggregator.OnGUI(left + MenuSize, false);
                                     GUILayout.Space(GroupSpace);
                                 }
 
@@ -433,6 +437,7 @@ namespace FDB.Editor
                                 changed |= OnExpandedGui(0, headers, i);
                                 itemIndex++;
                             }
+                            aggregator.OnGUI(left + MenuSize, true);
                         }
                     }
                     break;
@@ -440,8 +445,6 @@ namespace FDB.Editor
                     GUILayout.Label(collection?.GetType().ToString() ?? "Null");
                     break;
             }
-
-            aggregator.OnGUI(left + MenuSize);
 
             return changed;
         }

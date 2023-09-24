@@ -26,7 +26,12 @@ namespace FDB.Components.Editor
 
                 var translateRect = new Rect(position.x, position.y, position.width, position.height / 2);
                 {
-                    EditorGUI.PropertyField(translateRect, translateProp);
+                    EditorGUI.BeginChangeCheck();
+                    var newTranslate = GUI.Toggle(translateRect, translateProp.boolValue, translateProp.name);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        translateProp.boolValue = newTranslate;
+                    }
                 }
 
                 var valueRect = new Rect(position.x, position.y + position.height / 2, position.width, position.height / 2);
@@ -49,10 +54,10 @@ namespace FDB.Components.Editor
 
                 if (translateProp.boolValue)
                 {
-                    if (GUI.Button(browseRect, "..."))
+                    if (GUI.Button(browseRect, new GUIContent(null, FDBEditorIcons.LinkIcon)))
                     {
                         var kinds = GCache.GetKinds();
-                        PopupWindow.Show(valueRect, new TextKindChooseWindow(valueProp.stringValue, kinds, valueRect.width, newKind =>
+                        PopupWindow.Show(valueRect, new TextKindChooseWindow(valueProp.stringValue, kinds, position.width, newKind =>
                         {
                             valueProp.serializedObject.Update();
                             valueProp.stringValue = newKind;

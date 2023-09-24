@@ -85,19 +85,6 @@ namespace FDB.Editor
 
                 var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
 
-                using (new GUILayout.HorizontalScope())
-                {
-                    GUI.SetNextControlName("SearchFilter");
-                    pagePersist.Filter = EditorGUILayout.TextField(pagePersist.Filter ?? string.Empty, GUILayout.ExpandWidth(true));
-
-                    var e = Event.current;
-                    if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F && e.modifiers == EventModifiers.Control)
-                    {
-                        GUI.FocusControl("SearchFilter");
-                        GUI.changed = true;
-                    }
-                }
-
                 using (var scroll = new GUILayout.ScrollViewScope(pagePersist.Position,
                     GUILayout.ExpandWidth(true),
                     GUILayout.ExpandHeight(true)))
@@ -146,9 +133,11 @@ namespace FDB.Editor
 
         void OnToolbarGui()
         {
-            using (new GUILayout.HorizontalScope())
+            var e = Event.current;
+
+            using (new GUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                if (GuiButton("Save", EditorDB<T>.IsDirty))
+                if (GuiButton("Save", EditorDB<T>.IsDirty, EditorStyles.toolbarButton))
                 {
                     Invoke("Save", () => EditorDB<T>.Save());
                 }
@@ -160,22 +149,42 @@ namespace FDB.Editor
                 //}
                 //GuiButton("Redo", false);
 
-                PushGuiColor(Color.red);
-                if (GuiButton("Reset", true))
+                if (PageIndex == -1)
                 {
-                    Invoke("Load", () =>
+                    GUILayout.FlexibleSpace();
+                } else
+                {
+                    var pagePersist = _persistantPageStates[PageIndex];
+
+                    using (new GUILayout.HorizontalScope())
+                    {
+                        GUI.SetNextControlName("SearchFilter");
+                        pagePersist.Filter = EditorGUILayout.TextField(
+                            pagePersist.Filter ?? string.Empty,
+                            EditorStyles.toolbarSearchField,
+                            GUILayout.ExpandWidth(true));
+
+                        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F && e.modifiers == EventModifiers.Control)
+                        {
+                            GUI.FocusControl("SearchFilter");
+                            GUI.changed = true;
+                        }
+                    }
+                }
+
+                _autoSave = GUILayout.Toggle(_autoSave, "Auto save", GUILayout.ExpandWidth(false));
+
+                PushGuiColor(Color.red);
+                if (GuiButton("Reload", true, EditorStyles.toolbarButton))
+                {
+                    Invoke("Reload", () =>
                     {
                         EditorDB<T>.Load();
                     });
                 }
                 PopGuiColor();
-
-                GUILayout.FlexibleSpace();
-
-                _autoSave = GUILayout.Toggle(_autoSave, "Auto save"); ;
             }
 
-            var e = Event.current;
             if (e.type == EventType.KeyDown
                 && e.keyCode == KeyCode.Z
                 && e.modifiers == EventModifiers.Control)

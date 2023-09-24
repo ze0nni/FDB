@@ -47,7 +47,8 @@ namespace FDB.Editor
 
                 if (!isPopup && (autoRef != null || currentField.Config != null))
                 {
-                    if (GUILayout.Button("*", GUILayout.ExpandWidth(false)))
+                    if (GUILayout.Button("View",
+                        GUILayout.ExpandWidth(false)))
                     {
                         _controlId = id;
                         PopupWindow.Show(_hoveredRect, new AutoRefWindow(

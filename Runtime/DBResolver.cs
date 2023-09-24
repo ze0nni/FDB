@@ -146,6 +146,11 @@ namespace FDB
         {
             foreach (var field in model.GetType().GetFields())
             {
+                if (field.FieldType == typeof(string) && field.GetValue(model) == null)
+                {
+                    field.SetValue(model, string.Empty);
+                }
+
                 if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                 {
                     var list = field.GetValue(model);

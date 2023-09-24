@@ -64,7 +64,7 @@ namespace FDB.Editor
 
         int PageIndex
         {
-            get => _pageIndex;
+            get => _pageNames.Length == 0 ? -1 : _pageIndex;
             set {
                 _pageIndex = Mathf.Clamp(value, 0, _pageNames.Length);
                 _selectedPageName = _pageNames[_pageIndex];

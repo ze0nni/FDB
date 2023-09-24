@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -30,10 +31,10 @@ namespace FDB.Editor
             GUI.enabled = _guiEnabledStack.Pop();
         }
 
-        bool GuiButton(string text, bool enabled)
+        bool GuiButton(string text, bool enabled, GUIStyle style = null)
         {
             PushGuiEnabled(enabled);
-            var result = GUILayout.Button(text);
+            var result = GUILayout.Button(text, style ?? "button", GUILayout.ExpandWidth(false));
             PopGuiEnabled();
             return result;
         }

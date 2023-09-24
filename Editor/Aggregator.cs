@@ -82,7 +82,7 @@ namespace FDB.Editor
             _history.Add(model);
         }
 
-        public void OnGUI(float left, bool end)
+        public void OnGUI(float left, bool end, Func<float, IDisposable> tableLineScope)
         {
             if (end)
             {
@@ -98,9 +98,8 @@ namespace FDB.Editor
                 return;
             }
 
-            using (new GUILayout.HorizontalScope())
+            using (tableLineScope.Invoke(left))
             {
-                GUILayout.Space(left);
                 foreach (var a in _aggregators)
                 {
                     string result;

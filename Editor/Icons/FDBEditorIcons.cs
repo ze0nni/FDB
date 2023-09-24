@@ -16,6 +16,8 @@ namespace FDB.Editor
         public static Texture2D RowEven { get; private set; }
         public static Texture2D RowAction { get; private set; }
 
+        public static Texture2D HeaderBackground { get; private set; }
+
         static FDBEditorIcons()
         {
             ConflictIcon = GetTexture("fdb-conflict-icon.png");
@@ -28,6 +30,8 @@ namespace FDB.Editor
             RowOdd = GetTexture("fdb-row-odd.png");
             RowEven = GetTexture("fdb-row-even.png");
             RowAction = GetTexture("fdb-row-action.png");
+
+            HeaderBackground = GetTexture("fdb-header-backgroud.png");
         }
 
         static Texture2D GetTexture(string path) => EditorGUIUtility.FindTexture("Packages/com.pixelrebels.fdb/Editor/Icons/" + path);

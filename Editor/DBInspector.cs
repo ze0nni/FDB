@@ -252,16 +252,17 @@ namespace FDB.Editor
             var changed = false;
             OnHeadersGui(left, headers);
             changed |= OnItemsGui(left, aggregator, headers, type, model, filter);
-            OnPageActionsGui(left, headers, model);
+            if (string.IsNullOrEmpty(filter))
+            {
+                OnPageActionsGui(left, headers, model);
+            }
             return changed;
         }
         
         void OnHeadersGui(int left, HeaderState[] headers)
         {
-            using (new GUILayout.HorizontalScope())
+            using (new TableRowGUILayout(this, left + MenuSize))
             {
-                GUILayout.Space(left + MenuSize);
-
                 var e = Event.current;
 
                 foreach (var header in headers)
@@ -270,7 +271,7 @@ namespace FDB.Editor
                     {
                         GUILayout.Space(GroupSpace);
                     }
-                    GUILayout.Box(header.Title, GUILayout.Width(header.Width));
+                    GUILayout.Box(header.Title, FDBEditorStyles.HeaderStyle, GUILayout.Width(header.Width));
                     var labelRect = GUILayoutUtility.GetLastRect();
                     var resizeRect = new Rect(labelRect.xMax - 5, labelRect.y, 10, labelRect.height);
                     EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeHorizontal);
@@ -284,7 +285,7 @@ namespace FDB.Editor
                     {
                         case InputState.Target.Free:
                             {
-                                if (e.GetTypeForControl(id) == EventType.MouseDown && resizeRect.Contains(e.mousePosition))
+                                if (e.type == EventType.MouseDown && resizeRect.Contains(e.mousePosition))
                                 {
                                     _input = new InputState
                                     {
@@ -366,7 +367,7 @@ namespace FDB.Editor
 
                         if (string.IsNullOrEmpty(filter) && separate)
                         {
-                            aggregator.OnGUI(left + MenuSize, false);
+                            aggregator.OnGUI(left + MenuSize, false, TableLineScope);
                             GUILayout.Space(GroupSpace);
                         }
 
@@ -374,7 +375,7 @@ namespace FDB.Editor
                         changed |= OnExpandedGui(left, headers, i);
                         itemIndex++;
                     }
-                    aggregator.OnGUI(left + MenuSize, true);
+                    aggregator.OnGUI(left + MenuSize, true, TableLineScope);
                     if (changed)
                     {
                         index.SetDirty();
@@ -407,7 +408,7 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left + MenuSize, false);
+                                    aggregator.OnGUI(left + MenuSize, false, TableLineScope);
                                     GUILayout.Space(GroupSpace);
                                 }
 
@@ -423,7 +424,7 @@ namespace FDB.Editor
                                     }
                                 }
                             }
-                            aggregator.OnGUI(left + MenuSize, true);
+                            aggregator.OnGUI(left + MenuSize, true, TableLineScope);
                         }
                         else
                         {
@@ -433,7 +434,7 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left + MenuSize, false);
+                                    aggregator.OnGUI(left + MenuSize, false, TableLineScope);
                                     GUILayout.Space(GroupSpace);
                                 }
 
@@ -441,7 +442,7 @@ namespace FDB.Editor
                                 changed |= OnExpandedGui(0, headers, i);
                                 itemIndex++;
                             }
-                            aggregator.OnGUI(left + MenuSize, true);
+                            aggregator.OnGUI(left + MenuSize, true, TableLineScope);
                         }
                     }
                     break;
@@ -750,6 +751,11 @@ namespace FDB.Editor
             });
 
             menu.ShowAsContext();
+        }
+
+        private IDisposable TableLineScope(float left)
+        {
+            return new TableRowGUILayout(this, left);
         }
 
         private struct TableRowGUILayout : IDisposable

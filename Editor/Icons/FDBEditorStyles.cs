@@ -6,6 +6,7 @@ namespace FDB.Editor
     {
         public static GUIStyle OddRowStyle { get; private set; }
         public static GUIStyle EvenRowStyle { get; private set; }
+        public static GUIStyle HeaderStyle { get; private set; }
 
         static FDBEditorStyles()
         {
@@ -25,6 +26,20 @@ namespace FDB.Editor
                 {
                     background = FDBEditorIcons.RowEven
                 }
+            };
+            HeaderStyle = new GUIStyle
+            {
+                padding = new RectOffset(1, 1, 4, 4),
+                margin = new RectOffset(4, 4, 0, 0),
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                clipping = TextClipping.Clip,
+                border = new RectOffset(4, 4, 4, 4),
+                normal = new GUIStyleState
+                {
+                    textColor = Color.white,
+                    background = FDBEditorIcons.HeaderBackground
+                },
             };
         }
     }

@@ -150,7 +150,7 @@ namespace FDB.Editor
             var index = _resolver.GetIndex(_modelType);
             if (index == null)
             {
-                EditorGUILayout.HelpBox($"{_modelType.Name} not in Index", MessageType.Error);
+                EditorGUILayout.HelpBox($"Index<{_modelType.Name}> not found", MessageType.Error);
                 return;
             }
 

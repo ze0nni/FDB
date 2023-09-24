@@ -79,7 +79,7 @@ namespace FDB.Editor
 
             if (_pageStates == null || _pageStates.Length == 0)
             {
-                GUILayout.Label("No indexes", GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                EditorGUILayout.HelpBox("No indexes", MessageType.Info);
             } else
             {
                 var page = _pageStates[PageIndex];

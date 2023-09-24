@@ -11,6 +11,7 @@ namespace FDB.Editor
     public partial class DBInspector<T>
     {
         Exception _staticException;
+        List<string> _errors = new List<string>();
         Type _loadedModelType;
         FuryDBAttribute _fdbAttr;
         JsonConverterAttribute _jsonAttr;
@@ -24,7 +25,17 @@ namespace FDB.Editor
             if (_staticException != null)
             {
                 ok = false;
-                GUILayout.Label(_staticException.ToString(), GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                EditorGUILayout.HelpBox(
+                    _staticException.ToString(), MessageType.Error);
+            }
+
+            if (_errors.Count > 0)
+            {
+                ok = false;
+                foreach (var e in _errors)
+                {
+                    EditorGUILayout.HelpBox(e, MessageType.Error);
+                }
             }
 
             if (_fdbAttr == null)
@@ -55,6 +66,9 @@ namespace FDB.Editor
         {
             try
             {
+                _staticException = null;
+                _errors.Clear();
+
                 _loadedModelType = typeof(T);
                 _fdbAttr = _loadedModelType.GetCustomAttribute<FuryDBAttribute>();
                 _jsonAttr = _loadedModelType.GetCustomAttribute<JsonConverterAttribute>();
@@ -75,23 +89,28 @@ namespace FDB.Editor
                         continue;
                     }
 
-                    var modelType = fieldType.GetGenericArguments()[0];
+                    var configType = fieldType.GetGenericArguments()[0];
+                    if (_indexes.ContainsKey(configType))
+                    {
+                        _errors.Add($"Fields {_indexes[configType].Name} and {field.Name} has same type Index<{configType.Name}> ");
+                        continue;
+                    }
 
                     var errors = new List<string>();
-                    var headers = HeaderState.Of(modelType, 0, field.Name, true, errors.Add).ToArray();
+                    var headers = HeaderState.Of(configType, 0, field.Name, true, errors.Add).ToArray();
 
                     indexList.Add(new PageState
                     {
                         Title = field.Name,
                         IndexType = fieldType,
-                        ModelType = modelType,
+                        ModelType = configType,
                         ResolveModel = x => field.GetValue(x),
                         Headers = headers,
                         Errors = errors,
-                        Aggregator = new Aggregator(typeof(T), field, modelType)
+                        Aggregator = new Aggregator(typeof(T), field, configType)
                     });
 
-                    _indexes.Add(modelType, field);
+                    _indexes.Add(configType, field);
                 }
 
                 _pageNames = indexList.Select(x => x.Title).ToArray();

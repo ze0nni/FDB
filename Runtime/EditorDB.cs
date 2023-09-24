@@ -120,8 +120,6 @@ namespace FDB.Editor {
             }
         }
 
-        static Regex KindPatter = new Regex(@"^[a-zA-Z][\w_]*$");
-
         public static void GenerateCs(string path, T db)
         {
             var sb = new StringBuilder();
@@ -152,7 +150,7 @@ namespace FDB.Editor {
                     foreach (var config in index.All())
                     {
                         var kind = (Kind)kindField.GetValue(config);
-                        if (!KindPatter.IsMatch(kind.Value))
+                        if (!kind.CanExport)
                         {
                             sb.AppendLine($"\t\t\t// Skip kind '{kind.Value}'");
                         }

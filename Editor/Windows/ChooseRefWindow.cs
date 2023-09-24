@@ -66,7 +66,10 @@ namespace FDB.Editor
             var originIconSize = EditorGUIUtility.GetIconSize();
             EditorGUIUtility.SetIconSize(Vector2.one * 16);
 
-            if (GUI.Button(refRect,new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), EditorStyles.objectFieldThumb))
+            if (GUI.Button(
+                refRect,
+                new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), 
+                EditorStyles.objectFieldThumb))
             {
                 _controlId = id;
                 PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));

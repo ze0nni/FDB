@@ -37,14 +37,31 @@ namespace FDB.Editor
                         var index = resolver.GetIndex(kindHeader.ModelType);
 
                         var color = GUI.color;
+
+                        var canExport = kind.CanExport;
                         if (index.IsDuplicateKind(kind.Value))
                         {
                             GUI.color = Color.red;
                         }
+                        else if (!canExport)
+                        {
+                            GUI.color = Color.gray;
+                        }
 
                         var newValue = EditorGUILayout.TextField(kind.Value, layoutWidth);
-
                         GUI.color = color;
+
+                        if (!canExport)
+                        {
+                            var rect = GUILayoutUtility.GetLastRect();
+                            GUI.Box(
+                                new Rect(
+                                    rect.xMax - rect.height,
+                                    rect.y,
+                                    rect.height,
+                                    rect.height),
+                                FDBEditorIcons.NotExportIcon);
+                        }
 
                         if (newValue != kind.Value)
                         {

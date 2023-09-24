@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -29,9 +30,11 @@ namespace FDB.Editor
 
             var id = GUIUtility.GetControlID(FocusType.Passive);
 
+            var fieldRect = GUILayoutUtility.GetRect(new GUIContent(), "label", options);
+
             var originIconSize = EditorGUIUtility.GetIconSize();
             EditorGUIUtility.SetIconSize(Vector2.one * 14);
-            GUILayout.Label(new GUIContent(title, icon), EditorStyles.objectFieldThumb, options);
+            GUI.Label(fieldRect, new GUIContent(title, icon), EditorStyles.objectFieldThumb);
             EditorGUIUtility.SetIconSize(originIconSize);
 
             var rect = GUILayoutUtility.GetLastRect();

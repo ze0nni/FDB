@@ -19,7 +19,7 @@ namespace FDB.Editor
         List<string> _expandedOrder = new List<string>();
         const int MaxExpandedHistory = 128;
 
-        public void OnAfterDeserialize()
+        void InitPersistanceData()
         {
             var stateByName = _persistantPageStates.ToDictionary(x => x.Name, x => x);
             _persistantPageStates = _pageNames.Select(name =>
@@ -39,6 +39,11 @@ namespace FDB.Editor
                 .ToList();
             _expandedFields = _persistantExpendedFields
                 .ToDictionary(x => x.GUID, x => x.Field);
+        }
+
+        public void OnAfterDeserialize()
+        {
+            InitPersistanceData();
         }
 
         public void OnBeforeSerialize()

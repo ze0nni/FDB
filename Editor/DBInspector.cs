@@ -29,6 +29,7 @@ namespace FDB.Editor
         {
             _makeDirty = MakeDirty;
             InitStatic();
+            InitPersistanceData();
         }
 
         void OnDisable()

@@ -154,6 +154,7 @@ For read and edit database from editor use `EditorDB<DB>`
 - List<>
 - Ref<>
 - AssetReference
+- AssetReferenceT<>
 
 ## Space Attribute
 

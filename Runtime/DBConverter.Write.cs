@@ -80,9 +80,24 @@ namespace FDB
                 {
                     var kind = (Kind)value;
                     writer.WriteValue(kind.Value ?? string.Empty);
-                } else if (genericType == typeof(Ref<>)) {
+                }
+                else if (genericType == typeof(Ref<>))
+                {
                     writer.WriteValue(((Ref)value).Kind.Value);
-                } else if (genericType == typeof(List<>))
+                }
+                else if (genericType == typeof(AssetReferenceT<>))
+                {
+                    var r = (AssetReference)value;
+                    if (r != null && r.editorAsset != null)
+                    {
+                        writer.WriteValue(r.AssetGUID);
+                    }
+                    else
+                    {
+                        writer.WriteNull();
+                    }
+                }
+                else if (genericType == typeof(List<>))
                 {
                     var itemType = type.GetGenericArguments()[0];
                     var collection = (IEnumerable)value;

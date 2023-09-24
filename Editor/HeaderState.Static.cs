@@ -37,6 +37,12 @@ namespace FDB.Editor
                         var modelType = field.FieldType.GetGenericArguments()[0];
                         yield return new RefFieldHeaderState(path, field);
                     }
+                    else if (fieldGenericType == typeof(AssetReferenceT<>))
+                    {
+                        var assetType = field.FieldType.GetGenericArguments()[0];
+                       
+                        yield return new AssetReferenceFieldHeaderState(path, field, assetType);
+                    }
                     else if (fieldGenericType == typeof(List<>))
                     {
                         var listRoot = $"{path}/{field.Name}";
@@ -100,7 +106,7 @@ namespace FDB.Editor
                 }
                 else if (field.FieldType == typeof(AssetReference))
                 {
-                    yield return new AssetReferenceFieldHeaderState(path, field);
+                    yield return new AssetReferenceFieldHeaderState(path, field, typeof(object));
                 }
                 else if (field.FieldType == typeof(Color))
                 {

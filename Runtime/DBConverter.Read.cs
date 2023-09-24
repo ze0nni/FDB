@@ -179,6 +179,22 @@ namespace FDB
 
                     return Activator.CreateInstance(type, reader.Value.ToString());
                 }
+                else if (genericType == typeof(AssetReferenceT<>))
+                {
+                    switch (reader.TokenType)
+                    {
+                        case JsonToken.Undefined:
+                        case JsonToken.Null:
+                            return null;
+                        case JsonToken.String:
+                            var assetType = type.GetGenericArguments()[0];
+                            var assetReferenceType = typeof(AssetReferenceT<>).MakeGenericType(assetType);
+                            return Activator.CreateInstance(assetReferenceType, reader.Value);
+                        default:
+                            throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+
+                    }
+                }
                 else if (genericType == typeof(List<>))
                 {
                     return ReadList(resolver, reader, type, type.GetGenericArguments()[0]);

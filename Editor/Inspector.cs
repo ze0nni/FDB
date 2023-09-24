@@ -120,7 +120,7 @@ namespace FDB.Editor
 
                 case AssetReferenceFieldHeaderState assetRefHeader:
                     {
-                        return AssetReferenceField.Field(rawValue as AssetReference, layoutWidth);
+                        return AssetReferenceField.Field(rawValue as AssetReference, assetRefHeader.AssetType, layoutWidth);
                     }
                 case ColorFieldHeaderState colorHeader:
                     {

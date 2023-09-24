@@ -145,7 +145,10 @@ namespace FDB.Editor
 
     public sealed class AssetReferenceFieldHeaderState : FieldHeaderState
     {
-        public AssetReferenceFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+        public readonly Type AssetType;
+        public AssetReferenceFieldHeaderState(string path, FieldInfo field, Type assetType) : base(path, field) {
+            AssetType = assetType;
+        }
     }
 
     public sealed class ColorFieldHeaderState : FieldHeaderState

@@ -10,14 +10,26 @@ namespace FDB.Editor
     public static class AssetReferenceField
     {
         static int? resetId;
-        static GUIStyle GuiTextField = new GUIStyle("textField");
 
-        internal static AssetReference Field(AssetReference inputValue, params GUILayoutOption[] options)
+        internal static AssetReference Field(
+            AssetReference inputValue,
+            Type assetType,
+            params GUILayoutOption[] options)
         {
-            var title = inputValue == null || inputValue.editorAsset == null ? $"({nameof(AssetReference)})" : inputValue.editorAsset.name;
+            var title = 
+                inputValue != null && inputValue.editorAsset != null
+                    ? inputValue.editorAsset.name
+                : assetType == typeof(object)
+                    ? $"({nameof(AssetReference)})"
+                    : $"({assetType.Name})";
+            var icon =
+                inputValue == null || inputValue.editorAsset == null
+                    ? FDBEditorIcons.DefaultAssetIcon
+                    : AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(inputValue.editorAsset));
 
             var id = GUIUtility.GetControlID(FocusType.Passive);
-            GUILayout.Box(title, GuiTextField, options);
+            EditorGUIUtility.SetIconSize(Vector2.one * 14);
+            GUILayout.Label(new GUIContent(title, icon), EditorStyles.objectField, options);
             var rect = GUILayoutUtility.GetLastRect();
 
             if (resetId == id)
@@ -44,7 +56,7 @@ namespace FDB.Editor
                                 var obj = DragAndDrop.objectReferences[0];
                                 AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out var guid, out long _);
                                 var entry = settings.FindAssetEntry(guid);
-                                if (entry == null)
+                                if (obj == null || entry == null || !assetType.IsAssignableFrom(obj.GetType()))
                                 {
                                     DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
                                 } else
@@ -58,18 +70,23 @@ namespace FDB.Editor
                     break;
 
                 case EventType.DragPerform:
-                    {                        
+                    {
                         if (rect.Contains(e.mousePosition))
                         {
-                            if (DragAndDrop.objectReferences.Length == 1)                            
+                            if (DragAndDrop.objectReferences.Length == 1)
                             {
                                 var obj = DragAndDrop.objectReferences[0];
-                                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out var guid, out long _);                 
+                                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out var guid, out long _);
                                 var entry = settings.FindAssetEntry(guid);
-                                if (entry != null)
+                                if (entry != null && assetType == typeof(object))
                                 {
                                     GUI.changed = true;
                                     return new AssetReference(guid);
+                                } else
+                                {
+                                    GUI.changed = true;
+                                    var assetReferenceType = typeof(AssetReferenceT<>).MakeGenericType(assetType);
+                                    return (AssetReference)Activator.CreateInstance(assetReferenceType, new object[] { guid });
                                 }
                             }
                             e.Use();

@@ -63,7 +63,9 @@ namespace FDB.Editor
                 }
             }
 
-            if (EditorGUI.DropdownButton(refRect,new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), FocusType.Passive))
+            EditorGUIUtility.SetIconSize(Vector2.one * 14);
+
+            if (GUI.Button(refRect,new GUIContent(currentField.Kind.Value, FDBEditorIcons.LinkIcon), EditorStyles.objectField))
             {
                 _controlId = id;
                 PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));

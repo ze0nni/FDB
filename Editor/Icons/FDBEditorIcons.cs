@@ -9,6 +9,7 @@ namespace FDB.Editor
         public static Texture2D ErrorIcon { get; private set; }
         public static Texture2D LinkIcon { get; private set; }
         public static Texture2D ViewIcon { get; private set; }
+        public static Texture2D DefaultAssetIcon { get; private set; }
 
         static FDBEditorIcons()
         {
@@ -16,6 +17,7 @@ namespace FDB.Editor
             ErrorIcon = GetTexture("fdb-error-icon.png");
             LinkIcon = GetTexture("fdb-link-icon.png");
             ViewIcon = GetTexture("fdb-view-icon.png");
+            DefaultAssetIcon = GetTexture("fdb-default-asset-icon.png");
         }
 
         static Texture2D GetTexture(string path) => EditorGUIUtility.FindTexture("Packages/com.pixelrebels.fdb/Editor/Icons/" + path);

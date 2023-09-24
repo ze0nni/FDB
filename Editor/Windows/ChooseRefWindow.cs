@@ -38,46 +38,55 @@ namespace FDB.Editor
             _makeDirty = makeDirty;
 
             int id;
-            using (new GUILayout.HorizontalScope(layoutWidth))
+            var content = new GUIContent();
+            var fieldRect = GUILayoutUtility.GetRect(content, "label", layoutWidth);
+            
+            id = GUIUtility.GetControlID(FocusType.Passive);
+
+            if (Event.current.type == EventType.Repaint && fieldRect.Contains(Event.current.mousePosition))
             {
-                id = GUIUtility.GetControlID(FocusType.Passive);
+                _hoveredRect = fieldRect;
+            }
 
-                if (GUILayout.Button(currentField.Kind.Value))
+            var refRect = fieldRect;
+            var viewRect = new Rect();
+            if (autoRef != null || currentField.Config != null)
+            {
+                var viewWidth = EditorGUIUtility.singleLineHeight * 3;
+                refRect.width -= viewWidth;
+                if (refRect.width > 0)
                 {
-                    _controlId = id;
-                    PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));
-                }
-
-                var fieldRect = GUILayoutUtility.GetLastRect();
-                if (Event.current.type == EventType.Repaint && fieldRect.Contains(Event.current.mousePosition))
+                    viewRect = new Rect(refRect.xMax, refRect.y, viewWidth, refRect.height);
+                } else
                 {
-                    _hoveredRect = fieldRect;
-                }
-
-                if (autoRef != null || currentField.Config != null)
-                {
-                    if (GUILayout.Button("View",
-                        GUILayout.ExpandWidth(false)))
-                    {
-                        _controlId = id;
-                        PopupWindow.Show(_hoveredRect, new AutoRefWindow<TNestLevel>(
-                            resolver,
-                            owner,
-                            modelType,
-                            autoRef,
-                            currentField,
-                            width,
-                            nestLevel,
-                            makeDirty,
-                            UpdateRef(_controlId)));
-                    }
-                    var autoRefRect = GUILayoutUtility.GetLastRect();
-                    if (Event.current.type == EventType.Repaint && autoRefRect.Contains(Event.current.mousePosition))
-                    {
-                        _hoveredRect = fieldRect;
-                    }
+                    refRect.width = width;
                 }
             }
+
+            if (GUI.Button(refRect, currentField.Kind.Value))
+            {
+                _controlId = id;
+                PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));
+            }
+
+            if ((autoRef != null || currentField.Config != null))
+            {
+                if (GUI.Button(viewRect, "View"))
+                {
+                    _controlId = id;
+                    PopupWindow.Show(_hoveredRect, new AutoRefWindow<TNestLevel>(
+                        resolver,
+                        owner,
+                        modelType,
+                        autoRef,
+                        currentField,
+                        width,
+                        nestLevel,
+                        makeDirty,
+                        UpdateRef(_controlId)));
+                }
+            }
+            
 
             if (_done && _controlId == id)
             {

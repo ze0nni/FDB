@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public class AutoRefWindow : PopupWindowContent
+    public class AutoRefWindow<TNestLevel> : PopupWindowContent
     {
         readonly object _owner;
         readonly DBResolver _resolver;
@@ -14,6 +14,7 @@ namespace FDB.Editor
         readonly AutoRefAttribute _autoRef;
         Ref _currentRef;
         readonly float _width;
+        readonly int _nestLevel;
         readonly Action _makeDirty;
         readonly Action<Ref> _updateRef;
 
@@ -28,6 +29,7 @@ namespace FDB.Editor
             AutoRefAttribute autoRef,
             Ref currentField,
             float width,
+            int nestLevel,
             Action makeDirty,
             Action<Ref> updateRef)
         {
@@ -38,7 +40,12 @@ namespace FDB.Editor
             _autoRef = autoRef;
             _currentRef = currentField;
             _width = width;
-            _makeDirty = makeDirty;
+            _nestLevel = nestLevel;
+            _makeDirty = () =>
+            {
+                editorWindow.Repaint();
+                makeDirty.Invoke();
+            };
             _updateRef = updateRef;
 
             _targetKind = autoRef == null ? null : autoRef.GetKind(owner);
@@ -130,7 +137,7 @@ namespace FDB.Editor
                             {
                                 GUILayout.Label(header.Title, GUILayout.Width(_width / 2));
                                 var value = fieldHeader.Field.GetValue(config);
-                                var newValue = Inspector.Field(_resolver, header, config, value, true, _makeDirty);
+                                var newValue = Inspector.Field(_resolver, header, config, value, _nestLevel + 1, _makeDirty);
                                 if (!value.Equals(newValue))
                                 {
                                     fieldHeader.Field.SetValue(config, newValue);

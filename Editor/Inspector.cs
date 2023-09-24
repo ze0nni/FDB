@@ -24,7 +24,7 @@ namespace FDB.Editor
             return false;
         }
 
-        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue, bool isPopup, Action makeDirty)
+        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue, int nestLevel, Action makeDirty)
         {
             var layoutWidth = header.ExpandWidth
                 ? GUILayout.ExpandWidth(true)
@@ -55,7 +55,24 @@ namespace FDB.Editor
 
                 case RefFieldHeaderState refHeader:
                     {
-                        return ChooseRefWindow.Field(
+                        Func<object, DBResolver, Type, AutoRefAttribute, Ref, float, GUILayoutOption, int, Action, Ref> field =
+                            nestLevel == 0 ? ChooseRefWindow<NestLevel0>.Field
+                            : nestLevel == 1 ? ChooseRefWindow<NestLevel1>.Field
+                            : nestLevel == 2 ? ChooseRefWindow<NestLevel2>.Field
+                            : nestLevel == 3 ? ChooseRefWindow<NestLevel3>.Field
+                            : nestLevel == 4 ? ChooseRefWindow<NestLevel4>.Field
+                            : nestLevel == 5 ? ChooseRefWindow<NestLevel5>.Field
+                            : nestLevel == 6 ? ChooseRefWindow<NestLevel6>.Field
+                            : nestLevel == 7 ? ChooseRefWindow<NestLevel7>.Field
+                            : null;
+
+                        if (field == null)
+                        {
+                            GUILayout.Label("Too deep ref windows", layoutWidth);
+                            return rawValue;
+                        }
+
+                        return field(
                             owner,
                             resolver,
                             refHeader.ModelType,
@@ -63,7 +80,7 @@ namespace FDB.Editor
                             (Ref)rawValue,
                             header.Width,
                             layoutWidth,
-                            isPopup,
+                            nestLevel,
                             makeDirty);
                     }
 

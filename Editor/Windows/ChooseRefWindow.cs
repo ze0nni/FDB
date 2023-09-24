@@ -5,7 +5,16 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public class ChooseRefWindow : PopupWindowContent
+    class NestLevel0 { }
+    class NestLevel1 { }
+    class NestLevel2 { }
+    class NestLevel3 { }
+    class NestLevel4 { }
+    class NestLevel5 { }
+    class NestLevel6 { }
+    class NestLevel7 { }
+
+    public class ChooseRefWindow<TNestLevel> : PopupWindowContent
     {
         static int _controlId;
         static bool _done = false;
@@ -23,7 +32,7 @@ namespace FDB.Editor
             Ref currentField,
             float width,
             GUILayoutOption layoutWidth,
-            bool isPopup,
+            int nestLevel,
             Action makeDirty
         ) {
             _makeDirty = makeDirty;
@@ -36,7 +45,7 @@ namespace FDB.Editor
                 if (GUILayout.Button(currentField.Kind.Value))
                 {
                     _controlId = id;
-                    PopupWindow.Show(_hoveredRect, new ChooseRefWindow(resolver, modelType, currentField, width));
+                    PopupWindow.Show(_hoveredRect, new ChooseRefWindow<TNestLevel>(resolver, modelType, currentField, width));
                 }
 
                 var fieldRect = GUILayoutUtility.GetLastRect();
@@ -45,19 +54,20 @@ namespace FDB.Editor
                     _hoveredRect = fieldRect;
                 }
 
-                if (!isPopup && (autoRef != null || currentField.Config != null))
+                if (autoRef != null || currentField.Config != null)
                 {
                     if (GUILayout.Button("View",
                         GUILayout.ExpandWidth(false)))
                     {
                         _controlId = id;
-                        PopupWindow.Show(_hoveredRect, new AutoRefWindow(
+                        PopupWindow.Show(_hoveredRect, new AutoRefWindow<TNestLevel>(
                             resolver,
                             owner,
                             modelType,
                             autoRef,
                             currentField,
                             width,
+                            nestLevel,
                             makeDirty,
                             UpdateRef(_controlId)));
                     }

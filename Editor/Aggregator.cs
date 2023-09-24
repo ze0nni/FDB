@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using UnityEditor;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -112,6 +113,18 @@ namespace FDB.Editor
                         result = $"{Compute(_group, a.Func, a.InitialType)}";
                     }
                     GUILayout.Label(result);
+                    var rect = GUILayoutUtility.GetLastRect();
+                    if (Event.current.type == EventType.ContextClick && rect.Contains(Event.current.mousePosition))
+                    {
+                        var menu = new GenericMenu();
+
+                        menu.AddItem(new GUIContent("Copy"), false, () =>
+                        {
+                            GUIUtility.systemCopyBuffer = result;
+                        });
+
+                        menu.ShowAsContext();
+                    }
                 }
             }
 

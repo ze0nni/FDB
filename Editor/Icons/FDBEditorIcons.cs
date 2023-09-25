@@ -3,8 +3,10 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    internal static class FDBEditorIcons
+    public static class FDBEditorIcons
     {
+        public static Texture2D Solid { get; private set; }
+
         public static Texture2D ConflictIcon { get; private set; }
         public static Texture2D ErrorIcon { get; private set; }
         public static Texture2D LinkIcon { get; private set; }
@@ -20,6 +22,8 @@ namespace FDB.Editor
 
         static FDBEditorIcons()
         {
+            Solid = GetTexture("fdb-solid.png");
+
             ConflictIcon = GetTexture("fdb-conflict-icon.png");
             ErrorIcon = GetTexture("fdb-error-icon.png");
             LinkIcon = GetTexture("fdb-link-icon.png");

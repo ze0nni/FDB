@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -179,4 +178,3 @@ namespace FDB.Editor {
         }
     }
 }
-#endif

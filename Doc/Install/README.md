@@ -4,7 +4,7 @@ Open __Window -> Package Manager__
 
 ![Press plus button](./1.png)
 
-Paste `git@github.com:ze0nni/FDB.git`
+Paste `https://github.com/ze0nni/FDB.git`
 
 ![Paste](./2.png)
 

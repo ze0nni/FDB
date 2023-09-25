@@ -14,6 +14,7 @@ Static structured database for Unity. I create this project inspired by [CastleD
     - [MultilineText](#multilinetext-attribute)
     - [AutoRef](#autoref-attribute)
 - [__GUID field](#__guid-field)
+- [FuryDB Components](#furydb-components)
 
 # How to use
 
@@ -296,31 +297,6 @@ Press "Create" and start edit TextConfg-record
 
 ![Text](./Doc/14.png)
 
-## TextComponentBase
-
-For convenient work with localization take TextComponentBase:
-
-```TextComponent.cs
-class TextComponent : TextComponentBase<DB, TextConfig> {
-    [SerializeField] Text _textUIComponent;
-
-    // Path to database with TextConfig
-    protected override Index<TextConfig> Index => Boot.DB.Texts;
-    // The function of choosing localization
-    protected override string GetText(TextConfig config) => config.Ru;
-
-    protected override void Render(string text)
-    {
-        if (_textUIComponent)
-            _textUIComponent.text = text;
-    }
-}
-```
-
-![Text](./Doc/10.png)
-
-![Text](./Doc/11.png)
-
 ## __GUID field
 
 You can declare filed `__GUID` in any object.
@@ -332,4 +308,8 @@ class UserConfig {
 }
 ```
 
-Field automatic fill value GUID value
+Field automatic fill GUID values
+
+# FuryDB Components
+
+Use [FuryDB Components](https://github.com/ze0nni/FuryDB.Components) package for integrate database with unity

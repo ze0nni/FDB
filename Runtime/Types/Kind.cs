@@ -15,7 +15,7 @@ namespace FDB
     [JsonConverter(typeof(KindJsonConverter))]
     public readonly struct Kind<T> : Kind , IEquatable<Kind<T>>
     {
-        static Regex KindPatter = new Regex(@"^[a-zA-Z][\w_]*$");
+        static Regex KindPatter = new Regex(@"^[a-zA-Z_][\w_]*$");
 
         public readonly string Value;
         public Kind(string value) => Value = value;

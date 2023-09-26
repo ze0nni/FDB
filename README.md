@@ -16,6 +16,7 @@ Static structured database for Unity. I create this project inspired by [CastleD
     - [MultilineText](#multilinetext-attribute)
     - [AutoRef](#autoref-attribute)
 - [__GUID field](#__guid-field)
+- [In the plans](#in-the-plans)
 - [FuryDB Components](#furydb-components)
 
 # How to use
@@ -105,10 +106,28 @@ public class TextConfig
 }
 ```
 
+We have main `DB` class with three pubic fields
+
+```
+    public Index<UnitConfig> Units;
+    public Index<WeaponConfig> Weapons;
+    public Index<TextConfig> Texts;
+```
+
+This is three tables you can to edit. Every table have types: `UnitConfig` `WeaponConfig` or `TextConfig`
+
 > [!IMPORTANT]  
 > Every class in Index must contains field `Kind`
 
-And fill database with data.
+Look to class UserConfig it have following fields
+
+- `Kind<UnitConfig> Kind` - this is unique name of config. If it possible this kind exports to file `Kinds.cs`. If kind not possible to export it mark little darkness and eye icon
+- `Ref<TextConfig> Name` - this mean that unit refered to config from `Index<TextConfig>` you first need goto to page `Texts` add line and after select this line in `Unit.Name` field
+- `Str` `Dex` `Int` `Chr` are `int`. This just number
+- `Ref<WeaponConfig> Weapon` - this is reference again but to table `Weapons`
+}
+
+Fill database with data.
 
 ![Units](./Doc/3.png)
 ![Weapons](./Doc/4.png)
@@ -218,10 +237,6 @@ When you modify some data from `EditorDB<DB>` call `EditorDB<DB>.SetDirty()`
 - Ref<>
 - AssetReference
 - AssetReferenceT<>
-
-In planes:
-- TimeSpan
-- DateTime
 
 ## Space Attribute
 
@@ -367,6 +382,25 @@ class UserConfig {
 ```
 
 Field automatic fill GUID values
+
+# In the plans
+
+Add support for field types:
+- `TimeSpan`
+- `DateTime`
+
+Add attributes:
+- `ShowCondition` for hide field by condition
+- `Display` field for build preview when you look reference list
+- `Validate` attribute for add user rules to validate configs
+- `RequireAssetComponent` check that gameObject containst required component when you drag prefab to `AssetReference`
+
+DBWindow
+- Toggles for hide columns
+- Toggle to disable rows groupping
+- Undo/Redo
+- Drag-n-drop for rows
+- Improve work with multiline text fields
 
 # FuryDB Components
 

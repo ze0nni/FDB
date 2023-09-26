@@ -106,7 +106,7 @@ public class TextConfig
 > [!IMPORTANT]  
 > Every class in Index must contains field `Kind`
 
-And fill database with data. Don't forget press **Save**
+And fill database with data.
 
 ![Units](./Doc/3.png)
 ![Weapons](./Doc/4.png)
@@ -133,12 +133,12 @@ class Boot {
     public static DB DB { get; private set; }
     void Awake() {
         DB = DBResolver.Load<DB>();
-        var rogue = DB.Units.Get(Kinds.Units.rogue);
+        var rogue = DB.Units.Get(Kinds.Units.Rogue);
     }
 }
 ```
 
-For read and edit database from editor use `EditorDB<DB>`
+For read and edit database from editor use `EditorDB<DB>.DB`
 
 > [!WARNING]  
 > EditorDB available only in `UNITY_EDITOR`
@@ -156,6 +156,10 @@ For read and edit database from editor use `EditorDB<DB>`
 - Ref<>
 - AssetReference
 - AssetReferenceT<>
+
+In planes:
+- TimeSpan
+- DateTime
 
 ## Space Attribute
 
@@ -216,34 +220,24 @@ public class UnitConfig
 ```DB.cs
 public class DB
 {
-    //...
-    [Aggregate("GeWeapontStatistics", typeof(WeaponAgg))]
-    public Index<WeaponConfig> Weapons;
+    [GroupBy("Kind", @"(.+?)_")]
+    [Aggregate(nameof(CalcTextChars), typeof(TextAgg))]
+    public Index<TextConfig> Texts;
 
-    private static WeaponAgg GeWeapontStatistics(WeaponAgg agg, WeaponConfig config)
+    private static TextAgg CalcTextChars(TextAgg agg, TextConfig config)
     {
-        agg.Total++;
-        switch (config.Type)
-        {
-            case WeaponType.Melee:
-                agg.Melee++;
-                break;
-            case WeaponType.Range:
-                agg.Range++;
-                break;
-        }
-
+        agg.EnChars += config.En.Length;
+        agg.RuChars += config.Ru.Length;
         return agg;
     }
-    private class WeaponAgg
-    {
-        public int Total;
-        public int Melee;
-        public int Range;
 
+    private class TextAgg
+    {
+        public int EnChars;
+        public int RuChars;
         public override string ToString()
         {
-            return $"Total {Total}\nMelee {Melee}\nRange {Range}";
+            return $"EN chars = {EnChars}\nRU chars = {RuChars}";
         }
     }
 }
@@ -257,16 +251,17 @@ public class DB
 public class TextConfig
 {
     public Kind<TextConfig> Kind;
-
     [MultilineText(MinLines = 3, Condition = "IsMultiline")]
     public string En;
     [MultilineText(MinLines = 3, Condition = "IsMultiline")]
     public string Ru;
 
-    private static bool IsMultiline(TextConfig config)
+    static bool IsMultiline(TextConfig config)
     {
-        return config.Kind.Value != null &&
-            config.Kind.Value.EndsWith("_text");
+        var kind = config.Kind.Value;
+        if (kind == null)
+            return false;
+        return kind.Contains("Description_");
     }
 }
 ```
@@ -275,17 +270,16 @@ public class TextConfig
 
 ## AutoRef Attribute
 
-You have a way to quickly create links to other tables:
+You have a way to quickly create links to other tables an attribute `AutoRef`:
 
 ```
 public class UnitConfig
 {
     public Kind<UnitConfig> Kind;
-
-    [AutoRef(Prefix = "unit_name_")]
+    [AutoRef(Prefix ="UnitName_")]
     public Ref<TextConfig> Name;
 
-    ...
+    //
 }
 ```
 
@@ -295,6 +289,8 @@ Press "Create" and start edit TextConfg-record
 
 ![Text](./Doc/13.png)
 
+New line insert in the end of group of same lines
+
 ![Text](./Doc/14.png)
 
 ## __GUID field
@@ -303,7 +299,7 @@ You can declare filed `__GUID` in any object.
 
 ```DB.cs
 class UserConfig {
-    public string __GUID;
+    public string __GUID; // Not visible in DBWindow but work!
     public Kind<UserConfig> Kind;
 }
 ```

@@ -3,7 +3,7 @@ using System;
 namespace FDB
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class MultilineText :  Attribute
+    public class MultilineTextAttribute :  Attribute
     {
         public int MinLines;
         public int MaxLines;

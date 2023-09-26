@@ -111,7 +111,7 @@ namespace FDB.Editor
         public StringFieldHeaderState(string path, Type ownerType, FieldInfo field) : base(path, field) {
             if (field != null)
             {
-                var multilineAttr = field.GetCustomAttribute<MultilineText>();
+                var multilineAttr = field.GetCustomAttribute<MultilineTextAttribute>();
                 if (multilineAttr != null)
                 {
                     _minLines = multilineAttr.MinLines;

@@ -127,7 +127,12 @@ namespace FDB.Editor
                     {
                         if (stringHeader.IsMultiline(owner, out var minLines, out var maxLines))
                         {
-                            return EditorGUILayout.TextArea((string)rawValue, layoutWidth, GUILayout.MinHeight(minLines * 16), GUILayout.MaxHeight(maxLines * 16));
+                            return EditorGUILayout.TextArea(
+                                (string)rawValue,
+                                FDBEditorStyles.WordWrapTextArea,
+                                layoutWidth, 
+                                GUILayout.MinHeight(minLines * 16),
+                                GUILayout.MaxHeight(maxLines * 16));
                         }
                         else
                         {

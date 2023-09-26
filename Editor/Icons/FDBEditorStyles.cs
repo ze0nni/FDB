@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -7,6 +8,7 @@ namespace FDB.Editor
         public static GUIStyle OddRowStyle { get; private set; }
         public static GUIStyle EvenRowStyle { get; private set; }
         public static GUIStyle HeaderStyle { get; private set; }
+        public static GUIStyle WordWrapTextArea { get; private set; }
 
         static FDBEditorStyles()
         {
@@ -41,6 +43,8 @@ namespace FDB.Editor
                     background = FDBEditorIcons.HeaderBackground
                 },
             };
+            WordWrapTextArea = new GUIStyle(EditorStyles.textArea);
+            WordWrapTextArea.wordWrap = true;
         }
     }
 }

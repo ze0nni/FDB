@@ -6,7 +6,9 @@ Static structured database for Unity. I create this project inspired by [CastleD
 
 - [Install](./Doc/Install/README.md)
 - [How to use](#how-to-use)
+- [Get prefab from config](#get-prefab-from-config)
 - [Supported types](#supported-types)
+- [Editor tools](#editor-tools)
 - Attributes
     - [Space](#space-attribute)
     - [GroupBy](#groupby-attribute)
@@ -50,7 +52,7 @@ public class DBWindow : DBInspector<DB>
 
 ```
 
-Then open **Game -> DB** and look at window. Now you have empty database.
+Then open menu **Game -> DB** and look at window. Now you have empty database.
 
 ![New window](./Doc/2.png)
 
@@ -138,10 +140,70 @@ class Boot {
 }
 ```
 
+# Get prefab from config
+
+If you need attach prefab MonoBehaviour(Prefab) or ScriptableObject to your config you need [Addressables](https://docs.unity3d.com/Manual/com.unity.addressables.html) and types `AssetReference` or `AssetReferenceT<>`
+
+Well you have prefab
+
+![Text](./Doc/15.png)
+
+Browse prefab in hierarchy window and turn on toggle `Addressable`
+
+![Text](./Doc/16.png)
+
+Add field `Prefab` in UnitConfig
+```
+public class UnitConfig
+{
+    public Kind<UnitConfig> Kind;
+    public Ref<TextConfig> Name;
+    public AssetReference Prefab; // <<<<
+
+    [Space]
+    public int Str;
+    public int Dex;
+    public int Int;
+    public int Chr;
+
+    [Space]
+    public Ref<WeaponConfig> Weapon;
+}
+```
+
+And drag prefab into unit field
+
+![Text](./Doc/17.png)
+
+Add code for load prefab int Boot
+```
+class Boot : MonoBehaviour
+{
+    public static DB DB { get; private set; }
+
+    private async void Awake()
+    {
+        DB = DBResolver.Load<DB>();
+        var warrior = DB.Units[Kinds.Units.Warrior];
+        var prefab = await warrior.Prefab.InstantiateAsync().Task;
+    }
+}
+```
+
+Run game and look to result.
+
+![Text](./Doc/18.png)
+
+Read more about addressable and resource management in Internet.
+
+# Editor tools
+
 For read and edit database from editor use `EditorDB<DB>.DB`
 
 > [!WARNING]  
 > EditorDB available only in `UNITY_EDITOR`
+
+When you modify some data from `EditorDB<DB>` call `EditorDB<DB>.SetDirty()`
 
 ## Supported types
 

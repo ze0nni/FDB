@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -25,8 +24,11 @@ namespace FDB.Editor
             return false;
         }
 
-        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue)
+        public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue, int nestLevel, Action makeDirty)
         {
+            var layoutWidth = header.ExpandWidth
+                ? GUILayout.ExpandWidth(true)
+                : GUILayout.Width(header.Width);
             switch (header)
             {
                 case KindFieldHeaderState kindHeader:
@@ -35,14 +37,31 @@ namespace FDB.Editor
                         var index = resolver.GetIndex(kindHeader.ModelType);
 
                         var color = GUI.color;
+
+                        var canExport = kind.CanExport;
                         if (index.IsDuplicateKind(kind.Value))
                         {
                             GUI.color = Color.red;
                         }
+                        else if (!canExport)
+                        {
+                            GUI.color = Color.gray;
+                        }
 
-                        var newValue = EditorGUILayout.TextField(kind.Value, GUILayout.Width(header.Width));
-
+                        var newValue = EditorGUILayout.TextField(kind.Value, layoutWidth);
                         GUI.color = color;
+
+                        if (!canExport)
+                        {
+                            var rect = GUILayoutUtility.GetLastRect();
+                            GUI.Box(
+                                new Rect(
+                                    rect.xMax - rect.height,
+                                    rect.y,
+                                    rect.height,
+                                    rect.height),
+                                FDBEditorIcons.NotExportIcon);
+                        }
 
                         if (newValue != kind.Value)
                         {
@@ -53,62 +72,89 @@ namespace FDB.Editor
 
                 case RefFieldHeaderState refHeader:
                     {
-                        return ChooseRefWindow.Field(
+                        Func<object, DBResolver, Type, AutoRefAttribute, Ref, float, GUILayoutOption, int, Action, Ref> field =
+                            nestLevel == 0 ? ChooseRefWindow<NestLevel0>.Field
+                            : nestLevel == 1 ? ChooseRefWindow<NestLevel1>.Field
+                            : nestLevel == 2 ? ChooseRefWindow<NestLevel2>.Field
+                            : nestLevel == 3 ? ChooseRefWindow<NestLevel3>.Field
+                            : nestLevel == 4 ? ChooseRefWindow<NestLevel4>.Field
+                            : nestLevel == 5 ? ChooseRefWindow<NestLevel5>.Field
+                            : nestLevel == 6 ? ChooseRefWindow<NestLevel6>.Field
+                            : nestLevel == 7 ? ChooseRefWindow<NestLevel7>.Field
+                            : null;
+
+                        if (field == null)
+                        {
+                            GUILayout.Label("Too deep ref windows", layoutWidth);
+                            return rawValue;
+                        }
+
+                        return field(
+                            owner,
                             resolver,
                             refHeader.ModelType,
+                            refHeader.AutoRef,
                             (Ref)rawValue,
-                            header.Width);
+                            header.Width,
+                            layoutWidth,
+                            nestLevel,
+                            makeDirty);
                     }
 
                 case EnumFieldHeaderState enumHeader:
                     {
                         var index = Array.IndexOf(enumHeader.Values, rawValue);
-                        var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, GUILayout.Width(header.Width));
+                        var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, layoutWidth);
                         return enumHeader.Values.GetValue(newIndex);
                     }
 
                 case BoolFieldHeaderState boolField:
                     {
-                        return EditorGUILayout.Toggle((bool)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.Toggle((bool)rawValue, layoutWidth);
                     }
 
                 case IntFieldHeaderState intHeader:
                     {
-                        return EditorGUILayout.IntField((int)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.IntField((int)rawValue, layoutWidth);
                     }
 
                 case FloatFieldHeaderState floatHeader:
                     {
-                        return EditorGUILayout.FloatField((float)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.FloatField((float)rawValue, layoutWidth);
                     }
 
                 case StringFieldHeaderState stringHeader:
                     {
                         if (stringHeader.IsMultiline(owner, out var minLines, out var maxLines))
                         {
-                            return EditorGUILayout.TextArea((string)rawValue, GUILayout.Width(header.Width), GUILayout.MinHeight(minLines * 16), GUILayout.MaxHeight(maxLines * 16));
+                            return EditorGUILayout.TextArea(
+                                (string)rawValue,
+                                FDBEditorStyles.WordWrapTextArea,
+                                layoutWidth, 
+                                GUILayout.MinHeight(minLines * 16),
+                                GUILayout.MaxHeight(maxLines * 16));
                         }
                         else
                         {
-                            return EditorGUILayout.TextField((string)rawValue, GUILayout.Width(header.Width));
+                            return EditorGUILayout.TextField((string)rawValue, layoutWidth);
                         }
                     }
 
                 case AssetReferenceFieldHeaderState assetRefHeader:
                     {
-                        return AssetReferenceField.Field(rawValue as AssetReference, GUILayout.Width(header.Width));
+                        return AssetReferenceField.Field(rawValue as AssetReference, assetRefHeader.AssetType, layoutWidth);
                     }
                 case ColorFieldHeaderState colorHeader:
                     {
-                        return EditorGUILayout.ColorField((Color)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.ColorField((Color)rawValue, layoutWidth);
                     }
                 case AnimationCurveFieldHeaderState _:
                     {
-                        return EditorGUILayout.CurveField((AnimationCurve)rawValue, GUILayout.Width(header.Width));
+                        return EditorGUILayout.CurveField((AnimationCurve)rawValue, layoutWidth);
                     }
 
                 default:
-                    GUILayout.Box(header.GetType().Name, GUILayout.Width(header.Width));
+                    GUILayout.Box(header.GetType().Name, layoutWidth);
                     return rawValue;
             }            
         }

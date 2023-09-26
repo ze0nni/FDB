@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using UnityEditor;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -11,6 +12,7 @@ namespace FDB.Editor
     {
         readonly List<(string Name, MethodInfo Func, Type InitialType)> _aggregators = new List<(string, MethodInfo, Type)>();
         readonly List<object> _history = new List<object>();
+        readonly List<object> _group = new List<object>();
 
         readonly FieldInfo groupByField;
         readonly Regex groupByRegex;
@@ -33,7 +35,7 @@ namespace FDB.Editor
             }
             foreach (var attr in field.GetCustomAttributes<GroupByAttribute>())
             {
-                groupByField = itemType.GetField(attr.Field);                
+                groupByField = itemType.GetField(attr.Field);
                 if (groupByField == null)
                 {
                     Debug.LogWarning($"Field {attr.Field} not found in {itemType}");
@@ -53,12 +55,13 @@ namespace FDB.Editor
 
         public void Add(object model, out bool separate)
         {
-            var prev = _history.Count == 0 ? null : _history.Last();
+            var prev = _history.LastOrDefault();
             if (prev == null || groupByField == null)
             {
                 separate = false;
-            } else
-            {                
+            }
+            else
+            {
                 string group0 = Inspector.ToString(groupByField.GetValue(prev));
                 string group1 = Inspector.ToString(groupByField.GetValue(model));
                 if (groupByRegex != null)
@@ -69,12 +72,24 @@ namespace FDB.Editor
                 separate = group0 != group1;
             }
 
+            if (separate)
+            {
+                _group.Clear();
+                _group.AddRange(_history);
+                _history.Clear();
+            }
+
             _history.Add(model);
         }
 
-        public void OnGUI(float left)
+        public void OnGUI(float left, bool end, Func<float, IDisposable> tableLineScope)
         {
-            if (_history.Count == 0)
+            if (end)
+            {
+                _group.AddRange(_history);
+                _history.Clear();
+            }
+            if (_group.Count == 0)
             {
                 return;
             }
@@ -83,30 +98,44 @@ namespace FDB.Editor
                 return;
             }
 
-            using (new GUILayout.HorizontalScope())
+            using (tableLineScope.Invoke(left))
             {
-                GUILayout.Space(left);
                 foreach (var a in _aggregators)
                 {
+                    string result;
                     if (a.InitialType == null)
                     {
-                        GUILayout.Label($"{a.Name} = {Compute(_history, a.Func, a.InitialType)}");
-                    } else
+                        result = $"{a.Name} = {Compute(_group, a.Func, a.InitialType)}";
+                    }
+                    else
                     {
-                        GUILayout.Label($"{Compute(_history, a.Func, a.InitialType)}");
+                        result = $"{Compute(_group, a.Func, a.InitialType)}";
+                    }
+                    GUILayout.Label(result);
+                    var rect = GUILayoutUtility.GetLastRect();
+                    if (Event.current.type == EventType.ContextClick && rect.Contains(Event.current.mousePosition))
+                    {
+                        var menu = new GenericMenu();
+
+                        menu.AddItem(new GUIContent("Copy"), false, () =>
+                        {
+                            GUIUtility.systemCopyBuffer = result;
+                        });
+
+                        menu.ShowAsContext();
                     }
                 }
             }
 
-            _history.Clear();
+            _group.Clear();
         }
 
-        readonly object[] _pair = new object[2];
-        private object Compute(List<object> history, MethodInfo func, Type initialType)
+        static readonly object[] _pair = new object[2];
+        private static object Compute(List<object> history, MethodInfo func, Type initialType)
         {
             if (initialType == null)
             {
-                if (_history.Count == 0)
+                if (history.Count == 0)
                 {
                     return "Nil";
                 }
@@ -114,7 +143,7 @@ namespace FDB.Editor
                 for (var i = 1; i < history.Count; i++)
                 {
                     _pair[0] = acc;
-                    _pair[1] = _history[i];
+                    _pair[1] = history[i];
                     acc = func.Invoke(null, _pair);
                 }
                 return acc;
@@ -124,7 +153,7 @@ namespace FDB.Editor
                 for (var i = 0; i < history.Count; i++)
                 {
                     _pair[0] = acc;
-                    _pair[1] = _history[i];
+                    _pair[1] = history[i];
                     acc = func.Invoke(null, _pair);
                 }
                 return acc;

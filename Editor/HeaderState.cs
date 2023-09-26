@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public abstract class HeaderState
+    public abstract partial class HeaderState
     {
         public readonly string Path;
         public readonly string Title;
@@ -51,6 +51,7 @@ namespace FDB.Editor
                 PlayerPrefs.SetInt(Path, value);
             }
         }
+        public bool ExpandWidth;
     }
 
     public abstract class FieldHeaderState : HeaderState
@@ -74,8 +75,10 @@ namespace FDB.Editor
     public sealed class RefFieldHeaderState : FieldHeaderState
     {
         public readonly Type ModelType;
+        public readonly AutoRefAttribute AutoRef;
         public RefFieldHeaderState(string path, FieldInfo field) : base(path, field) {
             ModelType = field.FieldType.GetGenericArguments()[0];
+            AutoRef = field.GetCustomAttribute<AutoRefAttribute>();
         }
 
         public RefFieldHeaderState(string path, Type modelType) : base(path, null)
@@ -108,7 +111,7 @@ namespace FDB.Editor
         public StringFieldHeaderState(string path, Type ownerType, FieldInfo field) : base(path, field) {
             if (field != null)
             {
-                var multilineAttr = field.GetCustomAttribute<MultilineText>();
+                var multilineAttr = field.GetCustomAttribute<MultilineTextAttribute>();
                 if (multilineAttr != null)
                 {
                     _minLines = multilineAttr.MinLines;
@@ -142,7 +145,10 @@ namespace FDB.Editor
 
     public sealed class AssetReferenceFieldHeaderState : FieldHeaderState
     {
-        public AssetReferenceFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+        public readonly Type AssetType;
+        public AssetReferenceFieldHeaderState(string path, FieldInfo field, Type assetType) : base(path, field) {
+            AssetType = assetType;
+        }
     }
 
     public sealed class ColorFieldHeaderState : FieldHeaderState

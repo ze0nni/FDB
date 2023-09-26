@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace FDB
 {
-    public sealed class DBResolver
+    public sealed partial class DBResolver
     {
         internal static DBResolver Current;
 
@@ -69,13 +69,16 @@ namespace FDB
             return db;
         }
 
+        private List<Index> _indexes = new List<Index>();
         private Dictionary<Type, Index> _indexByType = new Dictionary<Type, Index>();
         readonly List<(object Model, FieldInfo Field, string RefValue)> _fields = new List<(object, FieldInfo, string)>();
         readonly Dictionary<object, List<string>> _listRef = new Dictionary<object, List<string>>();
-        public object Model { get; private set; }
+        public object DB { get; private set; }
+        public IReadOnlyList<Index> Indexes => _indexes;
 
         internal void SetDB(object db)
         {
+            DB = db;
             foreach (var field in db.GetType().GetFields())
             {
                 if (field.FieldType.IsGenericType
@@ -90,6 +93,7 @@ namespace FDB
 
                     var modelType = field.FieldType.GetGenericArguments()[0];
                     _indexByType[modelType] = index;
+                    _indexes.Add(index);
                 }
             }
         }
@@ -111,8 +115,33 @@ namespace FDB
 
         public static object Instantate(Type modelType, bool asNew)
         {
-            var model = Activator.CreateInstance(modelType);
+            var model = Activator.CreateInstance(Wrap(modelType));
             Instantate(model, asNew);
+            if (asNew)
+            {
+                Invalidate(model);
+            }
+            return model;
+        }
+
+        public static object Instantate(Type modelType, string kindValue)
+        {
+            var model = Activator.CreateInstance(Wrap(modelType));
+            Instantate(model, true);
+
+            var kindType = typeof(Kind<>).MakeGenericType(modelType);
+            var kind = (Kind)Activator.CreateInstance(kindType, new object[] { kindValue });
+            var kindField = modelType.GetField("Kind");
+            kindField.SetValue(model, kind);
+
+            return model;
+        }
+
+        public static T Instantate<T>()
+        {
+            var type = Wrap(typeof(T));
+            var model = (T)Activator.CreateInstance(type);
+            Instantate(model, true);
             return model;
         }
 
@@ -120,6 +149,11 @@ namespace FDB
         {
             foreach (var field in model.GetType().GetFields())
             {
+                if (field.FieldType == typeof(string) && field.GetValue(model) == null)
+                {
+                    field.SetValue(model, string.Empty);
+                }
+
                 if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                 {
                     var list = field.GetValue(model);
@@ -157,6 +191,12 @@ namespace FDB
                     }
                 }
             }
+        }
+
+        public static Ref CreateRef(DBResolver resolver, Type configType, object config)
+        {
+            var refType = typeof(Ref<>).MakeGenericType(configType);
+            return (Ref)Activator.CreateInstance(refType, new object[] { resolver, config });
         }
 
         internal void Resolve()
@@ -201,7 +241,8 @@ namespace FDB
 
         public Index GetIndex(Type indexType)
         {
-            return _indexByType[indexType];
+            _indexByType.TryGetValue(indexType, out var index);
+            return index;
         }
 
         public object GetConfig<T>(string kind)
@@ -211,7 +252,11 @@ namespace FDB
 
         public object GetConfig(Type configType, string kind)
         {
-            _indexByType[configType].TryGet(kind, out var config);
+            if (!_indexByType.TryGetValue(configType, out var index))
+            {
+                return null;
+            }
+            index.TryGet(kind, out var config);
             return config;
         }
 

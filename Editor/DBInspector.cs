@@ -3,38 +3,74 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Linq;
 
 namespace FDB.Editor
 {
     public partial class DBInspector<T> : EditorWindow
     {
-        public const int MenuSize = 25;
+        public const int MenuSize = 35;
         public const int GroupSpace = 25;
 
         InputState _input;
 
         long _dbVersion;
-        int _pageIndex;
-        Dictionary<object, int> _expandedItems = new Dictionary<object, int>();
+        bool _needRepaint;
 
+        Action _makeDirty;
         public void MakeDirty()
         {
+            _needRepaint = true;
             GUI.changed = true;
             EditorDB<T>.SetDirty();
         }
 
+        void OnEnable()
+        {
+            _makeDirty = MakeDirty;
+            InitStatic();
+            InitPersistanceData();
+        }
+
+        void OnDisable()
+        {
+            if (_autoSave && EditorDB<T>.IsDirty)
+            {
+                EditorDB<T>.Save();
+            }
+        }
+
+        private void OnProjectChange()
+        {
+            if (_autoSave && EditorDB<T>.IsDirty)
+            {
+                EditorDB<T>.Save();
+            }
+        }
+
         private void Update()
         {
+            var changed = false;
             if (_dbVersion != EditorDB<T>.Version)
             {
                 _dbVersion = EditorDB<T>.Version;
+                changed = true;
+            }
+            if (_needRepaint)
+            {
+                _needRepaint = false;
+                changed = true;
+            }
+
+            if (changed)
+            {
                 Repaint();
             }
         }
 
         void OnGUI()
         {
-            if (!InitStatic())
+            if (!OnValidateGUI())
             {
                 return;
             }
@@ -43,62 +79,99 @@ namespace FDB.Editor
 
             if (_pageStates == null || _pageStates.Length == 0)
             {
-                GUILayout.Label("No indexes", GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                EditorGUILayout.HelpBox("No indexes", MessageType.Info);
             } else
             {
-                if (_pageIndex < 0 || _pageIndex >= _pageStates.Length)
+                var page = _pageStates[PageIndex];
+                var pagePersist = _persistantPageStates[PageIndex];
+
+                if (page.Errors.Count > 0)
                 {
-                    _pageIndex = 0;
-                }
-                var page = _pageStates[_pageIndex];
-
-                var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
-
-                using (new GUILayout.HorizontalScope())
-                {
-                    GUI.SetNextControlName("SearchFilter");
-                    page.Filter = EditorGUILayout.TextField(page.Filter ?? string.Empty, GUILayout.ExpandWidth(true));
-
-                    var e = Event.current;
-                    if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F && e.modifiers == EventModifiers.Control)
+                    foreach (var w in page.Errors)
                     {
-                        GUI.FocusControl("SearchFilter");
-                        GUI.changed = true;
+                        EditorGUILayout.HelpBox(w, MessageType.Error);
+                    }
+                    GUILayout.FlexibleSpace();
+                }
+                else
+                {
+                    var pageId = GUIUtility.GetControlID(page.ModelType.GetHashCode(), FocusType.Passive);
+
+                    using (var scroll = new GUILayout.ScrollViewScope(pagePersist.Position,
+                        GUILayout.ExpandWidth(true),
+                        GUILayout.ExpandHeight(true)))
+                    {
+                        var index = page.ResolveModel(EditorDB<T>.DB);
+                        var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, pagePersist.Filter);
+
+                        if (page.IsPaintedOnce && _input.Type != InputState.Target.ResizeHeader)
+                        {
+                            pagePersist.Position = scroll.scrollPosition;
+                        }
+
+                        if (changed)
+                        {
+                            MakeDirty();
+                        }
+                    }
+                    var hasWarnings =
+                        EditorDB<T>.Resolver.Indexes.Any(i => i.Warnings.Count > 0)
+                        || _pageStates.Any(s => s.Errors.Count > 0);
+                    if (hasWarnings)
+                    {
+                        using (new GUILayout.VerticalScope(GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight * 5)))
+                        {
+                            using (var scrollView = new GUILayout.ScrollViewScope(_warningsScrollPosition))
+                            {
+                                foreach (var s in _pageStates)
+                                {
+                                    foreach (var e in s.Errors)
+                                    {
+                                        EditorGUILayout.HelpBox(e, MessageType.Error);
+                                    }
+                                }
+
+                                var color = GUI.color;
+                                GUI.color = Color.yellow;
+                                foreach (var index in EditorDB<T>.Resolver.Indexes)
+                                {
+                                    foreach (var w in index.Warnings)
+                                    {
+                                        GUILayout.Label($"[{index.ConfigType.Name}] {w}");
+                                    }
+                                }
+                                GUI.color = color;
+                                _warningsScrollPosition = scrollView.scrollPosition;
+                            }
+                        }
                     }
                 }
 
-                using (var scroll = new GUILayout.ScrollViewScope(page.Position,
-                    GUILayout.ExpandWidth(true),
-                    GUILayout.ExpandHeight(true)))
-                {
-                    var index = page.ResolveModel(EditorDB<T>.DB);
-                    var changed = OnTableGui(0, page.Aggregator, page.Headers, page.IndexType, index, page.Filter);
-                    page.Position = scroll.scrollPosition;
-
-                    if (changed)
+                var pages = _pageStates
+                    .Select(s =>
                     {
-                        MakeDirty();
-                    }
-                }
-                using (new GUILayout.VerticalScope())
+                        var index = EditorDB<T>.Resolver.GetIndex(s.ModelType);
+                        return new GUIContent
+                        {
+                            text = s.Title,
+                            image =
+                                s.Errors.Count > 0 ? FDBEditorIcons.ErrorIcon
+                                : index.Warnings.Count > 0 ? FDBEditorIcons.ConflictIcon
+                                : null
+                        };
+                    }).ToArray();
+
+                var newPageIndex = GUILayout.Toolbar(PageIndex, pages);
+                if (PageIndex != newPageIndex)
                 {
-                    var color = GUI.color;
-                    GUI.color = Color.yellow;
-
-                    foreach (var w in EditorDB<T>.Resolver.GetIndex(page.ModelType).Warnings)
-                    {
-                        GUILayout.Label(w);
-                    }
-
-                    GUI.color = color;
-                }
-
-                var newPageIndex = GUILayout.Toolbar(_pageIndex, _pageNames);
-                if (_pageIndex != newPageIndex)
-                {
-                    _pageIndex = newPageIndex;
+                    PageIndex = newPageIndex;
                     GUI.FocusControl(null);
                     GUI.changed = true;
+                }
+
+                if (Event.current.type == EventType.Repaint)
+                {
+                    page.IsPaintedOnce = true;
                 }
             }
             OnActionsGui();
@@ -106,9 +179,11 @@ namespace FDB.Editor
 
         void OnToolbarGui()
         {
-            using (new GUILayout.HorizontalScope())
+            var e = Event.current;
+
+            using (new GUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                if (GuiButton("Save", EditorDB<T>.IsDirty))
+                if (GuiButton("Save", EditorDB<T>.IsDirty, EditorStyles.toolbarButton))
                 {
                     Invoke("Save", () => EditorDB<T>.Save());
                 }
@@ -120,10 +195,35 @@ namespace FDB.Editor
                 //}
                 //GuiButton("Redo", false);
 
-                PushGuiColor(Color.red);
-                if (GuiButton("Reset", true))
+                if (PageIndex == -1)
                 {
-                    Invoke("Load", () =>
+                    GUILayout.FlexibleSpace();
+                } else
+                {
+                    var pagePersist = _persistantPageStates[PageIndex];
+
+                    using (new GUILayout.HorizontalScope())
+                    {
+                        GUI.SetNextControlName("SearchFilter");
+                        pagePersist.Filter = EditorGUILayout.TextField(
+                            pagePersist.Filter ?? string.Empty,
+                            EditorStyles.toolbarSearchField,
+                            GUILayout.ExpandWidth(true));
+
+                        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.F && e.modifiers == EventModifiers.Control)
+                        {
+                            GUI.FocusControl("SearchFilter");
+                            GUI.changed = true;
+                        }
+                    }
+                }
+
+                _autoSave = GUILayout.Toggle(_autoSave, "Auto save", GUILayout.ExpandWidth(false));
+
+                PushGuiColor(Color.red);
+                if (GuiButton("Reload", true, EditorStyles.toolbarButton))
+                {
+                    Invoke("Reload", () =>
                     {
                         EditorDB<T>.Load();
                     });
@@ -131,7 +231,6 @@ namespace FDB.Editor
                 PopGuiColor();
             }
 
-            var e = Event.current;
             if (e.type == EventType.KeyDown
                 && e.keyCode == KeyCode.Z
                 && e.modifiers == EventModifiers.Control)
@@ -144,21 +243,26 @@ namespace FDB.Editor
             }
         }
 
+        private int _pageRowsCounter = 0;
+
         bool OnTableGui(int left, Aggregator aggregator, HeaderState[] headers, Type type, object model, string filter)
-        {            
+        {
+            _pageRowsCounter = 0;
+
             var changed = false;
             OnHeadersGui(left, headers);
             changed |= OnItemsGui(left, aggregator, headers, type, model, filter);
-            OnPageActionsGui(left, headers, model);
+            if (string.IsNullOrEmpty(filter))
+            {
+                OnPageActionsGui(left, headers, model);
+            }
             return changed;
         }
         
         void OnHeadersGui(int left, HeaderState[] headers)
         {
-            using (new GUILayout.HorizontalScope())
+            using (new TableRowGUILayout(this, left + MenuSize))
             {
-                GUILayout.Space(left + MenuSize);
-
                 var e = Event.current;
 
                 foreach (var header in headers)
@@ -167,7 +271,7 @@ namespace FDB.Editor
                     {
                         GUILayout.Space(GroupSpace);
                     }
-                    GUILayout.Box(header.Title, GUILayout.Width(header.Width));
+                    GUILayout.Box(header.Title, FDBEditorStyles.HeaderStyle, GUILayout.Width(header.Width));
                     var labelRect = GUILayoutUtility.GetLastRect();
                     var resizeRect = new Rect(labelRect.xMax - 5, labelRect.y, 10, labelRect.height);
                     EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeHorizontal);
@@ -181,7 +285,7 @@ namespace FDB.Editor
                     {
                         case InputState.Target.Free:
                             {
-                                if (e.GetTypeForControl(id) == EventType.MouseDown && resizeRect.Contains(e.mousePosition))
+                                if (e.type == EventType.MouseDown && resizeRect.Contains(e.mousePosition))
                                 {
                                     _input = new InputState
                                     {
@@ -192,6 +296,10 @@ namespace FDB.Editor
                                     };
                                     e.Use();
                                 }
+                                if (e.type == EventType.ContextClick && labelRect.Contains(e.mousePosition))
+                                {
+                                    ShowHeaderContextMenu(header);
+                                }
                             }
                             break;
                         case InputState.Target.ResizeHeader:
@@ -200,6 +308,7 @@ namespace FDB.Editor
                                 {
                                     switch (e.GetTypeForControl(id)) {
                                         case EventType.MouseDrag:
+                                        case EventType.DragUpdated:
                                             {
                                                 var delta = e.mousePosition.x - _input.ResizeStartX;
                                                 header.Width = (int)Math.Max(20, _input.ResizeStartWidth + delta);
@@ -208,8 +317,12 @@ namespace FDB.Editor
                                             }
                                             break;
                                         case EventType.MouseUp:
+                                        case EventType.MouseDown:
+                                        case EventType.MouseLeaveWindow:
+                                        case EventType.DragExited:
                                             {
                                                 _input = default;
+                                                GUI.changed = true;
                                                 e.Use();
                                             }
                                             break;
@@ -238,13 +351,12 @@ namespace FDB.Editor
         {
             var changed = false;
 
-            aggregator.Clear();
-
             var itemIndex = 0;
 
             switch (collection)
             {
                 case Index index:
+                    aggregator.Clear();
                     foreach (var i in index.All())
                     {
                         aggregator.Add(i, out var separate);
@@ -255,7 +367,7 @@ namespace FDB.Editor
 
                         if (string.IsNullOrEmpty(filter) && separate)
                         {
-                            aggregator.OnGUI(left + MenuSize);
+                            aggregator.OnGUI(left + MenuSize, false, TableLineScope);
                             GUILayout.Space(GroupSpace);
                         }
 
@@ -263,6 +375,7 @@ namespace FDB.Editor
                         changed |= OnExpandedGui(left, headers, i);
                         itemIndex++;
                     }
+                    aggregator.OnGUI(left + MenuSize, true, TableLineScope);
                     if (changed)
                     {
                         index.SetDirty();
@@ -284,6 +397,8 @@ namespace FDB.Editor
                             var itemProp = list.GetType().GetProperty("Item");
 
                             var count = (int)countProp.GetValue(list);
+
+                            aggregator.Clear();
                             for (itemIndex = 0; itemIndex < count; itemIndex++)
                             {
                                 indexParamas[0] = itemIndex;
@@ -293,22 +408,23 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left + MenuSize);
+                                    aggregator.OnGUI(left + MenuSize, false, TableLineScope);
                                     GUILayout.Space(GroupSpace);
                                 }
 
-                                using (new GUILayout.HorizontalScope())
+                                using (new TableRowGUILayout(this, left))
                                 {
-                                    GUILayout.Space(left);
                                     OnIndexMenuGUI(list, itemIndex);
-                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value);
-                                    if (!newValue.Equals(value))
+                                    EditorGUI.BeginChangeCheck();
+                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, 0, _makeDirty);
+                                    if (EditorGUI.EndChangeCheck())
                                     {
                                         itemProp.SetValue(list, newValue, indexParamas);
                                         changed |= true;
                                     }
                                 }
                             }
+                            aggregator.OnGUI(left + MenuSize, true, TableLineScope);
                         }
                         else
                         {
@@ -318,7 +434,7 @@ namespace FDB.Editor
 
                                 if (separate)
                                 {
-                                    aggregator.OnGUI(left + MenuSize);
+                                    aggregator.OnGUI(left + MenuSize, false, TableLineScope);
                                     GUILayout.Space(GroupSpace);
                                 }
 
@@ -326,6 +442,7 @@ namespace FDB.Editor
                                 changed |= OnExpandedGui(0, headers, i);
                                 itemIndex++;
                             }
+                            aggregator.OnGUI(left + MenuSize, true, TableLineScope);
                         }
                     }
                     break;
@@ -334,31 +451,64 @@ namespace FDB.Editor
                     break;
             }
 
-            aggregator.OnGUI(left + MenuSize);
-
             return changed;
         }
 
-        void ToggleExpandedState(object item, int index)
+        void ToggleExpandedState(object item, HeaderState header)
         {
-            if (_expandedItems.TryGetValue(item, out var storedIndex) && storedIndex == index)
+            if (!DBResolver.GetGUID(item, out var guid))
             {
-                _expandedItems.Remove(item);
+                return;
+            }
+
+            if (_expandedFields.TryGetValue(guid, out var storedField) && storedField == header.Title)
+            {
+                _expandedFields.Remove(guid);
+                _expandedOrder.Remove(guid);
             }
             else
             {
-                _expandedItems[item] = index;
+                _expandedFields[guid] = header.Title;
+                _expandedOrder.Remove(guid);
+                _expandedOrder.Add(guid);
+            }
+
+            while (_expandedOrder.Count > MaxExpandedHistory)
+            {
+                _expandedFields.Remove(_expandedOrder[0]);
+                _expandedOrder.RemoveAt(0);
             }
 
             GUI.changed = true;
         }
 
+        bool TryGetExpandedHeader(object item, HeaderState[] headers, out HeaderState header)
+        {
+            if (!DBResolver.GetGUID(item, out var guid)
+                || !_expandedFields.TryGetValue(guid, out var field))
+            {
+                header = null;
+                return false;
+            }
+
+            foreach (var h in headers)
+            {
+                if (h.Title == field)
+                {
+                    header = h;
+                    return true;
+                }
+            }
+
+            header = null;
+            return false;
+        }
+
         bool OnExpandedGui(int left, HeaderState[] headers, object item)
         {
             var changed = false;
-            if (_expandedItems.TryGetValue(item, out var expandIndex))
+            if (TryGetExpandedHeader(item, headers, out var header))
             {
-                var header = headers[expandIndex];
                 switch (header)
                 {
                     case ListHeaderState listHeader:
@@ -389,10 +539,9 @@ namespace FDB.Editor
         {
             var changed = false;
 
-            using (new GUILayout.HorizontalScope())
+            using (new TableRowGUILayout(this, left))
             {
                 var id = GUIUtility.GetControlID(item.GetHashCode(), FocusType.Passive);
-                GUILayout.Space(left);
 
                 OnIndexMenuGUI(collection, collectionIndex);
                 for (var i = 0; i < headers.Length; i++)
@@ -411,8 +560,13 @@ namespace FDB.Editor
 
         void OnIndexMenuGUI(object collection, int itemIndex)
         {
-            GUILayout.Label("...", GUILayout.Width(MenuSize));
+            var originIconsSize = EditorGUIUtility.GetIconSize();
+            EditorGUIUtility.SetIconSize(Vector2.one * 16);
+            GUILayout.Label(FDBEditorIcons.RowAction, GUILayout.Width(MenuSize - 5));
+            EditorGUIUtility.SetIconSize(originIconsSize);
+
             var menuRect = GUILayoutUtility.GetLastRect();
+
             EditorGUIUtility.AddCursorRect(menuRect, MouseCursor.SplitResizeUpDown);
 
             var e = Event.current;
@@ -502,7 +656,7 @@ namespace FDB.Editor
                     EditorGUI.BeginChangeCheck();
 
                     var value = fieldHeader.Field.GetValue(owner);
-                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value);
+                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value, 0, _makeDirty);
                     var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
 
                     if (EditorGUI.EndChangeCheck())
@@ -514,9 +668,20 @@ namespace FDB.Editor
                     break;
 
                 case ListHeaderState listHeader:
-                    if (GUILayout.Button($"[...]", GUILayout.Width(header.Width)))
                     {
-                        ToggleExpandedState(owner, headerIndex);
+                        DBResolver.GetGUID(owner, out var guid);
+                        _expandedFields.TryGetValue(guid, out var fieldName);
+                        var isExpanded = fieldName == header.Title;
+
+                        var list = (IList)listHeader.Field.GetValue(owner);
+                        if (GUILayout.Button(
+                            isExpanded 
+                                ? " [...]" 
+                                : $"[ {list.Count} : {listHeader.ItemType.Name} ]",
+                            GUILayout.Width(header.Width)))
+                        {
+                            ToggleExpandedState(owner, header);
+                        }
                     }
                     break;
             }
@@ -564,6 +729,61 @@ namespace FDB.Editor
                         MakeDirty();
                     });
                 }
+            }
+        }
+
+        void ShowHeaderContextMenu(HeaderState header)
+        {
+            var menu = new GenericMenu();
+            var persistanceState = _persistantPageStates[PageIndex];
+
+            menu.AddItem(new GUIContent("Reset size"), false, () => {
+                var delta = 150 - header.Width;
+                header.Width = 150;
+                persistanceState.Position.x += delta;
+                GUI.changed = true;
+            });
+            menu.AddItem(new GUIContent("Expand"), false, () => {
+                var delta = header.Width;
+                header.Width *= 2;
+                persistanceState.Position.x += delta;
+                GUI.changed = true;
+            });
+
+            menu.ShowAsContext();
+        }
+
+        private IDisposable TableLineScope(float left)
+        {
+            return new TableRowGUILayout(this, left);
+        }
+
+        private struct TableRowGUILayout : IDisposable
+        {
+            readonly DBInspector<T> _inspector;
+            readonly int _rowIndex;
+
+            readonly GUILayout.HorizontalScope _scope;
+            readonly GUILayout.HorizontalScope _innerScope;
+
+            public TableRowGUILayout(DBInspector<T> inspector, float left)
+            {
+                _inspector = inspector;
+                _rowIndex = _inspector._pageRowsCounter++;
+                var style =
+                    _rowIndex % 2 == 0
+                    ? FDBEditorStyles.EvenRowStyle
+                    : FDBEditorStyles.OddRowStyle;
+               
+                _scope = new GUILayout.HorizontalScope();
+                GUILayout.Space(left);
+                _innerScope = new GUILayout.HorizontalScope(style);
+            }
+
+            public void Dispose()
+            {
+                _innerScope.Dispose();
+                _scope.Dispose();
             }
         }
     }

@@ -1,5 +1,5 @@
 using System;
-using UnityEngine;
+using System.Collections.Generic;
 
 namespace FDB.Editor
 {
@@ -10,10 +10,10 @@ namespace FDB.Editor
         public Type ModelType;
         public Func<object, object> ResolveModel;
 
-        public Vector2 Position;
-        public string Filter;
         public Aggregator Aggregator;
 
         public HeaderState[] Headers;
+        public List<string> Errors;
+        public bool IsPaintedOnce;
     }
 }

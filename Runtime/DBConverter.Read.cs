@@ -24,7 +24,7 @@ namespace FDB
 
             var model = (T)DBResolver.Instantate(typeof(T), false);
 
-            Contract.Assert(reader.TokenType == JsonToken.StartObject);            
+            Contract.Assert(reader.TokenType == JsonToken.StartObject);
 
             while (reader.Read())
             {
@@ -105,6 +105,7 @@ namespace FDB
 
         object ReadObject(DBResolver resolver, JsonReader reader, Type type)
         {
+            type = DBResolver.Wrap(type);
             var obj = DBResolver.Instantate(type, false);
             
             if (reader.TokenType == JsonToken.Null || reader.TokenType == JsonToken.Undefined)
@@ -123,7 +124,10 @@ namespace FDB
                             var field = type.GetField(fieldName);
                             if (field == null)
                             {
-                                Debug.LogWarning($"field {fieldName} not found in {type.FullName}");
+                                if (fieldName != DBResolver.__GUID)
+                                {
+                                    Debug.LogWarning($"field {fieldName} not found in {type.FullName}");
+                                }
                                 reader.Skip();
                                 break;
                             }
@@ -142,10 +146,10 @@ namespace FDB
                                         break;
                                     default:
                                         throw new ArgumentException($"Unexcepted token {reader.TokenType}");
-                                }                                
+                                }
                             } else {
                                 field.SetValue(obj, ReadValue(resolver, reader, field.FieldType));
-                            }                            
+                            }
                             break;
                         }
 
@@ -156,8 +160,10 @@ namespace FDB
                         throw new ArgumentException($"Unexcepted token {reader.TokenType}");
                 }
             }
-            endObject:
+        endObject:
             Contract.Assert(reader.TokenType == JsonToken.EndObject);
+
+            DBResolver.Invalidate(obj);
 
             return obj;
         }
@@ -172,6 +178,22 @@ namespace FDB
                     Contract.Assert(reader.TokenType == JsonToken.String);
 
                     return Activator.CreateInstance(type, reader.Value.ToString());
+                }
+                else if (genericType == typeof(AssetReferenceT<>))
+                {
+                    switch (reader.TokenType)
+                    {
+                        case JsonToken.Undefined:
+                        case JsonToken.Null:
+                            return null;
+                        case JsonToken.String:
+                            var assetType = type.GetGenericArguments()[0];
+                            var assetReferenceType = typeof(AssetReferenceT<>).MakeGenericType(assetType);
+                            return Activator.CreateInstance(assetReferenceType, reader.Value);
+                        default:
+                            throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+
+                    }
                 }
                 else if (genericType == typeof(List<>))
                 {

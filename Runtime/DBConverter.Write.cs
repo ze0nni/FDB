@@ -16,9 +16,11 @@ namespace FDB
             throw new NotImplementedException();
     }
 #else
+        public static bool HasChanges = false;
+
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            writer.WriteStartObject();            
+            writer.WriteStartObject();
 
             var type = value.GetType();
             foreach (var field in type.GetFields())
@@ -48,8 +50,16 @@ namespace FDB
             writer.WriteEndArray();
         }
 
-        void WriteObject(JsonWriter writer, object model)
+        void WriteObject(JsonWriter writer, object originModel)
         {
+            var model = DBResolver.WrapObj(originModel);
+            var changed = DBResolver.Invalidate(model);
+
+            if (model != originModel || changed)
+            {
+                HasChanges = true;
+            }
+
             writer.WriteStartObject();
 
             foreach (var field in model.GetType().GetFields())
@@ -70,9 +80,24 @@ namespace FDB
                 {
                     var kind = (Kind)value;
                     writer.WriteValue(kind.Value ?? string.Empty);
-                } else if (genericType == typeof(Ref<>)) {
+                }
+                else if (genericType == typeof(Ref<>))
+                {
                     writer.WriteValue(((Ref)value).Kind.Value);
-                } else if (genericType == typeof(List<>))
+                }
+                else if (genericType == typeof(AssetReferenceT<>))
+                {
+                    var r = (AssetReference)value;
+                    if (r != null && r.editorAsset != null)
+                    {
+                        writer.WriteValue(r.AssetGUID);
+                    }
+                    else
+                    {
+                        writer.WriteNull();
+                    }
+                }
+                else if (genericType == typeof(List<>))
                 {
                     var itemType = type.GetGenericArguments()[0];
                     var collection = (IEnumerable)value;

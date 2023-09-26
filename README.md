@@ -4,6 +4,20 @@
 
 Static structured database for Unity. I create this project inspired by [CastleDB](http://castledb.org/).
 
+- [Install](./Doc/Install/README.md)
+- [How to use](#how-to-use)
+- [Get prefab from config](#get-prefab-from-config)
+- [Supported types](#supported-types)
+- [Editor tools](#editor-tools)
+- Attributes
+    - [Space](#space-attribute)
+    - [GroupBy](#groupby-attribute)
+    - [Aggregate](#aggregate-attribute)
+    - [MultilineText](#multilinetext-attribute)
+    - [AutoRef](#autoref-attribute)
+- [__GUID field](#__guid-field)
+- [FuryDB Components](#furydb-components)
+
 # How to use
 
 First [Install FDB](./Doc/Install/README.md). Create your database class `DB.cs`:
@@ -38,7 +52,7 @@ public class DBWindow : DBInspector<DB>
 
 ```
 
-Then open **Game -> DB** and look at window. Now you have empty database.
+Then open menu **Game -> DB** and look at window. Now you have empty database.
 
 ![New window](./Doc/2.png)
 
@@ -91,7 +105,10 @@ public class TextConfig
 }
 ```
 
-And fill database with data. Don't forget press **Save**
+> [!IMPORTANT]  
+> Every class in Index must contains field `Kind`
+
+And fill database with data.
 
 ![Units](./Doc/3.png)
 ![Weapons](./Doc/4.png)
@@ -118,12 +135,75 @@ class Boot {
     public static DB DB { get; private set; }
     void Awake() {
         DB = DBResolver.Load<DB>();
-        var rogue = DB.Units.Get(Kinds.Units.rogue);
+        var rogue = DB.Units.Get(Kinds.Units.Rogue);
     }
 }
 ```
 
-For read and edit database from editor use `EditorDB<DB>`
+# Get prefab from config
+
+If you need attach prefab MonoBehaviour(Prefab) or ScriptableObject to your config you need [Addressables](https://docs.unity3d.com/Manual/com.unity.addressables.html) and types `AssetReference` or `AssetReferenceT<>`
+
+Well you have prefab
+
+![Text](./Doc/15.png)
+
+Browse prefab in hierarchy window and turn on toggle `Addressable`
+
+![Text](./Doc/16.png)
+
+Add field `Prefab` in UnitConfig
+```
+public class UnitConfig
+{
+    public Kind<UnitConfig> Kind;
+    public Ref<TextConfig> Name;
+    public AssetReference Prefab; // <<<<
+
+    [Space]
+    public int Str;
+    public int Dex;
+    public int Int;
+    public int Chr;
+
+    [Space]
+    public Ref<WeaponConfig> Weapon;
+}
+```
+
+And drag prefab into unit field
+
+![Text](./Doc/17.png)
+
+Add code for load prefab int Boot
+```
+class Boot : MonoBehaviour
+{
+    public static DB DB { get; private set; }
+
+    private async void Awake()
+    {
+        DB = DBResolver.Load<DB>();
+        var warrior = DB.Units[Kinds.Units.Warrior];
+        var prefab = await warrior.Prefab.InstantiateAsync().Task;
+    }
+}
+```
+
+Run game and look to result.
+
+![Text](./Doc/18.png)
+
+Read more about addressable and resource management in Internet.
+
+# Editor tools
+
+For read and edit database from editor use `EditorDB<DB>.DB`
+
+> [!WARNING]  
+> EditorDB available only in `UNITY_EDITOR`
+
+When you modify some data from `EditorDB<DB>` call `EditorDB<DB>.SetDirty()`
 
 ## Supported types
 
@@ -137,6 +217,11 @@ For read and edit database from editor use `EditorDB<DB>`
 - List<>
 - Ref<>
 - AssetReference
+- AssetReferenceT<>
+
+In planes:
+- TimeSpan
+- DateTime
 
 ## Space Attribute
 
@@ -197,34 +282,24 @@ public class UnitConfig
 ```DB.cs
 public class DB
 {
-    //...
-    [Aggregate("GeWeapontStatistics", typeof(WeaponAgg))]
-    public Index<WeaponConfig> Weapons;
+    [GroupBy("Kind", @"(.+?)_")]
+    [Aggregate(nameof(CalcTextChars), typeof(TextAgg))]
+    public Index<TextConfig> Texts;
 
-    private static WeaponAgg GeWeapontStatistics(WeaponAgg agg, WeaponConfig config)
+    private static TextAgg CalcTextChars(TextAgg agg, TextConfig config)
     {
-        agg.Total++;
-        switch (config.Type)
-        {
-            case WeaponType.Melee:
-                agg.Melee++;
-                break;
-            case WeaponType.Range:
-                agg.Range++;
-                break;
-        }
-
+        agg.EnChars += config.En.Length;
+        agg.RuChars += config.Ru.Length;
         return agg;
     }
-    private class WeaponAgg
-    {
-        public int Total;
-        public int Melee;
-        public int Range;
 
+    private class TextAgg
+    {
+        public int EnChars;
+        public int RuChars;
         public override string ToString()
         {
-            return $"Total {Total}\nMelee {Melee}\nRange {Range}";
+            return $"EN chars = {EnChars}\nRU chars = {RuChars}";
         }
     }
 }
@@ -238,43 +313,61 @@ public class DB
 public class TextConfig
 {
     public Kind<TextConfig> Kind;
-
     [MultilineText(MinLines = 3, Condition = "IsMultiline")]
     public string En;
     [MultilineText(MinLines = 3, Condition = "IsMultiline")]
     public string Ru;
 
-    private static bool IsMultiline(TextConfig config)
+    static bool IsMultiline(TextConfig config)
     {
-        return config.Kind.Value != null &&
-            config.Kind.Value.EndsWith("_text");
+        var kind = config.Kind.Value;
+        if (kind == null)
+            return false;
+        return kind.Contains("Description_");
     }
 }
 ```
 
 ![Text](./Doc/9.png)
 
-## TextComponentBase
+## AutoRef Attribute
 
-For convenient work with localization take TextComponentBase:
+You have a way to quickly create links to other tables an attribute `AutoRef`:
 
-```TextComponent.cs
-class TextComponent : TextComponentBase<DB, TextConfig> {
-    [SerializeField] Text _textUIComponent;
+```
+public class UnitConfig
+{
+    public Kind<UnitConfig> Kind;
+    [AutoRef(Prefix ="UnitName_")]
+    public Ref<TextConfig> Name;
 
-    // Path to database with TextConfig
-    protected override Index<TextConfig> Index => Boot.DB.Texts;
-    // The function of choosing localization
-    protected override string GetText(TextConfig config) => config.Ru;
-
-    protected override void Render(string text)
-    {
-        if (_textUIComponent)
-            _textUIComponent.text = text;
-    }
+    //
 }
 ```
 
-![Text](./Doc/10.png)
+![Text](./Doc/12.png)
 
-![Text](./Doc/11.png)
+Press "Create" and start edit TextConfg-record
+
+![Text](./Doc/13.png)
+
+New line insert in the end of group of same lines
+
+![Text](./Doc/14.png)
+
+## __GUID field
+
+You can declare filed `__GUID` in any object.
+
+```DB.cs
+class UserConfig {
+    public string __GUID; // Not visible in DBWindow but work!
+    public Kind<UserConfig> Kind;
+}
+```
+
+Field automatic fill GUID values
+
+# FuryDB Components
+
+Use [FuryDB Components](https://github.com/ze0nni/FuryDB.Components) package for integrate database with unity

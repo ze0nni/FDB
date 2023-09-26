@@ -1,24 +1,28 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
 
 namespace FDB
 {
     public interface Kind
     {
         string Value { get; }
+        bool CanExport { get; }
     }
 
     [Serializable]
     [JsonConverter(typeof(KindJsonConverter))]
     public readonly struct Kind<T> : Kind , IEquatable<Kind<T>>
     {
+        static Regex KindPatter = new Regex(@"^[a-zA-Z_][\w_]*$");
+
         public readonly string Value;
         public Kind(string value) => Value = value;
 
         string Kind.Value => Value ?? string.Empty;
+
+        public bool CanExport => Value != null && KindPatter.IsMatch(Value);
 
         public override string ToString()
         {

@@ -385,22 +385,7 @@ Field automatic fill GUID values
 
 # In the plans
 
-Add support for field types:
-- `TimeSpan`
-- `DateTime`
-
-Add attributes:
-- `ShowCondition` for hide field by condition
-- `Display` field for build preview when you look reference list
-- `Validate` attribute for add user rules to validate configs
-- `RequireAssetComponent` check that gameObject containst required component when you drag prefab to `AssetReference`
-
-DBWindow
-- Toggles for hide columns
-- Toggle to disable rows groupping
-- Undo/Redo
-- Drag-n-drop for rows
-- Improve work with multiline text fields
+See [projects](https://github.com/ze0nni/FDB/projects?query=is%3Aopen) with opened [issues](https://github.com/ze0nni/FDB/issues)
 
 # FuryDB Components
 

@@ -17,14 +17,25 @@ namespace FDB
             return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), out resolver);
         }
 
+        public static object LoadInternal(Type dbType, StreamReader tReader, out DBResolver resolver)
+        {
+            resolver = new DBResolver();
+            using (var jReader = new JsonTextReader(tReader))
+            {
+                var dbConverter = new DBConverter(dbType, resolver);
+                jReader.Read();
+                return dbConverter.Read(jReader);
+            }
+        }
+
         public static T LoadInternal<T>(StreamReader tReader, out DBResolver resolver)
         {
             resolver = new DBResolver();
             using (var jReader = new JsonTextReader(tReader))
             {
-                var dbConverter = new DBConverter<T>(resolver);
+                var dbConverter = new DBConverter(typeof(T), resolver);
                 jReader.Read();
-                return dbConverter.Read(jReader);
+                return (T)dbConverter.Read(jReader);
             }
         }
 
@@ -61,11 +72,13 @@ namespace FDB
         }
 
         private List<Index> _indexes = new List<Index>();
+        private List<string> _indexeNames = new List<string>();
         private Dictionary<Type, Index> _indexByType = new Dictionary<Type, Index>();
         readonly List<(object Model, FieldInfo Field, string RefValue)> _fields = new List<(object, FieldInfo, string)>();
         readonly Dictionary<object, List<string>> _listRef = new Dictionary<object, List<string>>();
         public object DB { get; private set; }
         public IReadOnlyList<Index> Indexes => _indexes;
+        public IReadOnlyList<string> IndexeNames => _indexeNames;
 
         internal void SetDB(object db)
         {
@@ -85,6 +98,7 @@ namespace FDB
                     var modelType = field.FieldType.GetGenericArguments()[0];
                     _indexByType[modelType] = index;
                     _indexes.Add(index);
+                    _indexeNames.Add(field.Name);
                 }
             }
         }

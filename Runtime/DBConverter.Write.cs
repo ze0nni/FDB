@@ -7,7 +7,7 @@ using UnityEngine.AddressableAssets;
 
 namespace FDB
 {
-    public sealed partial class DBConverter<T>
+    public sealed partial class DBConverter
     {
 
 #if !UNITY_EDITOR
@@ -16,12 +16,12 @@ namespace FDB
             throw new NotImplementedException();
     }
 #else
-        public static bool HasChanges = false;
+        public bool HasChanges { get; private set; }
 
-        public void Write(JsonWriter writer, T db)
+        public void Write(JsonWriter writer, object db)
         {
             writer.WriteStartObject();
-            foreach (var field in typeof(T).GetFields())
+            foreach (var field in _dbType.GetFields())
             {
                 var fieldType = field.FieldType;
                 if (fieldType.IsGenericType)

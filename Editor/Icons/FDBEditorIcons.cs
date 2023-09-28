@@ -7,6 +7,8 @@ namespace FDB.Editor
     {
         public static Texture2D Solid { get; private set; }
 
+        public static Texture2D Asset { get; private set; }
+
         public static Texture2D ConflictIcon { get; private set; }
         public static Texture2D ErrorIcon { get; private set; }
         public static Texture2D LinkIcon { get; private set; }
@@ -23,6 +25,8 @@ namespace FDB.Editor
         static FDBEditorIcons()
         {
             Solid = GetTexture("fdb-solid.png");
+
+            Asset = GetTexture("fdb-asset.png");
 
             ConflictIcon = GetTexture("fdb-conflict-icon.png");
             ErrorIcon = GetTexture("fdb-error-icon.png");

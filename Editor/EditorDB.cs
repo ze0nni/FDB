@@ -93,13 +93,12 @@ namespace FDB.Editor {
             var source = MetaData.SourcePath;
             Directory.CreateDirectory(Path.GetDirectoryName(source));
 
-            DBConverter<T>.HasChanges = false;
+            var dbConverter = new DBConverter(typeof(T), null);
             using (var tWriter = File.CreateText(source))
             {
                 using (var jWriter = new JsonTextWriter(tWriter))
                 {
                     jWriter.Formatting = Formatting.Indented;
-                    var dbConverter = new DBConverter<T>(null);
                     dbConverter.Write(jWriter, _db);
                 }
             }
@@ -112,7 +111,7 @@ namespace FDB.Editor {
             Version++;
             IsDirty = false;
 
-            if (DBConverter<T>.HasChanges)
+            if (dbConverter.HasChanges)
             {
                 Load();
             }

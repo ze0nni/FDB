@@ -7,17 +7,16 @@ using UnityEngine.AddressableAssets;
 
 namespace FDB
 {
-    public sealed partial class DBConverter<T>
+    public sealed partial class DBConverter
     {
-        public T Read(JsonReader reader)
+        public object Read(JsonReader reader)
         {
             if (_resolver == null)
             {
                 throw new InvalidOperationException($"Use {nameof(DBResolver)} for instantiate model");
             }
 
-            var objectType = typeof(T);
-            var model = (T)DBResolver.Instantate(typeof(T), false);
+            var db = DBResolver.Instantate(_dbType, false);
 
             Contract.Assert(reader.TokenType == JsonToken.StartObject);
 
@@ -28,10 +27,10 @@ namespace FDB
                     case JsonToken.PropertyName:
                         {
                             var fieldName = reader.Value.ToString();
-                            var field = objectType.GetField(fieldName);
+                            var field = _dbType.GetField(fieldName);
                             if (field == null)
                             {
-                                Debug.LogWarning($"field {fieldName} not found in {objectType.FullName}");
+                                Debug.LogWarning($"field {fieldName} not found in {_dbType.FullName}");
                                 reader.Skip();
 
                                 break;
@@ -41,11 +40,11 @@ namespace FDB
                             if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(Index<>))
                             {
                                 reader.Read();
-                                field.SetValue(model, ReadIndex(reader, fieldType));
+                                field.SetValue(db, ReadIndex(reader, fieldType));
                                 break;
                             }
 
-                            Debug.LogWarning($"field {fieldName} in {objectType.FullName} skipped");
+                            Debug.LogWarning($"field {fieldName} in {_dbType.FullName} skipped");
 
                             reader.Skip();
                             break;
@@ -62,10 +61,10 @@ namespace FDB
         endObject:
             Contract.Assert(reader.TokenType == JsonToken.EndObject);
 
-            _resolver.SetDB(model);
+            _resolver.SetDB(db);
             _resolver.Resolve();
 
-            return model;
+            return db;
         }
 
         object ReadIndex(JsonReader reader, Type indexType)

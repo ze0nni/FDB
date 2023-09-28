@@ -2,7 +2,6 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -91,17 +90,17 @@ namespace FDB.Editor {
                 return;
             }
 
-            var serializer = new JsonSerializer();
-            serializer.Formatting = Formatting.Indented;
             var source = MetaData.SourcePath;
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(source));
+            Directory.CreateDirectory(Path.GetDirectoryName(source));
 
             DBConverter<T>.HasChanges = false;
-            using (var writer = System.IO.File.CreateText(source))
+            using (var tWriter = File.CreateText(source))
             {
-                using (var jsonWriter = new JsonTextWriter(writer))
+                using (var jWriter = new JsonTextWriter(tWriter))
                 {
-                    serializer.Serialize(writer, _db);
+                    jWriter.Formatting = Formatting.Indented;
+                    var dbConverter = new DBConverter<T>(null);
+                    dbConverter.Write(jWriter, _db);
                 }
             }
 

@@ -14,7 +14,6 @@ namespace FDB.Editor
         List<string> _errors = new List<string>();
         Type _loadedModelType;
         FuryDBAttribute _fdbAttr;
-        JsonConverterAttribute _jsonAttr;
         string[] _pageNames;
         PageState[] _pageStates;
         Dictionary<Type, FieldInfo> _indexes = new Dictionary<Type, FieldInfo>();
@@ -45,16 +44,6 @@ namespace FDB.Editor
                 GUILayout.TextField("[FuryDB(\"Assets/Resources/DB.json.txt\", \"Assets/Kinds.cs\")]");
             }
 
-            if (_jsonAttr == null
-                || !_jsonAttr.ConverterType.IsGenericType
-                || _jsonAttr.ConverterType.GetGenericTypeDefinition() != typeof(DBConverter<>)
-                || _jsonAttr.ConverterType.GetGenericArguments()[0] != typeof(T))
-            {
-                ok = false;
-                GUILayout.Label("Add attribute");
-                GUILayout.TextField("[JsonConverter(typeof(DBConverter<" + typeof(T).Name + ">))]");
-            }
-
             if (_loadedModelType != typeof(T))
             {
                 ok = false;
@@ -71,7 +60,6 @@ namespace FDB.Editor
 
                 _loadedModelType = typeof(T);
                 _fdbAttr = _loadedModelType.GetCustomAttribute<FuryDBAttribute>();
-                _jsonAttr = _loadedModelType.GetCustomAttribute<JsonConverterAttribute>();
 
                 _indexes.Clear();
                 var indexList = new List<PageState>();

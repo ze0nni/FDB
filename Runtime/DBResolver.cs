@@ -12,28 +12,19 @@ namespace FDB
 {
     public sealed partial class DBResolver
     {
-        internal static DBResolver Current;
-
         public static T New<T>(out DBResolver resolver)
         {
             return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), out resolver);
         }
 
-        public static T LoadInternal<T>(StreamReader reader, out DBResolver resolver)
+        public static T LoadInternal<T>(StreamReader tReader, out DBResolver resolver)
         {
-            var serializer = new JsonSerializer();
-
             resolver = new DBResolver();
-            using (var jsonReader = new JsonTextReader(reader))
+            using (var jReader = new JsonTextReader(tReader))
             {
-                try
-                {
-                    Current = resolver;
-                    return serializer.Deserialize<T>(jsonReader);
-                } finally
-                {
-                    Current = null;
-                }
+                var dbConverter = new DBConverter<T>(resolver);
+                jReader.Read();
+                return dbConverter.Read(jReader);
             }
         }
 

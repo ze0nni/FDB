@@ -7,21 +7,16 @@ using UnityEngine.AddressableAssets;
 
 namespace FDB
 {
-    public sealed partial class DBConverter<T> : JsonConverter
+    public sealed partial class DBConverter<T>
     {
-        public override bool CanConvert(Type objectType)
+        public T Read(JsonReader reader)
         {
-            return objectType == typeof(T);
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            var resolver = DBResolver.Current;
-            if (resolver == null)
+            if (_resolver == null)
             {
                 throw new InvalidOperationException($"Use {nameof(DBResolver)} for instantiate model");
             }
 
+            var objectType = typeof(T);
             var model = (T)DBResolver.Instantate(typeof(T), false);
 
             Contract.Assert(reader.TokenType == JsonToken.StartObject);
@@ -46,7 +41,7 @@ namespace FDB
                             if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(Index<>))
                             {
                                 reader.Read();
-                                field.SetValue(model, ReadIndex(resolver, reader, fieldType));
+                                field.SetValue(model, ReadIndex(reader, fieldType));
                                 break;
                             }
 
@@ -67,13 +62,13 @@ namespace FDB
         endObject:
             Contract.Assert(reader.TokenType == JsonToken.EndObject);
 
-            resolver.SetDB(model);
-            resolver.Resolve();
+            _resolver.SetDB(model);
+            _resolver.Resolve();
 
             return model;
         }
 
-        object ReadIndex(DBResolver resolver, JsonReader reader, Type indexType)
+        object ReadIndex(JsonReader reader, Type indexType)
         {
             var modelType = indexType.GetGenericArguments()[0];
             var index = (Index)Activator.CreateInstance(indexType);
@@ -85,7 +80,7 @@ namespace FDB
                 {
                     case JsonToken.StartObject:
                         {
-                            index.Add(ReadObject(resolver, reader, modelType));
+                            index.Add(ReadObject(reader, modelType));
                         }
                         break;
 
@@ -103,7 +98,7 @@ namespace FDB
             return index;
         }
 
-        object ReadObject(DBResolver resolver, JsonReader reader, Type type)
+        object ReadObject(JsonReader reader, Type type)
         {
             type = DBResolver.Wrap(type);
             var obj = DBResolver.Instantate(type, false);
@@ -142,13 +137,13 @@ namespace FDB
                                     case JsonToken.Null:
                                         break;
                                     case JsonToken.String:
-                                        resolver.AddField(obj, field, (string)reader.Value);
+                                        _resolver.AddField(obj, field, (string)reader.Value);
                                         break;
                                     default:
                                         throw new ArgumentException($"Unexcepted token {reader.TokenType}");
                                 }
                             } else {
-                                field.SetValue(obj, ReadValue(resolver, reader, field.FieldType));
+                                field.SetValue(obj, ReadValue(reader, field.FieldType));
                             }
                             break;
                         }
@@ -168,7 +163,7 @@ namespace FDB
             return obj;
         }
 
-        object ReadValue(DBResolver resolver, JsonReader reader, Type type)
+        object ReadValue(JsonReader reader, Type type)
         {
             if (type.IsGenericType)
             {
@@ -197,7 +192,7 @@ namespace FDB
                 }
                 else if (genericType == typeof(List<>))
                 {
-                    return ReadList(resolver, reader, type, type.GetGenericArguments()[0]);
+                    return ReadList(reader, type, type.GetGenericArguments()[0]);
                 }
                 else
                 {
@@ -283,7 +278,7 @@ namespace FDB
                 }
             } else if (type.IsClass)
             {
-                return ReadObject(resolver, reader, type);
+                return ReadObject(reader, type);
             }
 
             Debug.LogWarning($"Unknown field type {type.FullName}");
@@ -292,7 +287,7 @@ namespace FDB
         }
 
 
-        object ReadList(DBResolver resolver, JsonReader reader, Type listType, Type itemType)
+        object ReadList(JsonReader reader, Type listType, Type itemType)
         {
             var list = Activator.CreateInstance(listType);
             if (reader.TokenType == JsonToken.Undefined || reader.TokenType == JsonToken.Null)
@@ -312,7 +307,7 @@ namespace FDB
                             break;
 
                         case JsonToken.String:
-                            resolver.AddListRef(list, (string)reader.Value);
+                            _resolver.AddListRef(list, (string)reader.Value);
                             break;
                         
                        case JsonToken.EndArray:
@@ -338,7 +333,7 @@ namespace FDB
                         case JsonToken.Float:
                         case JsonToken.String:
                         case JsonToken.StartObject:
-                            var value = ReadValue(resolver, reader, itemType);
+                            var value = ReadValue(reader, itemType);
                             add.Invoke(list, new[] { value });
                             break;
 

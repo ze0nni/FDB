@@ -11,19 +11,17 @@ namespace FDB
     {
 
 #if !UNITY_EDITOR
-    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, object value)
     {
             throw new NotImplementedException();
     }
 #else
         public static bool HasChanges = false;
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public void Write(JsonWriter writer, T db)
         {
             writer.WriteStartObject();
-
-            var type = value.GetType();
-            foreach (var field in type.GetFields())
+            foreach (var field in typeof(T).GetFields())
             {
                 var fieldType = field.FieldType;
                 if (fieldType.IsGenericType)
@@ -32,7 +30,7 @@ namespace FDB
                     if (genericFieldType == typeof(Index<>))
                     {
                         writer.WritePropertyName(field.Name);
-                        WriteIndex(writer, (Index)field.GetValue(value));
+                        WriteIndex(writer, (Index)field.GetValue(db));
                     }
                 }
             }

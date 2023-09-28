@@ -1,4 +1,6 @@
 [![openupm](https://img.shields.io/npm/v/com.pixelrebels.fdb?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.pixelrebels.fdb/)
+![GitHub issues](https://img.shields.io/github/issues/ze0nni/FDB)
+
 
 # FuryDB
 

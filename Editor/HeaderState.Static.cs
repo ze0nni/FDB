@@ -77,6 +77,14 @@ namespace FDB.Editor
                             yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new StringFieldHeaderState(listRoot, null, null) });
                         }
+                        else if (itemType == typeof(AssetReference) || itemType == typeof(AssetReferenceT<>))
+                        {
+                            Debug.LogWarning("List of AssetReference not supported");
+                        }
+                        else if (DBResolver.IsSupportedUnityType(itemType))
+                        {
+                            Debug.LogWarning("List of UnityEngine.Object not supported");
+                        }
                         else
                         {
                             yield return new ListHeaderState(path, type, field, itemType, false,
@@ -115,6 +123,10 @@ namespace FDB.Editor
                 else if (field.FieldType == typeof(AnimationCurve))
                 {
                     yield return new AnimationCurveFieldHeaderState(path, field);
+                }
+                else if (DBResolver.IsSupportedUnityType(field.FieldType))
+                {
+                    yield return new UnityObjectFieldHeaderState(path, field);
                 }
             }
 

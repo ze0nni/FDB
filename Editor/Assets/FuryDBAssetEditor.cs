@@ -18,6 +18,16 @@ namespace FDB.Editor
                 }
                 return;
             }
+            
+            foreach (var entry in asset.Entries)
+            {
+                EditorGUILayout.HelpBox(entry.name, MessageType.None);
+                var _resCount = entry.GetStatistics();
+                foreach (var rType in _resCount)
+                {
+                    GUILayout.Label(rType.ToString());
+                }
+            }
         }
     }
 

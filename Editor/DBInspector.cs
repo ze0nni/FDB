@@ -390,7 +390,8 @@ namespace FDB.Editor
                             || itemType == typeof(bool)
                             || itemType == typeof(int)
                             || itemType == typeof(float)
-                            || itemType == typeof(string))
+                            || itemType == typeof(string)
+                            || DBResolver.IsSupportedUnityType(itemType))
                         {
                             var indexParamas = new object[1];
                             var countProp = list.GetType().GetProperty("Count");

@@ -23,15 +23,12 @@ namespace FDB.Editor
                     throw new Exception($"Not found class associated with {ctx.assetPath}");
                 }
 
-                ctx.AddObjectToAsset(".furydb", dbAsset, FDBEditorIcons.Asset);
-                ctx.SetMainObject(dbAsset);
-
                 object db;
                 DBResolver resolver;
 
                 using (var reader = new StreamReader(ctx.assetPath))
                 {
-                    db = DBResolver.LoadInternal(dbType, reader, out resolver);
+                    db = DBResolver.LoadInternal(dbType, reader, DBResolver.EditorUnityObjectsResolver, out resolver);
                 }
 
                 dbAsset.Entries = new List<FuryDBEntryAsset>();
@@ -42,7 +39,15 @@ namespace FDB.Editor
                     entryAsset.name = indexName;
                     ctx.AddObjectToAsset("Entery/" + indexName, entryAsset);
                     dbAsset.Entries.Add(entryAsset);
+
+                    foreach (var dependency in resolver.GetDependency(indexName))
+                    {
+                        entryAsset.Dependency.Add(dependency);
+                    }
                 }
+
+                ctx.AddObjectToAsset(".furydb", dbAsset, FDBEditorIcons.Asset);
+                ctx.SetMainObject(dbAsset);
             }
             catch (Exception exc)
             {
@@ -53,6 +58,7 @@ namespace FDB.Editor
                 dbAsset.Errors = new List<string>();
                 dbAsset.Errors.Add(exc.Message);
                 ctx.AddObjectToAsset(".furydb", dbAsset, FDBEditorIcons.ErrorIcon);
+                ctx.SetMainObject(dbAsset);
                 return;
             }
         }

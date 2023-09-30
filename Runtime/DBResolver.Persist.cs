@@ -62,6 +62,11 @@ namespace FDB
             {
                 return internalType;
             }
+            if (DBResolver.IsSupportedUnityType(originType))
+            {
+                _internalTypes.Add(originType, originType);
+                return originType;
+            }
             if (!originType.IsClass)
             {
                 _internalTypes.Add(originType, originType);

@@ -179,6 +179,13 @@ namespace FDB.Editor
         }
     }
 
+    public sealed class UnityObjectFieldHeaderState : FieldHeaderState
+    {
+        public UnityObjectFieldHeaderState(string path, FieldInfo field) : base(path, field)
+        {
+        }
+    }
+
     public sealed class ListHeaderState : HeaderState
     {
         public readonly FieldInfo Field;

@@ -152,6 +152,10 @@ namespace FDB.Editor
                     {
                         return EditorGUILayout.CurveField((AnimationCurve)rawValue, layoutWidth);
                     }
+                case UnityObjectFieldHeaderState unityObjectField:
+                    {
+                        return UnityObjectField.Field((UnityEngine.Object)rawValue, unityObjectField.Field.FieldType, layoutWidth);
+                    }
 
                 default:
                     GUILayout.Box(header.GetType().Name, layoutWidth);

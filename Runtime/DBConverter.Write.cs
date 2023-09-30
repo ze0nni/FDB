@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -50,6 +51,12 @@ namespace FDB
 
         void WriteObject(JsonWriter writer, object originModel)
         {
+            if (originModel == null)
+            {
+                writer.WriteNull();
+                return;
+            }
+
             var model = DBResolver.WrapObj(originModel);
             var changed = DBResolver.Invalidate(model);
 
@@ -162,9 +169,17 @@ namespace FDB
                     writer.WriteEndConstructor();
                 }
                 writer.WriteEndArray();
-            } else if (type.IsClass)
+            } else if (DBResolver.IsSupportedUnityType(type))
             {
-                WriteObject(writer, value);
+                var uObject = (UnityEngine.Object)value;
+                if (uObject != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(uObject, out string guid, out long _))
+                {
+                    Debug.Log($"{uObject} {guid}");
+                    writer.WriteValue(guid);
+                } else
+                {
+                    writer.WriteNull();
+                }
             } else
             {
                 writer.WriteComment(type.Name);

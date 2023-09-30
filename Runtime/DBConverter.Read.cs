@@ -9,6 +9,8 @@ namespace FDB
 {
     public sealed partial class DBConverter
     {
+        private string _currentReadedEntry;
+
         public object Read(JsonReader reader)
         {
             if (_resolver == null)
@@ -40,7 +42,9 @@ namespace FDB
                             if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(Index<>))
                             {
                                 reader.Read();
+                                _currentReadedEntry = field.Name;
                                 field.SetValue(db, ReadIndex(reader, fieldType));
+                                _currentReadedEntry = "";
                                 break;
                             }
 
@@ -275,7 +279,33 @@ namespace FDB
                             throw new ArgumentException($"Unexcepted token {reader.TokenType}");
                     }
                 }
-            } else if (type.IsClass)
+            }
+            else if (DBResolver.IsSupportedUnityType(type))
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonToken.Undefined:
+                    case JsonToken.Null:
+                        return null;
+                    case JsonToken.String:
+                        var guid = (string)reader.Value;
+                        if (_unityObjectsResolver == null)
+                        {
+                            Debug.LogWarning("unityObjectsResolver not set. Can't resolve object");
+                        }
+                        else
+                        {
+                            var uObject = _unityObjectsResolver.Invoke(guid, type);
+                            _resolver.AddUnityDependency(_currentReadedEntry, uObject);
+                            return uObject;
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException($"Unexcepted token {reader.TokenType}");
+
+                }
+            }
+            else if (type.IsClass)
             {
                 return ReadObject(reader, type);
             }

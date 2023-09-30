@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace FDB
 {
@@ -14,42 +15,61 @@ namespace FDB
     {
         public static T New<T>(out DBResolver resolver)
         {
-            return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), out resolver);
+            return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), null, out resolver);
         }
 
-        public static object LoadInternal(Type dbType, StreamReader tReader, out DBResolver resolver)
+        public static object LoadInternal(
+            Type dbType,
+            StreamReader tReader,
+            DBConverter.UnityResolverDelegate unityResolver,
+            out DBResolver resolver)
         {
             resolver = new DBResolver();
             using (var jReader = new JsonTextReader(tReader))
             {
-                var dbConverter = new DBConverter(dbType, resolver);
+                var dbConverter = new DBConverter(dbType, resolver, unityResolver);
                 jReader.Read();
                 return dbConverter.Read(jReader);
             }
         }
 
-        public static T LoadInternal<T>(StreamReader tReader, out DBResolver resolver)
+        public static T LoadInternal<T>(
+            StreamReader tReader,
+            DBConverter.UnityResolverDelegate unityResolver,
+            out DBResolver resolver)
         {
             resolver = new DBResolver();
             using (var jReader = new JsonTextReader(tReader))
             {
-                var dbConverter = new DBConverter(typeof(T), resolver);
+                var dbConverter = new DBConverter(typeof(T), resolver, unityResolver);
                 jReader.Read();
                 return (T)dbConverter.Read(jReader);
             }
         }
 
-        public static T LoadInternal<T>()
+#if UNITY_EDITOR
+
+        public static T LoadEditor<T>()
         {
             var fdb = typeof(T).GetCustomAttribute<FuryDBAttribute>();
             using (var fileReader = File.OpenRead(fdb.SourcePath))
             {
                 using (var reader = new StreamReader(fileReader))
                 {
-                    return LoadInternal<T>(reader, out _);
+                    return LoadInternal<T>(
+                        reader,
+                        EditorUnityObjectsResolver,
+                        out _);
                 }
             }
         }
+
+        public static UnityEngine.Object EditorUnityObjectsResolver(string guid, Type type)
+        {
+            var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            return UnityEditor.AssetDatabase.LoadAssetAtPath(path, type);
+        }
+#endif
 
         public static T Load<T>()
         {
@@ -66,9 +86,10 @@ namespace FDB
 
         public static T Load<T>(string path)
         {
-            var textAsset = Resources.Load<TextAsset>(path);
-            var db = LoadInternal<T>(new StreamReader(new MemoryStream(textAsset.bytes)), out _);
-            return db;
+            throw new Exception();
+            //var textAsset = Resources.Load<TextAsset>(path);
+            //var db = LoadInternal<T>(new StreamReader(new MemoryStream(textAsset.bytes)), out _);
+            //return db;
         }
 
         private List<Index> _indexes = new List<Index>();
@@ -79,6 +100,8 @@ namespace FDB
         public object DB { get; private set; }
         public IReadOnlyList<Index> Indexes => _indexes;
         public IReadOnlyList<string> IndexeNames => _indexeNames;
+
+        public Dictionary<string, List<UnityEngine.Object>> _entryDependency = new Dictionary<string, List<UnityEngine.Object>>();
 
         internal void SetDB(object db)
         {
@@ -116,6 +139,28 @@ namespace FDB
                 _listRef.Add(list, refs);
             }
             refs.Add(refValue);
+        }
+
+        internal void AddUnityDependency(string entryName, UnityEngine.Object dependency)
+        {
+            if (!_entryDependency.TryGetValue(entryName, out var list))
+            {
+                list = new List<UnityEngine.Object>();
+                _entryDependency.Add(entryName, list);
+            }
+            list.Add(dependency);
+        }
+
+        public IEnumerable<UnityEngine.Object> GetDependency(string entryName)
+        {
+            if (!_entryDependency.TryGetValue(entryName, out var list))
+            {
+                yield break ;
+            }
+            foreach (var i in list)
+            {
+                yield return i;
+            }
         }
 
         public static object Instantate(Type modelType, bool asNew)
@@ -271,6 +316,14 @@ namespace FDB
             {
                 i.SetDirty();
             }
+        }
+
+        public static bool IsSupportedUnityType(Type type)
+        {
+            return 
+                type != typeof(AssetReference)
+                && type != typeof(AssetReferenceT<>)
+                && typeof(UnityEngine.Object).IsAssignableFrom(type);
         }
     }
 }

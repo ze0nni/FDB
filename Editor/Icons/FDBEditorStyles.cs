@@ -9,6 +9,7 @@ namespace FDB.Editor
         public static GUIStyle EvenRowStyle { get; private set; }
         public static GUIStyle HeaderStyle { get; private set; }
         public static GUIStyle WordWrapTextArea { get; private set; }
+        public static GUIStyle RichTextLabel { get; private set; }
 
         static FDBEditorStyles()
         {
@@ -45,6 +46,9 @@ namespace FDB.Editor
             };
             WordWrapTextArea = new GUIStyle(EditorStyles.textArea);
             WordWrapTextArea.wordWrap = true;
+
+            RichTextLabel = new GUIStyle(EditorStyles.label);
+            RichTextLabel.richText = true;
         }
     }
 }

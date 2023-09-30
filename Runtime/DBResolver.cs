@@ -13,6 +13,8 @@ namespace FDB
 {
     public sealed partial class DBResolver
     {
+        public const string DBExt = ".furydb";
+
         public static T New<T>(out DBResolver resolver)
         {
             return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), null, out resolver);
@@ -61,7 +63,7 @@ namespace FDB
                         }
                         return Load<T>(textAsset);
                     }
-                case ".furydb":
+                case DBExt:
                     {
                         var fdbAsset = Resources.Load<FuryDBAsset>(name);
                         if (fdbAsset == null)

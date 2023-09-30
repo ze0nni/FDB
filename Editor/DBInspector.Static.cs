@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
@@ -12,6 +13,7 @@ namespace FDB.Editor
     {
         Exception _staticException;
         List<string> _errors = new List<string>();
+        bool _isCorrenExt;
         Type _loadedModelType;
         FuryDBAttribute _fdbAttr;
         string[] _pageNames;
@@ -37,16 +39,35 @@ namespace FDB.Editor
                 }
             }
 
-            if (_fdbAttr == null)
+            if (_fdbAttr == null || string.IsNullOrWhiteSpace(_fdbAttr.SourcePath))
             {
                 ok = false;
                 GUILayout.Label("Add attribute");
-                GUILayout.TextField("[FuryDB(\"Assets/Resources/DB.json.txt\", \"Assets/Kinds.cs\")]");
+                GUILayout.TextField($"[FuryDB(\"Assets/Resources/DB{DBResolver.DBExt}\", \"Assets/Kinds.cs\")]");
+            }
+            if (_fdbAttr != null && !_isCorrenExt)
+            {
+                ok = false;
+                var currentExt = Path.GetExtension(_fdbAttr.SourcePath);
+                if (_fdbAttr.SourcePath.EndsWith(".json.txt"))
+                {
+                    currentExt = ".json.txt";
+                }
+                var sourceNameWoExt = _fdbAttr.SourcePath.Substring(0, _fdbAttr.SourcePath.Length - currentExt.Length);
+
+                EditorGUILayout.HelpBox($"Your main database file has wrong extension {currentExt} excepted {DBResolver.DBExt}", MessageType.Error);
+                GUILayout.Label(
+                    $"[FuryDB(\"{sourceNameWoExt}<color=red>{currentExt}</color>\", ...]",
+                    FDBEditorStyles.RichTextLabel);
+                GUILayout.Label(
+                    $"[FuryDB(\"{sourceNameWoExt}<color=green>{DBResolver.DBExt}</color>\", ...]",
+                    FDBEditorStyles.RichTextLabel);
             }
 
             if (_loadedModelType != typeof(T))
             {
                 ok = false;
+                EditorGUILayout.HelpBox($"DB types not matched{_loadedModelType} and {typeof(T)}", MessageType.Error);
             }
             return ok;
         }
@@ -60,6 +81,10 @@ namespace FDB.Editor
 
                 _loadedModelType = typeof(T);
                 _fdbAttr = _loadedModelType.GetCustomAttribute<FuryDBAttribute>();
+                if (_fdbAttr != null)
+                {
+                    _isCorrenExt = _fdbAttr.SourcePath != null && _fdbAttr.SourcePath.EndsWith(DBResolver.DBExt);
+                }
 
                 _indexes.Clear();
                 var indexList = new List<PageState>();

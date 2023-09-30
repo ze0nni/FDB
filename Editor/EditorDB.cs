@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace FDB.Editor {
 
-    public static class EditorDB
+    internal static class EditorDB
     {
         public static UnityEngine.Object EditorUnityObjectsResolver(string guid, Type type)
         {

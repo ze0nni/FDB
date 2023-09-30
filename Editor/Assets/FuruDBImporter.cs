@@ -55,7 +55,7 @@ namespace FDB.Editor
                     }
                 }
 
-                ctx.AddObjectToAsset(".furydb", dbAsset, FDBEditorIcons.Asset);
+                ctx.AddObjectToAsset(DBResolver.DBExt, dbAsset, FDBEditorIcons.Asset);
                 ctx.SetMainObject(dbAsset);
             }
             catch (Exception exc)
@@ -66,7 +66,7 @@ namespace FDB.Editor
                 dbAsset.name = Path.GetFileNameWithoutExtension(ctx.assetPath);
                 dbAsset.Errors = new List<string>();
                 dbAsset.Errors.Add(exc.Message);
-                ctx.AddObjectToAsset(".furydb", dbAsset, FDBEditorIcons.ErrorIcon);
+                ctx.AddObjectToAsset(DBResolver.DBExt, dbAsset, FDBEditorIcons.ErrorIcon);
                 ctx.SetMainObject(dbAsset);
                 return;
             }

@@ -8,6 +8,8 @@ namespace FDB
     {
         public byte[] JsonData;
         public string MD5;
+        public string DBTypeName;
+        public Type DBType => Type.GetType(DBTypeName);
 
         public List<string> Errors;
         public List<FuryDBEntryAsset> Entries;

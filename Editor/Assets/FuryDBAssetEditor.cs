@@ -20,7 +20,11 @@ namespace FDB.Editor
                 }
                 return;
             }
-
+            using (new GUILayout.HorizontalScope())
+            {
+                var type = asset.DBType;
+                GUILayout.Label($"DB Type: {(type == null ? "Null" : type.FullName)}");
+            }
             using (new GUILayout.HorizontalScope())
             {
                 GUILayout.Label($"Json size (bytes) ");

@@ -30,6 +30,8 @@ namespace FDB.Editor
                     throw new Exception($"Not found class associated with {ctx.assetPath}");
                 }
 
+                dbAsset.DBTypeName = dbType.AssemblyQualifiedName;
+
                 object db;
                 DBResolver resolver;
 

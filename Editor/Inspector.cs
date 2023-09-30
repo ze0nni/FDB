@@ -154,7 +154,7 @@ namespace FDB.Editor
                     }
                 case UnityObjectFieldHeaderState unityObjectField:
                     {
-                        return UnityObjectField.Field((UnityEngine.Object)rawValue, unityObjectField.Field.FieldType, layoutWidth);
+                        return UnityObjectField.Field((UnityEngine.Object)rawValue, unityObjectField.Field.FieldType, layoutWidth, makeDirty);
                     }
 
                 default:

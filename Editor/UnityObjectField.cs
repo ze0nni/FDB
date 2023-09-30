@@ -6,7 +6,7 @@ namespace FDB.Editor
 {
     public class UnityObjectField
     {
-        internal static UnityEngine.Object Field(UnityEngine.Object inputValue, Type assetType, GUILayoutOption layoutWidth)
+        internal static UnityEngine.Object Field(UnityEngine.Object inputValue, Type assetType, GUILayoutOption layoutWidth, Action onChanged)
         {
             var title =
                 inputValue != null
@@ -19,7 +19,7 @@ namespace FDB.Editor
                     ? FDBEditorIcons.DefaultAssetIcon
                     : AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(inputValue));
 
-            var id = GUIUtility.GetControlID(FocusType.Passive);
+            var id = GUIUtility.GetControlID(FocusType.Keyboard);
 
             var fieldRect = GUILayoutUtility.GetRect(new GUIContent(), "label", layoutWidth);
 
@@ -28,14 +28,28 @@ namespace FDB.Editor
             GUI.Label(fieldRect, new GUIContent(title, icon), EditorStyles.objectFieldThumb);
             EditorGUIUtility.SetIconSize(originIconSize);
 
+            if (ChooseUnityObjectWindow.TrySelect(id, out var selected))
+            {
+                GUI.changed = true;
+                return selected;
+            }
+
             var e = Event.current;
             switch (e.GetTypeForControl(id))
             {
                 case EventType.MouseDown:
                     if (fieldRect.Contains(e.mousePosition))
                     {
-                        Debug.Log("Show objects window");
-                        e.Use();
+                        if (e.button == 0)
+                        {
+                            PopupWindow.Show(
+                                fieldRect,
+                                new ChooseUnityObjectWindow(id, inputValue, assetType, onChanged));
+                            e.Use();
+                        } else
+                        {
+                            EditorGUIUtility.PingObject(inputValue);
+                        }
                     }
                     break;
                 case EventType.DragUpdated:
@@ -58,10 +72,10 @@ namespace FDB.Editor
                     if (fieldRect.Contains(e.mousePosition))
                     {
                         var obj = DragAndDrop.objectReferences[0];
-                        if (GetAssignableObject(obj, assetType, out var result))
+                        if (GetAssignableObject(obj, assetType, out var dropResult))
                         {
                             GUI.changed = true;
-                            return result;
+                            return dropResult;
                         }
                         e.Use();
                     }

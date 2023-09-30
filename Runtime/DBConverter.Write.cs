@@ -12,10 +12,10 @@ namespace FDB
     {
 
 #if !UNITY_EDITOR
-    public override void WriteJson(JsonWriter writer, object value)
-    {
+        public void Write(JsonWriter writer, object value)
+        {
             throw new NotImplementedException();
-    }
+        }
 #else
         public bool HasChanges { get; private set; }
 

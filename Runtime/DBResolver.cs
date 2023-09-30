@@ -18,21 +18,6 @@ namespace FDB
             return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), null, out resolver);
         }
 
-        public static object LoadInternal(
-            Type dbType,
-            StreamReader tReader,
-            DBConverter.UnityResolverDelegate unityResolver,
-            out DBResolver resolver)
-        {
-            resolver = new DBResolver();
-            using (var jReader = new JsonTextReader(tReader))
-            {
-                var dbConverter = new DBConverter(dbType, resolver, unityResolver);
-                jReader.Read();
-                return dbConverter.Read(jReader);
-            }
-        }
-
         public static T LoadInternal<T>(
             StreamReader tReader,
             DBConverter.UnityResolverDelegate unityResolver,
@@ -51,21 +36,76 @@ namespace FDB
         {
             var fdb = typeof(T).GetCustomAttribute<FuryDBAttribute>();
             var fullPath = fdb.SourcePath;
-            var pattern = new Regex(@"[\\\/]Resources[\\\/](.+?)\.txt");
+            var pattern = new Regex(@"[\\\/]Resources[\\\/](.*)");
             var match = pattern.Match(fullPath);
             if (!match.Success)
             {
                 throw new IOException("DB not constraint in Resources folder");
             }
-            return Load<T>(match.Groups[1].Value);
+            return LoadFromResources<T>(match.Groups[1].Value);
         }
 
-        public static T Load<T>(string path)
+        public static T LoadFromResources<T>(string path)
         {
-            throw new Exception();
-            //var textAsset = Resources.Load<TextAsset>(path);
-            //var db = LoadInternal<T>(new StreamReader(new MemoryStream(textAsset.bytes)), out _);
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            var name = path.Substring(0, path.Length - ext.Length);
+            switch (ext)
+            {
+                case ".txt":
+                case ".json":
+                    {
+                        var textAsset = Resources.Load<TextAsset>(name);
+                        if (textAsset == null)
+                        {
+                            throw new NullReferenceException($"Can't resolve resource '{name}' with type {nameof(TextAsset)}");
+                        }
+                        return Load<T>(textAsset);
+                    }
+                case ".furydb":
+                    {
+                        var fdbAsset = Resources.Load<FuryDBAsset>(name);
+                        if (fdbAsset == null)
+                        {
+                            throw new NullReferenceException($"Can't resolve resource '{name}' with type {nameof(FuryDBAsset)}");
+                        }
+                        return Load<T>(fdbAsset);
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException($"Invalid file extension of file {name}");
+
+            }
             //return db;
+        }
+
+        public static T Load<T>(TextAsset textAsset)
+        {
+            return (T) LoadInternal(typeof(T),
+                new StreamReader(new MemoryStream(textAsset.bytes)),
+                null,
+                out _);
+        }
+
+        public static T Load<T>(FuryDBAsset fdbAsset)
+        {
+            return (T)LoadInternal(typeof(T),
+                new StreamReader(new MemoryStream(fdbAsset.JsonData)),
+                fdbAsset.ResolveDependency,
+                out _);
+        }
+
+        public static object LoadInternal(
+            Type dbType,
+            StreamReader tReader,
+            DBConverter.UnityResolverDelegate unityResolver,
+            out DBResolver resolver)
+        {
+            resolver = new DBResolver();
+            using (var jReader = new JsonTextReader(tReader))
+            {
+                var dbConverter = new DBConverter(dbType, resolver, unityResolver);
+                jReader.Read();
+                return dbConverter.Read(jReader);
+            }
         }
 
         private List<Index> _indexes = new List<Index>();
@@ -77,7 +117,8 @@ namespace FDB
         public IReadOnlyList<Index> Indexes => _indexes;
         public IReadOnlyList<string> IndexeNames => _indexeNames;
 
-        public Dictionary<string, List<UnityEngine.Object>> _entryDependency = new Dictionary<string, List<UnityEngine.Object>>();
+        public Dictionary<string, List<FuryDBEntryAsset.DependencyRecord>> _entryDependency = 
+            new Dictionary<string, List<FuryDBEntryAsset.DependencyRecord>>();
 
         internal void SetDB(object db)
         {
@@ -117,17 +158,21 @@ namespace FDB
             refs.Add(refValue);
         }
 
-        internal void AddUnityDependency(string entryName, UnityEngine.Object dependency)
+        internal void AddUnityDependency(string entryName, string guid, UnityEngine.Object obj)
         {
             if (!_entryDependency.TryGetValue(entryName, out var list))
             {
-                list = new List<UnityEngine.Object>();
+                list = new List<FuryDBEntryAsset.DependencyRecord>();
                 _entryDependency.Add(entryName, list);
             }
-            list.Add(dependency);
+            list.Add(new FuryDBEntryAsset.DependencyRecord
+            {
+                GUID = guid,
+                Object = obj
+            });
         }
 
-        public IEnumerable<UnityEngine.Object> GetDependency(string entryName)
+        public IEnumerable<FuryDBEntryAsset.DependencyRecord> GetDependency(string entryName)
         {
             if (!_entryDependency.TryGetValue(entryName, out var list))
             {

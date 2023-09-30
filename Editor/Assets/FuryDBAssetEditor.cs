@@ -47,10 +47,6 @@ namespace FDB.Editor
                     }
                 }
             }
-
-            GUILayout.Space(20);
-
-            GUILayout.TextArea(asset.JsonData);
         }
     }
 

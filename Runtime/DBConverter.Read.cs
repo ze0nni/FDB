@@ -296,7 +296,7 @@ namespace FDB
                         else
                         {
                             var uObject = _unityObjectsResolver.Invoke(guid, type);
-                            _resolver.AddUnityDependency(_currentReadedEntry, uObject);
+                            _resolver.AddUnityDependency(_currentReadedEntry, guid, uObject);
                             return uObject;
                         }
                         break;

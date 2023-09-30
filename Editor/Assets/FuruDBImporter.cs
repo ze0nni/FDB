@@ -21,10 +21,8 @@ namespace FDB.Editor
                 var dbAsset = ScriptableObject.CreateInstance<FuryDBAsset>();
                 dbAsset.name = Path.GetFileNameWithoutExtension(ctx.assetPath);
 
-                dbAsset.JsonData = File.ReadAllText(ctx.assetPath);
-                var bytes = ASCIIEncoding.ASCII.GetBytes(dbAsset.JsonData);
-                var md5 = new MD5CryptoServiceProvider().ComputeHash(bytes);
-                dbAsset.JsonSize = bytes.Length;
+                dbAsset.JsonData = File.ReadAllBytes(ctx.assetPath);
+                var md5 = new MD5CryptoServiceProvider().ComputeHash(dbAsset.JsonData);
                 dbAsset.MD5 = BitConverter.ToString(md5).Replace("-", "");
 
                 if (!GetDBByPath(ctx.assetPath, out var dbType))

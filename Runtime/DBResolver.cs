@@ -47,30 +47,6 @@ namespace FDB
             }
         }
 
-#if UNITY_EDITOR
-
-        public static T LoadEditor<T>()
-        {
-            var fdb = typeof(T).GetCustomAttribute<FuryDBAttribute>();
-            using (var fileReader = File.OpenRead(fdb.SourcePath))
-            {
-                using (var reader = new StreamReader(fileReader))
-                {
-                    return LoadInternal<T>(
-                        reader,
-                        EditorUnityObjectsResolver,
-                        out _);
-                }
-            }
-        }
-
-        public static UnityEngine.Object EditorUnityObjectsResolver(string guid, Type type)
-        {
-            var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            return UnityEditor.AssetDatabase.LoadAssetAtPath(path, type);
-        }
-#endif
-
         public static T Load<T>()
         {
             var fdb = typeof(T).GetCustomAttribute<FuryDBAttribute>();

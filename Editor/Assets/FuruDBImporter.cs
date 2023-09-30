@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
@@ -18,6 +21,12 @@ namespace FDB.Editor
                 var dbAsset = ScriptableObject.CreateInstance<FuryDBAsset>();
                 dbAsset.name = Path.GetFileNameWithoutExtension(ctx.assetPath);
 
+                dbAsset.JsonData = File.ReadAllText(ctx.assetPath);
+                var bytes = ASCIIEncoding.ASCII.GetBytes(dbAsset.JsonData);
+                var md5 = new MD5CryptoServiceProvider().ComputeHash(bytes);
+                dbAsset.JsonSize = bytes.Length;
+                dbAsset.MD5 = BitConverter.ToString(md5).Replace("-", "");
+
                 if (!GetDBByPath(ctx.assetPath, out var dbType))
                 {
                     throw new Exception($"Not found class associated with {ctx.assetPath}");
@@ -28,7 +37,7 @@ namespace FDB.Editor
 
                 using (var reader = new StreamReader(ctx.assetPath))
                 {
-                    db = DBResolver.LoadInternal(dbType, reader, DBResolver.EditorUnityObjectsResolver, out resolver);
+                    db = DBResolver.LoadInternal(dbType, reader, EditorDB.EditorUnityObjectsResolver, out resolver);
                 }
 
                 dbAsset.Entries = new List<FuryDBEntryAsset>();

@@ -6,6 +6,16 @@ using UnityEditor;
 using UnityEngine;
 
 namespace FDB.Editor {
+
+    public static class EditorDB
+    {
+        public static UnityEngine.Object EditorUnityObjectsResolver(string guid, Type type)
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            return AssetDatabase.LoadAssetAtPath(path, type);
+        }
+    }
+
     public class EditorDB<T>
     {
         public static long Version { get; private set; }
@@ -77,7 +87,7 @@ namespace FDB.Editor {
             {
                 using (var reader = new StreamReader(fileReader))
                 {
-                    return DBResolver.LoadInternal<T>(reader, DBResolver.EditorUnityObjectsResolver, out resolver);
+                    return DBResolver.LoadInternal<T>(reader, EditorDB.EditorUnityObjectsResolver, out resolver);
                 }
             }
         }

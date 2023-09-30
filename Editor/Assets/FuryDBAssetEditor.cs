@@ -18,13 +18,26 @@ namespace FDB.Editor
                 {
                     EditorGUILayout.HelpBox(error, MessageType.Error);
                 }
+
+                if (GUILayout.Button("Show databases"))
+                {
+                    SettingsService.OpenProjectSettings(FuryDBSettings.Path);
+                }
+                    if (GUILayout.Button("Reimport"))
+                {
+                    var path = AssetDatabase.GetAssetPath(asset);
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                }
+
                 return;
             }
+
             using (new GUILayout.HorizontalScope())
             {
                 var type = asset.DBType;
                 GUILayout.Label($"DB Type: {(type == null ? "Null" : type.FullName)}");
             }
+
             using (new GUILayout.HorizontalScope())
             {
                 GUILayout.Label($"Json size (bytes) ");

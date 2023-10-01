@@ -34,7 +34,7 @@ namespace FDB.Editor
                 case KindFieldHeaderState kindHeader:
                     {
                         var kind = (Kind)rawValue;
-                        var index = resolver.GetIndex(kindHeader.ModelType);
+                        var index = resolver.GetIndex(kindHeader.ConfigType);
 
                         var color = GUI.color;
 
@@ -73,14 +73,14 @@ namespace FDB.Editor
                 case RefFieldHeaderState refHeader:
                     {
                         Func<object, DBResolver, Type, AutoRefAttribute, Ref, float, GUILayoutOption, int, Action, Ref> field =
-                            nestLevel == 0 ? ChooseRefWindow<NestLevel0>.Field
-                            : nestLevel == 1 ? ChooseRefWindow<NestLevel1>.Field
-                            : nestLevel == 2 ? ChooseRefWindow<NestLevel2>.Field
-                            : nestLevel == 3 ? ChooseRefWindow<NestLevel3>.Field
-                            : nestLevel == 4 ? ChooseRefWindow<NestLevel4>.Field
-                            : nestLevel == 5 ? ChooseRefWindow<NestLevel5>.Field
-                            : nestLevel == 6 ? ChooseRefWindow<NestLevel6>.Field
-                            : nestLevel == 7 ? ChooseRefWindow<NestLevel7>.Field
+                            nestLevel == 0 ? ChooseRefWindow_BAK<NestLevel0>.Field
+                            : nestLevel == 1 ? ChooseRefWindow_BAK<NestLevel1>.Field
+                            : nestLevel == 2 ? ChooseRefWindow_BAK<NestLevel2>.Field
+                            : nestLevel == 3 ? ChooseRefWindow_BAK<NestLevel3>.Field
+                            : nestLevel == 4 ? ChooseRefWindow_BAK<NestLevel4>.Field
+                            : nestLevel == 5 ? ChooseRefWindow_BAK<NestLevel5>.Field
+                            : nestLevel == 6 ? ChooseRefWindow_BAK<NestLevel6>.Field
+                            : nestLevel == 7 ? ChooseRefWindow_BAK<NestLevel7>.Field
                             : null;
 
                         if (field == null)
@@ -92,7 +92,7 @@ namespace FDB.Editor
                         return field(
                             owner,
                             resolver,
-                            refHeader.ModelType,
+                            refHeader.ConfigType,
                             refHeader.AutoRef,
                             (Ref)rawValue,
                             header.Width,
@@ -125,14 +125,13 @@ namespace FDB.Editor
 
                 case StringFieldHeaderState stringHeader:
                     {
-                        if (stringHeader.IsMultiline(owner, out var minLines, out var maxLines))
+                        if (stringHeader.IsMultiline(owner, out var minLines))
                         {
                             return EditorGUILayout.TextArea(
                                 (string)rawValue,
                                 FDBEditorStyles.WordWrapTextArea,
                                 layoutWidth, 
-                                GUILayout.MinHeight(minLines * 16),
-                                GUILayout.MaxHeight(maxLines * 16));
+                                GUILayout.MinHeight(minLines * 16));
                         }
                         else
                         {

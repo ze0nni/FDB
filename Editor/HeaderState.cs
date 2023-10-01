@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -52,6 +53,32 @@ namespace FDB.Editor
             }
         }
         public bool ExpandWidth;
+
+        public virtual float GetFieldHeight(in PageContext context, object config)
+        {
+            return GUIConst.RowFieldHeight;
+        }
+
+        public abstract object Get(object config, int? collectionIndex);
+        public abstract void Set(object config, int? collectionIndex, object value);
+
+        public void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
+        {
+            var lineRect = rect;
+            lineRect.height = GUIConst.RowFieldHeight;
+            OnGUI(in context, rect, lineRect, config, collectionIndex, Get(config, collectionIndex));
+        }
+
+        public virtual void OnGUI(
+            in PageContext context,
+            Rect rect,
+            Rect lineRect,
+            object config,
+            int? collectionIndex,
+            object rawValue)
+        {
+            GUI.Label(rect, GetType().Name);
+        }
     }
 
     public abstract class FieldHeaderState : HeaderState
@@ -62,84 +89,16 @@ namespace FDB.Editor
         {
             Field = field;
         }
-    }
 
-    public sealed class KindFieldHeaderState : FieldHeaderState
-    {
-        public readonly Type ModelType;
-        public KindFieldHeaderState(string path, FieldInfo field) : base(path, field) {
-            ModelType = field.FieldType.GetGenericArguments()[0];
-        }
-    }
-
-    public sealed class RefFieldHeaderState : FieldHeaderState
-    {
-        public readonly Type ModelType;
-        public readonly AutoRefAttribute AutoRef;
-        public RefFieldHeaderState(string path, FieldInfo field) : base(path, field) {
-            ModelType = field.FieldType.GetGenericArguments()[0];
-            AutoRef = field.GetCustomAttribute<AutoRefAttribute>();
-        }
-
-        public RefFieldHeaderState(string path, Type modelType) : base(path, null)
+        public override object Get(object config, int? collectionIndex)
         {
-            ModelType = modelType;
-        }
-    }
-
-    public sealed class BoolFieldHeaderState : FieldHeaderState
-    {
-        public BoolFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
-    }
-
-    public sealed class IntFieldHeaderState : FieldHeaderState
-    {
-        public IntFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
-    }
-
-    public sealed class FloatFieldHeaderState : FieldHeaderState
-    {
-        public FloatFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
-    }
-
-    public sealed class StringFieldHeaderState : FieldHeaderState
-    {
-        private int _minLines;
-        private int _maxLines;
-        private MethodInfo _condition;
-
-        public StringFieldHeaderState(string path, Type ownerType, FieldInfo field) : base(path, field) {
-            if (field != null)
-            {
-                var multilineAttr = field.GetCustomAttribute<MultilineTextAttribute>();
-                if (multilineAttr != null)
-                {
-                    _minLines = multilineAttr.MinLines;
-                    _maxLines = Math.Max(_minLines, multilineAttr.MaxLines);
-                    if (ownerType != null && !string.IsNullOrEmpty(multilineAttr.Condition))
-                    {
-                        _condition = ownerType.GetMethod(multilineAttr.Condition, BindingFlags.Static | BindingFlags.NonPublic);
-                    }
-                }
-            }
+            return Field.GetValue(config);
         }
 
-        public static object[] _conditionArgs = new object[1];
-        public bool IsMultiline(object owner, out int minLines, out int maxLines)
+        public override void Set(object config, int? collectionIndex, object value)
         {
-            minLines = _minLines;
-            maxLines = _maxLines;
-            if (_condition == null)
-            {
-                return false;
-            }
-
-            if (minLines > 1 && _condition == null)
-            {
-                return true;
-            }
-            _conditionArgs[0] = owner;
-            return (bool)_condition.Invoke(null, _conditionArgs);
+            Field.SetValue(config, value);
+            GUI.changed = true;
         }
     }
 
@@ -200,6 +159,16 @@ namespace FDB.Editor
             ItemType = itemType;
             Primitive = primitive;
             Aggregator = new Aggregator(ownerType, field, itemType);
+        }
+
+        public override object Get(object config, int? collectionIndex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Set(object config, int? collectionIndex, object value)
+        {
+            throw new NotImplementedException();
         }
     }
 }

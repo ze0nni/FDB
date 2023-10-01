@@ -6,7 +6,6 @@ namespace FDB
     public class MultilineTextAttribute :  Attribute
     {
         public int MinLines;
-        public int MaxLines;
         public string Condition;
     }
 }

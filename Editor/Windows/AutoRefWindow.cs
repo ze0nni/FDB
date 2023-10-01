@@ -6,59 +6,53 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public class AutoRefWindow<TNestLevel> : PopupWindowContent
+    internal struct NestLevel0 { }
+    internal struct NestLevel1 { }
+    internal struct NestLevel2 { }
+    internal struct NestLevel3 { }
+    internal struct NestLevel4 { }
+    internal struct NestLevel5 { }
+    internal struct NestLevel6 { }
+    internal struct NestLevel7 { }
+
+    internal class AutoRefWindow<TNestLevel> : PopupWindowContent
     {
-        readonly object _owner;
-        readonly DBResolver _resolver;
+        readonly PageContext _context;
+        readonly object _config;
         readonly Type _modelType;
         readonly List<string> _errors;
         readonly HeaderState[] _modelHeaders;
         readonly AutoRefAttribute _autoRef;
         Ref _currentRef;
-        readonly float _width;
-        readonly int _nestLevel;
-        readonly Action _makeDirty;
-        readonly Action<Ref> _updateRef;
+        readonly Action<string> _updateRef;
 
         readonly string _linkedKind;
         readonly string _targetKind;
         Vector2 _scrollPosition;
 
         public AutoRefWindow(
-            DBResolver resolver,
-            object owner,
+            PageContext context,
+            object config,
             Type modelType,
             AutoRefAttribute autoRef,
             Ref currentField,
-            float width,
-            int nestLevel,
-            Action makeDirty,
-            Action<Ref> updateRef)
+            Action<string> updateRef)
         {
-            _owner = owner;
-            _resolver = resolver;
+            _context = context;
+            _config = config;
             _modelType = modelType;
             _errors = new List<string>();
             _modelHeaders = HeaderState.Of(_modelType, 0, "", true, _errors.Add).ToArray();
             _autoRef = autoRef;
             _currentRef = currentField;
-            _width = width;
-            _nestLevel = nestLevel;
-            _makeDirty = () =>
-            {
-                editorWindow.Repaint();
-                makeDirty.Invoke();
-            };
             _updateRef = updateRef;
 
-            _targetKind = autoRef == null ? null : autoRef.GetKind(owner);
+            _targetKind = autoRef == null ? null : autoRef.GetKind(config);
         }
 
         public override Vector2 GetWindowSize()
         {
-            var size = base.GetWindowSize();
-            size.x = _width * 2;
-            return size;
+            return new Vector2(300, 300);
         }
 
         public override void OnGUI(Rect rect)
@@ -98,7 +92,7 @@ namespace FDB.Editor
                 return;
             }
             resolvedConfig =
-                _resolver.GetConfig(_modelType, _targetKind);
+                _context.Resolver.GetConfig(_modelType, _targetKind);
 
             using (new GUILayout.HorizontalScope())
             {
@@ -108,22 +102,21 @@ namespace FDB.Editor
                 {
                     if (GUILayout.Button("Create"))
                     {
-                        var index = _resolver.GetIndex(_modelType);
-                        var insertIndex = _autoRef.GetInsertIndex(_owner, index);
+                        var index = _context.Resolver.GetIndex(_modelType);
+                        var insertIndex = _autoRef.GetInsertIndex(_config, index);
                         var config = DBResolver.Instantate(_modelType, _targetKind);
                         index.Insert(insertIndex, config);
 
-                        _currentRef = DBResolver.CreateRef(_resolver, _modelType, config);
-                        _updateRef(_currentRef);
+                        _currentRef = DBResolver.CreateRef(_context.Resolver, _modelType, config);
+                        _updateRef(_currentRef.Kind.Value);
                     }
                 }
                 else if (_currentRef.Config == null && resolvedConfig != null)
                 {
                     if (GUILayout.Button("Connect"))
                     {
-                        _currentRef = DBResolver.CreateRef(_resolver, _modelType, resolvedConfig);
-                        _updateRef(_currentRef);
-                        _makeDirty?.Invoke();
+                        _currentRef = DBResolver.CreateRef(_context.Resolver, _modelType, resolvedConfig);
+                        _updateRef(_currentRef.Kind.Value);
                     }
                 }
             }
@@ -135,33 +128,7 @@ namespace FDB.Editor
             {
                 using (new EditorGUI.DisabledScope(!enabled))
                 {
-                    foreach (var header in _modelHeaders)
-                    {
-                        if (header is KindFieldHeaderState)
-                        {
-                            continue;
-                        }
-
-                        if (header is FieldHeaderState fieldHeader)
-                        {
-                            header.ExpandWidth = true;
-                            using (new GUILayout.HorizontalScope())
-                            {
-                                GUILayout.Label(header.Title, GUILayout.Width(_width / 2));
-                                var value = fieldHeader.Field.GetValue(config);
-
-                                EditorGUI.BeginChangeCheck();
-                                var newValue = Inspector.Field(_resolver, header, config, value, _nestLevel + 1, _makeDirty);
-                                if (EditorGUI.EndChangeCheck())
-                                {
-                                    fieldHeader.Field.SetValue(config, newValue);
-                                    GUI.changed = true;
-                                    _makeDirty?.Invoke();
-                                }
-                            }
-                        }
-                    }
-                    _scrollPosition = scrollView.scrollPosition;
+                    
                 }
             }
         }

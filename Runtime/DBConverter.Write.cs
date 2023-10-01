@@ -174,7 +174,6 @@ namespace FDB
                 var uObject = (UnityEngine.Object)value;
                 if (uObject != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(uObject, out string guid, out long _))
                 {
-                    Debug.Log($"{uObject} {guid}");
                     writer.WriteValue(guid);
                 } else
                 {

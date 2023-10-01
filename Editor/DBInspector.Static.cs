@@ -69,6 +69,19 @@ namespace FDB.Editor
                 ok = false;
                 EditorGUILayout.HelpBox($"DB types not matched{_loadedModelType} and {typeof(T)}", MessageType.Error);
             }
+
+            if (ok) {
+                try
+                {
+                    var db = EditorDB<T>.DB;
+                } catch (Exception exc)
+                {
+                    ok = false;
+                    EditorGUILayout.HelpBox($"Error when load {_fdbAttr.SourcePath}\n {exc.Message}", MessageType.Error);
+                    Debug.LogException(exc);
+                }
+            }
+
             return ok;
         }
         

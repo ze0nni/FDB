@@ -179,6 +179,9 @@ namespace FDB
                 {
                     writer.WriteNull();
                 }
+            } else if (type.IsClass)
+            {
+                WriteObject(writer, value);
             } else
             {
                 writer.WriteComment(type.Name);

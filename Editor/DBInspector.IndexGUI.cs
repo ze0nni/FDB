@@ -38,12 +38,17 @@ namespace FDB.Editor
             WindowLevel = windowLevel;
         }
 
-        public PageContext Nested()
+        public PageContext Nested(Action repaint)
         {
+            var baseRepaint = Repaint;
             return new PageContext(
                 DB,
                 Resolver,
-                Repaint,
+                () =>
+                {
+                    repaint();
+                    baseRepaint();
+                },
                 MakeDirty,
                 WindowLevel + 1);
         }

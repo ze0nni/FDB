@@ -70,36 +70,36 @@ namespace FDB.Editor
                     }
                     return rawValue;
 
-                case RefFieldHeaderState refHeader:
-                    {
-                        Func<object, DBResolver, Type, AutoRefAttribute, Ref, float, GUILayoutOption, int, Action, Ref> field =
-                            nestLevel == 0 ? ChooseRefWindow_BAK<NestLevel0>.Field
-                            : nestLevel == 1 ? ChooseRefWindow_BAK<NestLevel1>.Field
-                            : nestLevel == 2 ? ChooseRefWindow_BAK<NestLevel2>.Field
-                            : nestLevel == 3 ? ChooseRefWindow_BAK<NestLevel3>.Field
-                            : nestLevel == 4 ? ChooseRefWindow_BAK<NestLevel4>.Field
-                            : nestLevel == 5 ? ChooseRefWindow_BAK<NestLevel5>.Field
-                            : nestLevel == 6 ? ChooseRefWindow_BAK<NestLevel6>.Field
-                            : nestLevel == 7 ? ChooseRefWindow_BAK<NestLevel7>.Field
-                            : null;
+                //case RefFieldHeaderState refHeader:
+                //    {
+                //        Func<object, DBResolver, Type, AutoRefAttribute, Ref, float, GUILayoutOption, int, Action, Ref> field =
+                //            nestLevel == 0 ? ChooseRefWindow_BAK<NestLevel0>.Field
+                //            : nestLevel == 1 ? ChooseRefWindow_BAK<NestLevel1>.Field
+                //            : nestLevel == 2 ? ChooseRefWindow_BAK<NestLevel2>.Field
+                //            : nestLevel == 3 ? ChooseRefWindow_BAK<NestLevel3>.Field
+                //            : nestLevel == 4 ? ChooseRefWindow_BAK<NestLevel4>.Field
+                //            : nestLevel == 5 ? ChooseRefWindow_BAK<NestLevel5>.Field
+                //            : nestLevel == 6 ? ChooseRefWindow_BAK<NestLevel6>.Field
+                //            : nestLevel == 7 ? ChooseRefWindow_BAK<NestLevel7>.Field
+                //            : null;
 
-                        if (field == null)
-                        {
-                            GUILayout.Label("Too deep ref windows", layoutWidth);
-                            return rawValue;
-                        }
+                //        if (field == null)
+                //        {
+                //            GUILayout.Label("Too deep ref windows", layoutWidth);
+                //            return rawValue;
+                //        }
 
-                        return field(
-                            owner,
-                            resolver,
-                            refHeader.ConfigType,
-                            refHeader.AutoRef,
-                            (Ref)rawValue,
-                            header.Width,
-                            layoutWidth,
-                            nestLevel,
-                            makeDirty);
-                    }
+                //        return field(
+                //            owner,
+                //            resolver,
+                //            refHeader.ConfigType,
+                //            refHeader.AutoRef,
+                //            (Ref)rawValue,
+                //            header.Width,
+                //            layoutWidth,
+                //            nestLevel,
+                //            makeDirty);
+                //    }
 
                 case EnumFieldHeaderState enumHeader:
                     {

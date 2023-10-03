@@ -77,7 +77,7 @@ namespace FDB.Editor
                     var makeDirty = context.MakeDirty;
                     PopupWindow.Show(
                         fieldRect,
-                        new AutoRefWindow<NestLevel0>(
+                        AutoRefWindow.New(
                             context,
                             config,
                             ConfigType,

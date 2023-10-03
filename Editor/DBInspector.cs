@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System;
-using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
 
 namespace FDB.Editor
@@ -11,8 +9,6 @@ namespace FDB.Editor
     {
         public const int MenuSize = 35;
         public const int GroupSpace = 25;
-
-        InputState _input;
 
         long _dbVersion;
         bool _needRepaint;

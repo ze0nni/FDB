@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -99,7 +100,7 @@ namespace FDB.Editor
                     OnRowGUI(in context, in row);
                     break;
                 case RowType.Header:
-                    OnHeadersGUI(row.Rect, row.Headers);
+                    OnHeadersGUI(context.Input, row.Rect, row.Headers);
                     break;
                 case RowType.Aggregate:
                     break;
@@ -132,14 +133,55 @@ namespace FDB.Editor
         }
 
 
-        public static void OnHeadersGUI(Rect rect, HeaderState[] headers)
+        public static void OnHeadersGUI(IInput input, Rect rect, HeaderState[] headers)
         {
+            int headersId = GUIUtility.GetControlID(headers.GetHashCode(), FocusType.Passive);
+
             var left = rect.x + GUIConst.ActionsColumnWidth;
             foreach (var header in headers)
             {
                 var headerRect = new Rect(left, rect.y, header.Width, rect.height);
                 GUI.Label(headerRect, header.Title, FDBEditorStyles.HeaderStyle);
+
                 left += GUIConst.HeaderSpace + header.Width;
+
+                var resizeRect = new Rect(left - GUIConst.HeaderSpace, rect.y, GUIConst.HeaderSpace * 3, rect.height);
+                HandleHeaderResizeEvent(input, headersId, header, resizeRect);
+            }
+        }
+
+        public static void HandleHeaderResizeEvent(IInput input, int headersId, HeaderState header, Rect resize)
+        {
+            EditorGUIUtility.AddCursorRect(resize, MouseCursor.ResizeHorizontal);
+
+            var e = Event.current;
+            if (input.State == null)
+            {
+                if (e.type == EventType.MouseDown && e.button == 0 && resize.Contains(e.mousePosition))
+                {
+                    GUIUtility.hotControl = headersId;
+                    input.Set(new InputResizeHeader(header, e.mousePosition));
+                }
+            } else if (input.Resolve<InputResizeHeader>(out var resizeHeader) && resizeHeader.Header == header)
+            {
+                var t = e.GetTypeForControl(headersId);
+                switch (t)
+                {
+                    case EventType.MouseUp:
+                        GUIUtility.hotControl = 0;
+                        input.Reset();
+                        e.Use();
+                        break;
+                    case EventType.MouseDrag:
+                        GUIUtility.hotControl = headersId;
+                        var newWidth = Math.Max(
+                            GUIConst.HeaderMinWidth,
+                            resizeHeader.StartWidth + e.mousePosition.x - resizeHeader.StartMouse.x);
+                        header.Width = (int)newWidth;
+                        input.Repaint();
+                        e.Use();
+                        break;
+                }
             }
         }
     }

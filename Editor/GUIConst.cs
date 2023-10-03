@@ -6,6 +6,7 @@ namespace FDB.Editor
     {
         public const float ActionsColumnWidth = 48f;
         public const float HeaderHeight = 24f;
+        public const float HeaderMinWidth = 30f;
         public const float HeaderSpace = 4f;
 
         public static float RowFieldHeight => EditorGUIUtility.singleLineHeight + 2;

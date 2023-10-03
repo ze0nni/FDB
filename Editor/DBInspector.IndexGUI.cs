@@ -6,17 +6,20 @@ namespace FDB.Editor
 {
     public readonly struct PageContext
     {
+        public readonly IInput Input;
         public readonly object DB;
         public readonly DBResolver Resolver;
         public readonly Action Repaint;
         public readonly Action MakeDirty;
         public readonly int WindowLevel;
         public PageContext(
+            IInput input,
             object db,
             DBResolver resolver,
             Action repaint,
             Action makeDirty)
         {
+            Input = input;
             DB = db;
             Resolver = resolver;
             Repaint = repaint;
@@ -25,12 +28,14 @@ namespace FDB.Editor
         }
 
         PageContext(
+            IInput input,
             object db,
             DBResolver resolver,
             Action repaint,
             Action makeDirty,
             int windowLevel)
         {
+            Input = input;
             DB = db;
             Resolver = resolver;
             Repaint = repaint;
@@ -42,6 +47,7 @@ namespace FDB.Editor
         {
             var baseRepaint = Repaint;
             return new PageContext(
+                Input,
                 DB,
                 Resolver,
                 () =>
@@ -64,17 +70,23 @@ namespace FDB.Editor
             var headerWidth = GUIConst.MeasureHeadersWidth(state.Headers);
             var headerRect = new Rect(pageRect.x, pageRect.y, headerWidth, GUIConst.HeaderHeight);
             headerRect.x -= pagePers.Position.x;
-            PageRender.OnHeadersGUI(headerRect, state.Headers);
+            PageRender.OnHeadersGUI(Input, headerRect, state.Headers);
 
             var db = EditorDB<T>.DB;
             var resolver = EditorDB<T>.Resolver;
             var index = (Index)state.ResolveModel(db);
-            var context = new PageContext(db, resolver, this.Repaint, EditorDB<T>.SetDirty);
+            var context = new PageContext(Input, db, resolver, this.Repaint, EditorDB<T>.SetDirty);
 
             Render.Render(in context, state.Headers, index);
 
+            var contentRect = Render.Content;
+            if (Input.State != null && Input.State.GetFixedPageContentSize(out var fixedContentRect))
+            {
+                contentRect = fixedContentRect;
+            }
+
             var scrollRect = new Rect(pageRect.x, headerRect.yMax, pageRect.width, pageRect.height - headerRect.height);
-            using (var scrollView = new GUI.ScrollViewScope(scrollRect, pagePers.Position, Render.Content))
+            using (var scrollView = new GUI.ScrollViewScope(scrollRect, pagePers.Position, contentRect))
             {
                 var viewRect = new Rect(pagePers.Position, scrollRect.size);
                 Render.OnGUI(in context, viewRect);

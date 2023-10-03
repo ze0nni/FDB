@@ -15,90 +15,13 @@ namespace FDB.Editor
             _pageRowsCounter = 0;
 
             var changed = false;
-            OnHeadersGui(left, headers);
+            //OnHeadersGui(left, headers);
             changed |= OnItemsGui_BAK(left, aggregator, headers, type, model, filter);
             if (string.IsNullOrEmpty(filter))
             {
                 OnPageActionsGui_BAK(left, headers, model);
             }
             return changed;
-        }
-
-        void OnHeadersGui(int left, HeaderState[] headers)
-        {
-            using (new TableRowGUILayout(this, left + MenuSize))
-            {
-                var e = Event.current;
-
-                foreach (var header in headers)
-                {
-                    if (header.Separate)
-                    {
-                        GUILayout.Space(GroupSpace);
-                    }
-                    GUILayout.Box(header.Title, FDBEditorStyles.HeaderStyle, GUILayout.Width(header.Width));
-                    var labelRect = GUILayoutUtility.GetLastRect();
-                    var resizeRect = new Rect(labelRect.xMax - 5, labelRect.y, 10, labelRect.height);
-                    EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeHorizontal);
-
-                    int id = GUIUtility.GetControlID(FocusType.Passive);
-
-                    if (e.type == EventType.Repaint)
-                        header.Left = (int)labelRect.xMin;
-
-                    switch (_input.Type)
-                    {
-                        case InputState.Target.Free:
-                            {
-                                if (e.type == EventType.MouseDown && resizeRect.Contains(e.mousePosition))
-                                {
-                                    _input = new InputState
-                                    {
-                                        Type = InputState.Target.ResizeHeader,
-                                        ResizePath = header.Path,
-                                        ResizeStartWidth = header.Width,
-                                        ResizeStartX = e.mousePosition.x,
-                                    };
-                                    e.Use();
-                                }
-                                if (e.type == EventType.ContextClick && labelRect.Contains(e.mousePosition))
-                                {
-                                    ShowHeaderContextMenu_BAK(header);
-                                }
-                            }
-                            break;
-                        case InputState.Target.ResizeHeader:
-                            {
-                                if (_input.ResizePath == header.Path)
-                                {
-                                    switch (e.GetTypeForControl(id))
-                                    {
-                                        case EventType.MouseDrag:
-                                        case EventType.DragUpdated:
-                                            {
-                                                var delta = e.mousePosition.x - _input.ResizeStartX;
-                                                header.Width = (int)Math.Max(20, _input.ResizeStartWidth + delta);
-                                                GUI.changed = true;
-                                                e.Use();
-                                            }
-                                            break;
-                                        case EventType.MouseUp:
-                                        case EventType.MouseDown:
-                                        case EventType.MouseLeaveWindow:
-                                        case EventType.DragExited:
-                                            {
-                                                _input = default;
-                                                GUI.changed = true;
-                                                e.Use();
-                                            }
-                                            break;
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-            }
         }
 
         void OnAggregateGUI_BAK(int left, List<object> list, HeaderState[] headers)
@@ -280,7 +203,7 @@ namespace FDB.Editor
                 {
                     case ListHeaderState listHeader:
                         {
-                            OnHeadersGui(left + header.Left, listHeader.Headers);
+                            //OnHeadersGui(left + header.Left, listHeader.Headers);
                             var list = listHeader.Field.GetValue(item);
                             changed |= OnItemsGui_BAK(
                                 left + header.Left,

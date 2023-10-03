@@ -51,6 +51,8 @@ namespace FDB.Editor
             {
                 var index = context.Resolver.GetIndex(ConfigType);
                 var resolver = context.Resolver;
+                var repaint = context.Repaint;
+                var makeDirty = context.MakeDirty;
                 PopupWindow.Show(
                     fieldRect,
                     new ChooseRefWindow(
@@ -64,6 +66,8 @@ namespace FDB.Editor
                                 index.TryGet(str, out refConfig);
                             }
                             Set(config, collectionIndex, NewRef(resolver, refConfig));
+                            makeDirty();
+                            repaint();
                         }));
             }
 

@@ -26,9 +26,7 @@ namespace FDB.Editor
 
         public static object Field(DBResolver resolver, HeaderState header, object owner, object rawValue, int nestLevel, Action makeDirty)
         {
-            var layoutWidth = header.ExpandWidth
-                ? GUILayout.ExpandWidth(true)
-                : GUILayout.Width(header.Width);
+            var layoutWidth = GUILayout.Width(header.Width);
             switch (header)
             {
                 case KindFieldHeaderState kindHeader:
@@ -104,10 +102,6 @@ namespace FDB.Editor
                 case AssetReferenceFieldHeaderState assetRefHeader:
                     {
                         return AssetReferenceField.Field(rawValue as AssetReference, assetRefHeader.AssetType, layoutWidth);
-                    }
-                case UnityObjectFieldHeaderState unityObjectField:
-                    {
-                        return UnityObjectField.Field((UnityEngine.Object)rawValue, unityObjectField.Field.FieldType, layoutWidth, makeDirty);
                     }
 
                 default:

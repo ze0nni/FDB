@@ -126,7 +126,7 @@ namespace FDB.Editor
                 }
                 else if (DBResolver.IsSupportedUnityType(field.FieldType))
                 {
-                    yield return new UnityObjectFieldHeaderState(path, field);
+                    yield return new UnityObjectFieldHeaderState(path, field.FieldType, field);
                 }
             }
 

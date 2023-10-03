@@ -8,11 +8,6 @@ namespace FDB.Editor
 {
     public class ChooseUnityObjectWindow : PopupWindowContent
     {
-        static int ControlId;
-        static bool Selected;
-        static Action OnChanged;
-        static UnityEngine.Object Result;
-
         public struct Item
         {
             public string Path;
@@ -21,7 +16,7 @@ namespace FDB.Editor
 
         readonly static Item[] None = new Item[] { new Item() };
         UnityEngine.Object _current;
-
+        Action<UnityEngine.Object> _onSelect;
 
         Item[] _allSources;
         Item[] _sources;
@@ -32,15 +27,12 @@ namespace FDB.Editor
         int _scrollToIndex;
 
         public ChooseUnityObjectWindow(
-            int controlId,
             UnityEngine.Object current,
             Type assetType,
-            Action onChanged)
+            Action<UnityEngine.Object> onSelect)
         {
-            ControlId = controlId;
-            Result = null;
-
             _current = current;
+            _onSelect = onSelect;
 
             var isComponent = typeof(Component).IsAssignableFrom(assetType);
             Type filterType = isComponent
@@ -74,24 +66,10 @@ namespace FDB.Editor
                 .ToArray();
         }
 
-        public static bool TrySelect(int controlId, out UnityEngine.Object result)
+        private void SetResult(UnityEngine.Object result)
         {
-            if (ControlId == controlId && Selected)
-            {
-                result = Result;
-                Selected = false;
-                Result = null;
-                return true;
-            }
-            result = default;
-            return false;
-        }
-
-        private static void SetResult(UnityEngine.Object result)
-        {
-            Result = result;
-            Selected = true;
-            OnChanged?.Invoke();
+            _onSelect(result);
+            editorWindow.Close();
         }
 
         public override Vector2 GetWindowSize()
@@ -119,11 +97,6 @@ namespace FDB.Editor
             Filter();
 
             _scrollToIndex = Array.FindIndex(_sources, i => i.Object == _current);
-        }
-
-        public override void OnClose()
-        {
-            OnChanged = null;
         }
 
         public void Filter()
@@ -209,8 +182,7 @@ namespace FDB.Editor
                 base.HandleEvent(evt);
                 if (evt is MouseDownEvent mouseDown && mouseDown.button == 0 && mouseDown.clickCount == 2)
                 {
-                    SetResult(_object);
-                    _window.editorWindow.Close();
+                    _window.SetResult(_object);
                 }
             }
         }

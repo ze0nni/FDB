@@ -28,30 +28,9 @@ namespace FDB.Editor
             GUI.Label(fieldRect, new GUIContent(title, icon), EditorStyles.objectFieldThumb);
             EditorGUIUtility.SetIconSize(originIconSize);
 
-            if (ChooseUnityObjectWindow.TrySelect(id, out var selected))
-            {
-                GUI.changed = true;
-                return selected;
-            }
-
             var e = Event.current;
             switch (e.GetTypeForControl(id))
             {
-                case EventType.MouseDown:
-                    if (fieldRect.Contains(e.mousePosition))
-                    {
-                        if (e.button == 0)
-                        {
-                            PopupWindow.Show(
-                                fieldRect,
-                                new ChooseUnityObjectWindow(id, inputValue, assetType, onChanged));
-                            e.Use();
-                        } else
-                        {
-                            EditorGUIUtility.PingObject(inputValue);
-                        }
-                    }
-                    break;
                 case EventType.DragUpdated:
                     {
                         if (fieldRect.Contains(e.mousePosition))

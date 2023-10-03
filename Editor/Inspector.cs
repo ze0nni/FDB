@@ -105,14 +105,6 @@ namespace FDB.Editor
                     {
                         return AssetReferenceField.Field(rawValue as AssetReference, assetRefHeader.AssetType, layoutWidth);
                     }
-                case ColorFieldHeaderState colorHeader:
-                    {
-                        return EditorGUILayout.ColorField((Color)rawValue, layoutWidth);
-                    }
-                case AnimationCurveFieldHeaderState _:
-                    {
-                        return EditorGUILayout.CurveField((AnimationCurve)rawValue, layoutWidth);
-                    }
                 case UnityObjectFieldHeaderState unityObjectField:
                     {
                         return UnityObjectField.Field((UnityEngine.Object)rawValue, unityObjectField.Field.FieldType, layoutWidth, makeDirty);

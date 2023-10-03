@@ -101,44 +101,6 @@ namespace FDB.Editor
                 //            makeDirty);
                 //    }
 
-                case EnumFieldHeaderState enumHeader:
-                    {
-                        var index = Array.IndexOf(enumHeader.Values, rawValue);
-                        var newIndex = EditorGUILayout.Popup(index, enumHeader.Names, layoutWidth);
-                        return enumHeader.Values.GetValue(newIndex);
-                    }
-
-                case BoolFieldHeaderState boolField:
-                    {
-                        return EditorGUILayout.Toggle((bool)rawValue, layoutWidth);
-                    }
-
-                case IntFieldHeaderState intHeader:
-                    {
-                        return EditorGUILayout.IntField((int)rawValue, layoutWidth);
-                    }
-
-                case FloatFieldHeaderState floatHeader:
-                    {
-                        return EditorGUILayout.FloatField((float)rawValue, layoutWidth);
-                    }
-
-                case StringFieldHeaderState stringHeader:
-                    {
-                        if (stringHeader.IsMultiline(owner, out var minLines))
-                        {
-                            return EditorGUILayout.TextArea(
-                                (string)rawValue,
-                                FDBEditorStyles.WordWrapTextArea,
-                                layoutWidth, 
-                                GUILayout.MinHeight(minLines * 16));
-                        }
-                        else
-                        {
-                            return EditorGUILayout.TextField((string)rawValue, layoutWidth);
-                        }
-                    }
-
                 case AssetReferenceFieldHeaderState assetRefHeader:
                     {
                         return AssetReferenceField.Field(rawValue as AssetReference, assetRefHeader.AssetType, layoutWidth);

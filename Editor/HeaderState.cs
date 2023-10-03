@@ -120,24 +120,6 @@ namespace FDB.Editor
         public AnimationCurveFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
     }
 
-    public sealed class EnumFieldHeaderState : FieldHeaderState
-    {
-        public readonly Array Values;
-        public readonly string[] Names;
-
-        public EnumFieldHeaderState(string path, FieldInfo field) : base(path, field)
-        {
-            Values = field.FieldType.GetEnumValues();
-            Names = field.FieldType.GetEnumNames();
-        }
-
-        public EnumFieldHeaderState(string path, Type enumType) : base(path, null)
-        {
-            Values = enumType.GetEnumValues();
-            Names = enumType.GetEnumNames();
-        }
-    }
-
     public sealed class UnityObjectFieldHeaderState : FieldHeaderState
     {
         public UnityObjectFieldHeaderState(string path, FieldInfo field) : base(path, field)

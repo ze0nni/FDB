@@ -3,14 +3,6 @@ using System.Reflection;
 
 namespace FDB.Editor
 {
-    public sealed class AssetReferenceFieldHeaderState : FieldHeaderState
-    {
-        public readonly Type AssetType;
-        public AssetReferenceFieldHeaderState(string path, FieldInfo field, Type assetType) : base(path, field) {
-            AssetType = assetType;
-        }
-    }
-
     public sealed class ListHeaderState : HeaderState
     {
         public readonly FieldInfo Field;

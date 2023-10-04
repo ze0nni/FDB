@@ -41,7 +41,7 @@ namespace FDB.Editor
                     {
                         var assetType = field.FieldType.GetGenericArguments()[0];
                        
-                        yield return new AssetReferenceFieldHeaderState(path, field, assetType);
+                        yield return new AssetReferenceFieldHeaderState(path, assetType, field);
                     }
                     else if (fieldGenericType == typeof(List<>))
                     {
@@ -114,7 +114,7 @@ namespace FDB.Editor
                 }
                 else if (field.FieldType == typeof(AssetReference))
                 {
-                    yield return new AssetReferenceFieldHeaderState(path, field, typeof(object));
+                    yield return new AssetReferenceFieldHeaderState(path, typeof(UnityEngine.Object), field);
                 }
                 else if (field.FieldType == typeof(Color))
                 {

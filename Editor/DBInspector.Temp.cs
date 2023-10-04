@@ -15,12 +15,12 @@ namespace FDB.Editor
             _pageRowsCounter = 0;
 
             var changed = false;
-            //OnHeadersGui(left, headers);
-            changed |= OnItemsGui_BAK(left, aggregator, headers, type, model, filter);
-            if (string.IsNullOrEmpty(filter))
-            {
-                OnPageActionsGui_BAK(left, headers, model);
-            }
+            ////OnHeadersGui(left, headers);
+            //changed |= OnItemsGui_BAK(left, aggregator, headers, type, model, filter);
+            //if (string.IsNullOrEmpty(filter))
+            //{
+            //    OnPageActionsGui_BAK(left, headers, model);
+            //}
             return changed;
         }
 
@@ -36,113 +36,113 @@ namespace FDB.Editor
             }
         }
 
-        bool OnItemsGui_BAK(int left, Aggregator aggregator, HeaderState[] headers, Type itemType, object collection, string filter)
-        {
-            var changed = false;
+        //bool OnItemsGui_BAK(int left, Aggregator aggregator, HeaderState[] headers, Type itemType, object collection, string filter)
+        //{
+        //    var changed = false;
 
-            var itemIndex = 0;
+        //    var itemIndex = 0;
 
-            switch (collection)
-            {
-                case Index index:
-                    aggregator.Clear();
-                    foreach (var i in index.All())
-                    {
-                        aggregator.Add(i, out var separate);
-                        if (!string.IsNullOrEmpty(filter) && !Inspector.ApplyFilter(i, filter))
-                        {
-                            continue;
-                        }
+        //    switch (collection)
+        //    {
+        //        case Index index:
+        //            aggregator.Clear();
+        //            foreach (var i in index.All())
+        //            {
+        //                aggregator.Add(i, out var separate);
+        //                if (!string.IsNullOrEmpty(filter) && !Inspector.ApplyFilter(i, filter))
+        //                {
+        //                    continue;
+        //                }
 
-                        if (string.IsNullOrEmpty(filter) && separate)
-                        {
-                            aggregator.OnGUI(left + MenuSize, false, TableLineScope_BAK);
-                            GUILayout.Space(GroupSpace);
-                        }
+        //                if (string.IsNullOrEmpty(filter) && separate)
+        //                {
+        //                    aggregator.OnGUI(left + MenuSize, false, TableLineScope_BAK);
+        //                    GUILayout.Space(GroupSpace);
+        //                }
 
-                        changed |= OnModelGui_BAK(left, headers, i, index, itemIndex);
-                        changed |= OnExpandedGui_BAK(left, headers, i);
-                        itemIndex++;
-                    }
-                    aggregator.OnGUI(left + MenuSize, true, TableLineScope_BAK);
-                    if (changed)
-                    {
-                        index.SetDirty();
-                    }
-                    break;
-                case IEnumerable list
-                    when list.GetType().IsGenericType
-                    && list.GetType().GetGenericTypeDefinition() == typeof(List<>):
-                    {
-                        if (itemType.IsEnum
-                            || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Ref<>))
-                            || itemType == typeof(bool)
-                            || itemType == typeof(int)
-                            || itemType == typeof(float)
-                            || itemType == typeof(string)
-                            || DBResolver.IsSupportedUnityType(itemType))
-                        {
-                            var indexParamas = new object[1];
-                            var countProp = list.GetType().GetProperty("Count");
-                            var itemProp = list.GetType().GetProperty("Item");
+        //                changed |= OnModelGui_BAK(left, headers, i, index, itemIndex);
+        //                changed |= OnExpandedGui_BAK(left, headers, i);
+        //                itemIndex++;
+        //            }
+        //            aggregator.OnGUI(left + MenuSize, true, TableLineScope_BAK);
+        //            if (changed)
+        //            {
+        //                index.SetDirty();
+        //            }
+        //            break;
+        //        case IEnumerable list
+        //            when list.GetType().IsGenericType
+        //            && list.GetType().GetGenericTypeDefinition() == typeof(List<>):
+        //            {
+        //                if (itemType.IsEnum
+        //                    || (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Ref<>))
+        //                    || itemType == typeof(bool)
+        //                    || itemType == typeof(int)
+        //                    || itemType == typeof(float)
+        //                    || itemType == typeof(string)
+        //                    || DBResolver.IsSupportedUnityType(itemType))
+        //                {
+        //                    var indexParamas = new object[1];
+        //                    var countProp = list.GetType().GetProperty("Count");
+        //                    var itemProp = list.GetType().GetProperty("Item");
 
-                            var count = (int)countProp.GetValue(list);
+        //                    var count = (int)countProp.GetValue(list);
 
-                            aggregator.Clear();
-                            for (itemIndex = 0; itemIndex < count; itemIndex++)
-                            {
-                                indexParamas[0] = itemIndex;
-                                var value = itemProp.GetValue(list, indexParamas);
+        //                    aggregator.Clear();
+        //                    for (itemIndex = 0; itemIndex < count; itemIndex++)
+        //                    {
+        //                        indexParamas[0] = itemIndex;
+        //                        var value = itemProp.GetValue(list, indexParamas);
 
-                                aggregator.Add(value, out var separate);
+        //                        aggregator.Add(value, out var separate);
 
-                                if (separate)
-                                {
-                                    aggregator.OnGUI(left + MenuSize, false, TableLineScope_BAK);
-                                    GUILayout.Space(GroupSpace);
-                                }
+        //                        if (separate)
+        //                        {
+        //                            aggregator.OnGUI(left + MenuSize, false, TableLineScope_BAK);
+        //                            GUILayout.Space(GroupSpace);
+        //                        }
 
-                                using (new TableRowGUILayout(this, left))
-                                {
-                                    OnIndexMenuGUI_BAK(list, itemIndex);
-                                    EditorGUI.BeginChangeCheck();
-                                    var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, 0, _makeDirty);
-                                    if (EditorGUI.EndChangeCheck())
-                                    {
-                                        itemProp.SetValue(list, newValue, indexParamas);
-                                        changed |= true;
-                                    }
-                                }
-                            }
-                            aggregator.OnGUI(left + MenuSize, true, TableLineScope_BAK);
-                        }
-                        else
-                        {
-                            foreach (var i in list)
-                            {
-                                aggregator.Add(i, out var separate);
+        //                        using (new TableRowGUILayout(this, left))
+        //                        {
+        //                            OnIndexMenuGUI_BAK(list, itemIndex);
+        //                            EditorGUI.BeginChangeCheck();
+        //                            var newValue = Inspector.Field(EditorDB<T>.Resolver, headers[0], null, value, 0, _makeDirty);
+        //                            if (EditorGUI.EndChangeCheck())
+        //                            {
+        //                                itemProp.SetValue(list, newValue, indexParamas);
+        //                                changed |= true;
+        //                            }
+        //                        }
+        //                    }
+        //                    aggregator.OnGUI(left + MenuSize, true, TableLineScope_BAK);
+        //                }
+        //                else
+        //                {
+        //                    foreach (var i in list)
+        //                    {
+        //                        aggregator.Add(i, out var separate);
 
-                                if (separate)
-                                {
-                                    aggregator.OnGUI(left + MenuSize, false, TableLineScope_BAK);
-                                    GUILayout.Space(GroupSpace);
-                                }
+        //                        if (separate)
+        //                        {
+        //                            aggregator.OnGUI(left + MenuSize, false, TableLineScope_BAK);
+        //                            GUILayout.Space(GroupSpace);
+        //                        }
 
-                                changed |= OnModelGui_BAK(left, headers, i, list, itemIndex);
-                                changed |= OnExpandedGui_BAK(0, headers, i);
-                                itemIndex++;
-                            }
-                            aggregator.OnGUI(left + MenuSize, true, TableLineScope_BAK);
-                        }
-                    }
-                    break;
-                default:
-                    GUILayout.Label(collection?.GetType().ToString() ?? "Null");
-                    break;
-            }
+        //                        changed |= OnModelGui_BAK(left, headers, i, list, itemIndex);
+        //                        changed |= OnExpandedGui_BAK(0, headers, i);
+        //                        itemIndex++;
+        //                    }
+        //                    aggregator.OnGUI(left + MenuSize, true, TableLineScope_BAK);
+        //                }
+        //            }
+        //            break;
+        //        default:
+        //            GUILayout.Label(collection?.GetType().ToString() ?? "Null");
+        //            break;
+        //    }
 
-            return changed;
-        }
+        //    return changed;
+        //}
 
         void ToggleExpandedState_BAK(object item, HeaderState header)
         {
@@ -205,11 +205,11 @@ namespace FDB.Editor
                         {
                             //OnHeadersGui(left + header.Left, listHeader.Headers);
                             var list = listHeader.Field.GetValue(item);
-                            changed |= OnItemsGui_BAK(
-                                left + header.Left,
-                                listHeader.Aggregator,
-                                listHeader.Headers,
-                                listHeader.ItemType, list, null);
+                            //changed |= OnItemsGui_BAK(
+                            //    left + header.Left,
+                            //    listHeader.Aggregator,
+                            //    listHeader.Headers,
+                            //    listHeader.ItemType, list, null);
                             OnPageActionsGui_BAK(left + header.Left, listHeader.Headers, list);
                         }
                         break;
@@ -340,42 +340,42 @@ namespace FDB.Editor
         {
             var changed = false;
 
-            switch (header)
-            {
-                case FieldHeaderState fieldHeader:
+            //switch (header)
+            //{
+            //    case FieldHeaderState fieldHeader:
 
-                    EditorGUI.BeginChangeCheck();
+            //        EditorGUI.BeginChangeCheck();
 
-                    var value = fieldHeader.Field.GetValue(owner);
-                    var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value, 0, _makeDirty);
-                    var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
+            //        var value = fieldHeader.Field.GetValue(owner);
+            //        var newValue = Inspector.Field(EditorDB<T>.Resolver, fieldHeader, owner, value, 0, _makeDirty);
+            //        var fieldId = GUIUtility.GetControlID(headerIndex, FocusType.Passive);
 
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        Undo.Push(fieldId, owner);
-                        fieldHeader.Field.SetValue(owner, newValue);
-                        changed |= true;
-                    }
-                    break;
+            //        if (EditorGUI.EndChangeCheck())
+            //        {
+            //            Undo.Push(fieldId, owner);
+            //            fieldHeader.Field.SetValue(owner, newValue);
+            //            changed |= true;
+            //        }
+            //        break;
 
-                case ListHeaderState listHeader:
-                    {
-                        DBResolver.GetGUID(owner, out var guid);
-                        _expandedFields.TryGetValue(guid, out var fieldName);
-                        var isExpanded = fieldName == header.Title;
+            //    case ListHeaderState listHeader:
+            //        {
+            //            DBResolver.GetGUID(owner, out var guid);
+            //            _expandedFields.TryGetValue(guid, out var fieldName);
+            //            var isExpanded = fieldName == header.Title;
 
-                        var list = (IList)listHeader.Field.GetValue(owner);
-                        if (GUILayout.Button(
-                            isExpanded
-                                ? " [...]"
-                                : $"[ {list.Count} : {listHeader.ItemType.Name} ]",
-                            GUILayout.Width(header.Width)))
-                        {
-                            ToggleExpandedState_BAK(owner, header);
-                        }
-                    }
-                    break;
-            }
+            //            var list = (IList)listHeader.Field.GetValue(owner);
+            //            if (GUILayout.Button(
+            //                isExpanded
+            //                    ? " [...]"
+            //                    : $"[ {list.Count} : {listHeader.ItemType.Name} ]",
+            //                GUILayout.Width(header.Width)))
+            //            {
+            //                ToggleExpandedState_BAK(owner, header);
+            //            }
+            //        }
+            //        break;
+            //}
             return changed;
         }
 

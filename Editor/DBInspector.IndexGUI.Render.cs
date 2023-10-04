@@ -124,6 +124,11 @@ namespace FDB.Editor
 
             foreach (var h in row.Headers)
             {
+                if (h.Separate)
+                {
+                    left += GUIConst.HeaderSeparator;
+                }
+
                 var fieldRect = new Rect(left, top, h.Width, height);
 
                 h.OnGUI(in context, fieldRect, config, null);
@@ -140,6 +145,11 @@ namespace FDB.Editor
             var left = rect.x + GUIConst.ActionsColumnWidth;
             foreach (var header in headers)
             {
+                if (header.Separate)
+                {
+                    left += GUIConst.HeaderSeparator;
+                }
+
                 var headerRect = new Rect(left, rect.y, header.Width, rect.height);
                 GUI.Label(headerRect, header.Title, FDBEditorStyles.HeaderStyle);
 

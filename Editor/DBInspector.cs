@@ -149,6 +149,8 @@ namespace FDB.Editor
                 if (PageIndex != newPageIndex)
                 {
                     PageIndex = newPageIndex;
+                    ResetInput();
+                    GUIUtility.hotControl = 0;
                     GUI.FocusControl(null);
                     GUI.changed = true;
                 }

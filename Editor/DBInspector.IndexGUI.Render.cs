@@ -128,6 +128,20 @@ namespace FDB.Editor
             _indent = _indents.Sum();
         }
 
+        bool RectFrom(Vector2 pos, out RowRender row)
+        {
+            foreach (var r in _rows)
+            {
+                if (r.Rect.Contains(pos))
+                {
+                    row = r;
+                    return true;
+                }
+            }
+            row = default;
+            return false;
+        }
+
         void RenderRow(
             in PageContext context,
             HeaderState[] headers,
@@ -187,8 +201,8 @@ namespace FDB.Editor
                             OnHeadersGUI(context.Inspector, row.Rect, row.Headers);
                             break;
                         case RowType.Row:
-                            OnRowBackground(row.Rect, rowIndex++);
-                            OnRowGUI(in context, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.CollectionIndex, row.Headers);
+                            OnRowBackground(in context, row.Rect, row.Config, rowIndex++);
+                            OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.CollectionIndex, row.Headers);
                             break;
                         case RowType.CollectionActions:
                             OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType);
@@ -201,15 +215,19 @@ namespace FDB.Editor
             }
         }
 
-        void OnRowBackground(Rect rect, int rowIndex)
+        void OnRowBackground(in PageContext context, Rect rect, object config, int rowIndex)
         {
-            var style = rowIndex % 2 == 0
-                ? FDBEditorStyles.EvenRowStyle
-                : FDBEditorStyles.OddRowStyle;
+            var style = 
+                context.Inspector.OnInput<InputDragRow>(out var drageRow) && drageRow.Config == config
+                    ? FDBEditorStyles.HoverRowStyle
+                :rowIndex % 2 == 0
+                    ? FDBEditorStyles.EvenRowStyle
+                    : FDBEditorStyles.OddRowStyle;
+
             GUI.Box(rect, "", style);
         }
 
-        void OnRowGUI(in PageContext context, Rect rowRect, object config, IList collection, Type collectionItemType, int collectionIndex, HeaderState[] headers)
+        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, int collectionIndex, HeaderState[] headers)
         {
             var rect = rowRect;
             rect.y += GUIConst.RowPadding;
@@ -219,10 +237,15 @@ namespace FDB.Editor
             var top = rect.y;
             var height = rect.height;
 
-            {
-                OnRowActionsGUI(in context, new Rect(left, top, GUIConst.RowActionsColumnWidth, height), config, collection, collectionItemType, collectionIndex); ;
-                left += GUIConst.RowActionsColumnWidth;
-            }
+            OnRowActionsGUI(in context,
+                rowId,
+                new Rect(left, top, GUIConst.RowActionsColumnWidth, height),
+                config,
+                collection,
+                collectionItemType, 
+                collectionIndex);
+
+            left += GUIConst.RowActionsColumnWidth;
 
             foreach (var h in headers)
             {
@@ -239,17 +262,62 @@ namespace FDB.Editor
             }
         }
 
-        void OnRowActionsGUI(in PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex)
+        void OnRowActionsGUI(in PageContext context, int rowId, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex)
         {
             var iconSize = GUIConst.RowFieldHeight;
             var iconRect = new Rect(rect.x, rect.y, iconSize, iconSize);
             GUI.Label(iconRect, FDBEditorIcons.RowAction);
             var labelRect = new Rect(rect.x + iconSize, rect.y, rect.width - iconSize - GUIConst.HeaderSpace, iconSize);
-            GUI.Label(labelRect, collectionIndex.ToString(), FDBEditorStyles.RightAlignLabel);
+            if (context.Inspector.OnInput<InputDragRow>(out var dragRow) && dragRow.Config == config)
+            {
+                GUI.Label(labelRect, $"{collectionIndex}<", FDBEditorStyles.RightAlignLabel);
+            } else
+            {
+                GUI.Label(labelRect, collectionIndex.ToString(), FDBEditorStyles.RightAlignLabel);
+            }
+
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeVertical);
 
             var e = Event.current;
-            switch (e.type)
+            var t = e.GetTypeForControl(rowId);
+            switch (t)
             {
+                case EventType.MouseDown:
+                    if (rect.Contains(e.mousePosition))
+                    {
+                        if (e.button == 0)
+                        {
+                            GUIUtility.hotControl = rowId;
+                            context.Inspector.SetInput(new InputDragRow(config, collection, collectionIndex));
+                            e.Use();
+                        }
+                    }
+                    break;
+                case EventType.MouseUp:
+                    if (dragRow != null && dragRow.Config == config)
+                    {
+                        context.Inspector.ResetInput();
+                        GUIUtility.hotControl = 0;
+                        e.Use();
+                    }
+                    break;
+                case EventType.MouseDrag:
+                    if (dragRow != null && dragRow.Config == config)
+                    {
+                        if (RectFrom(e.mousePosition, out var targetRow) 
+                            && targetRow.Type == RowType.Row
+                            && targetRow.Collection == collection
+                            && Math.Abs(targetRow.CollectionIndex - collectionIndex) == 1)
+                        {
+                            collection[collectionIndex] = targetRow.Config;
+                            collection[targetRow.CollectionIndex] = config;
+                            context.Inspector.SetInput(new InputDragRow(config, collection, targetRow.CollectionIndex));
+                            context.MakeDirty();
+                        }
+                        GUIUtility.hotControl = rowId;
+                        e.Use();
+                    }
+                    break;
                 case EventType.ContextClick:
                     if (rect.Contains(e.mousePosition))
                     {

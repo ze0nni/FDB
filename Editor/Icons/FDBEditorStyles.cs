@@ -7,6 +7,7 @@ namespace FDB.Editor
     {
         public static GUIStyle OddRowStyle { get; private set; }
         public static GUIStyle EvenRowStyle { get; private set; }
+        public static GUIStyle HoverRowStyle { get; private set; }
         public static GUIStyle HeaderStyle { get; private set; }
         public static GUIStyle WordWrapTextArea { get; private set; }
         public static GUIStyle RichTextLabel { get; private set; }
@@ -29,6 +30,14 @@ namespace FDB.Editor
                 normal = new GUIStyleState
                 {
                     background = FDBEditorIcons.RowEven
+                }
+            };
+            HoverRowStyle = new GUIStyle
+            {
+                padding = padding,
+                normal = new GUIStyleState
+                {
+                    background = FDBEditorIcons.RowHover
                 }
             };
             HeaderStyle = new GUIStyle

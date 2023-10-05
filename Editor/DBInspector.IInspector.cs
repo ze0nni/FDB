@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace FDB.Editor {
@@ -30,6 +31,19 @@ namespace FDB.Editor {
             Header = header;
             StartWidth = header.Width;
             StartMouse = startMouse;
+        }
+    }
+
+    public sealed class InputDragRow : InputStateBase
+    {
+        public readonly object Config;
+        public readonly IList Collection;
+        public readonly int CollectionIndex;
+        public InputDragRow(object config, IList collection, int collectionIndex)
+        {
+            Config = config;
+            Collection = collection;
+            CollectionIndex = collectionIndex;
         }
     }
 

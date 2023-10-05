@@ -18,6 +18,7 @@ namespace FDB.Editor
 
         public static Texture2D RowOdd { get; private set; }
         public static Texture2D RowEven { get; private set; }
+        public static Texture2D RowHover { get; private set; }
         public static Texture2D RowAction { get; private set; }
 
         public static Texture2D HeaderBackground { get; private set; }
@@ -37,6 +38,7 @@ namespace FDB.Editor
 
             RowOdd = GetTexture("fdb-row-odd.png");
             RowEven = GetTexture("fdb-row-even.png");
+            RowHover = GetTexture("fdb-row-hover.png");
             RowAction = GetTexture("fdb-row-action.png");
 
             HeaderBackground = GetTexture("fdb-header-backgroud.png");

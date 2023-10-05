@@ -23,6 +23,7 @@ namespace FDB.Editor
         public HeaderState[] Headers;
         public object Config;
         public IList Collection;
+        public int CollectionIndex;
         public Type CollectionItemType;
 
         public override int GetHashCode()
@@ -88,9 +89,10 @@ namespace FDB.Editor
 
         void RenderCollection(in PageContext context, IList collection, Type itemType, HeaderState[] headers)
         {
+            var collectionIndex = 0;
             foreach (var config in collection)
             {
-                AppendRow(in context, headers, config);
+                AppendRow(in context, headers, config, collection, itemType, collectionIndex++);
             }
 
             BeginIndend(GUIConst.ActionsColumnWidth);
@@ -126,7 +128,13 @@ namespace FDB.Editor
             _indent = _indents.Sum();
         }
 
-        void AppendRow(in PageContext context, HeaderState[] headers, object config)
+        void AppendRow(
+            in PageContext context,
+            HeaderState[] headers,
+            object config,
+            IList collection,
+            Type collectionItemType,
+            int collectionIndex)
         {
             var height = GUIConst.RowFieldHeight;
             foreach (var h in headers)
@@ -139,7 +147,10 @@ namespace FDB.Editor
                 Type = RowType.Row,
                 Rect = AppendRect(GUIConst.MeasureHeadersWidth(headers), height),
                 Headers = headers,
-                Config = config
+                Config = config,
+                Collection = collection,
+                CollectionItemType = collectionItemType,
+                CollectionIndex = collectionIndex
             });
 
             if (context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
@@ -155,7 +166,7 @@ namespace FDB.Editor
                             RenderCollection(in context, list, listHeader.ItemType, listHeader.Headers);
                         } else
                         {
-                            
+
                         }
                         break;
                 }
@@ -175,7 +186,7 @@ namespace FDB.Editor
                             OnHeadersGUI(context.Input, row.Rect, row.Headers);
                             break;
                         case RowType.Row:
-                            OnRowGUI(in context, row.Rect, row.Config, row.Headers);
+                            OnRowGUI(in context, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.CollectionIndex, row.Headers);
                             break;
                         case RowType.CollectionActions:
                             OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType);
@@ -188,14 +199,14 @@ namespace FDB.Editor
             }
         }
 
-        void OnRowGUI(in PageContext context, Rect rect, object config, HeaderState[] headers)
+        void OnRowGUI(in PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex, HeaderState[] headers)
         {
             var left = rect.x;
             var top = rect.y;
             var height = rect.height;
 
             {
-                //TODO actions
+                OnRowActionsGUI(in context, new Rect(left, top, GUIConst.ActionsColumnWidth, height), config, collection, collectionItemType, collectionIndex); ;
                 left += GUIConst.ActionsColumnWidth;
             }
 
@@ -212,6 +223,65 @@ namespace FDB.Editor
 
                 left += h.Width + GUIConst.HeaderSpace;
             }
+        }
+
+        void OnRowActionsGUI(in PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex)
+        {
+            var iconsWidth = FDBEditorIcons.RowAction.width;
+            var iconRect = new Rect(rect.x, rect.y, iconsWidth, rect.height);
+            GUI.Label(iconRect, FDBEditorIcons.RowAction);
+            var labelRect = new Rect(rect.x + iconsWidth, rect.y, rect.width - iconsWidth - GUIConst.HeaderSpace, rect.height);
+            GUI.Label(labelRect, collectionIndex.ToString(), FDBEditorStyles.RightAlignLabel);
+
+            var e = Event.current;
+            switch (e.type)
+            {
+                case EventType.ContextClick:
+                    if (rect.Contains(e.mousePosition))
+                    {
+                        ShowRowActionsMenu(context, rect, config, collection, collectionItemType, collectionIndex);
+                        e.Use();
+                    }
+                    break;
+            }
+        }
+
+        void ShowRowActionsMenu(PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex)
+        {
+            var menu = new GenericMenu();
+
+            void swap(int i0, int i1)
+            {
+                var o0 = collection[i0];
+                var o1 = collection[i1];
+                collection[i0] = o1;
+                collection[i1] = o0;
+            }
+
+            menu.AddItem(new GUIContent("Move up"), false, () => {
+                swap(collectionIndex, collectionIndex - 1);
+                context.MakeDirty();
+            });
+            menu.AddItem(new GUIContent("Move down"), false, () => {
+                swap(collectionIndex, collectionIndex + 1);
+                context.MakeDirty();
+            });
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("Insert above"), false, () => {
+                collection.Insert(collectionIndex, DBResolver.Instantate(collectionItemType, true));
+                context.MakeDirty();
+            });
+            menu.AddItem(new GUIContent("Insert belove"), false, () => {
+                collection.Insert(collectionIndex + 1, DBResolver.Instantate(collectionItemType, true));
+                context.MakeDirty();
+            });
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("Delete"), false, () => {
+                collection.RemoveAt(collectionIndex);
+                context.MakeDirty();
+            });
+
+            menu.DropDown(rect);
         }
 
         public void OnCollectionActions(in PageContext context, Rect rect, IList collection, Type itemType)

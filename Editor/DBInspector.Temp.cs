@@ -144,82 +144,32 @@ namespace FDB.Editor
         //    return changed;
         //}
 
-        void ToggleExpandedState_BAK(object item, HeaderState header)
-        {
-            if (!DBResolver.GetGUID(item, out var guid))
-            {
-                return;
-            }
-
-            if (_expandedFields.TryGetValue(guid, out var storedField) && storedField == header.Title)
-            {
-                _expandedFields.Remove(guid);
-                _expandedOrder.Remove(guid);
-            }
-            else
-            {
-                _expandedFields[guid] = header.Title;
-                _expandedOrder.Remove(guid);
-                _expandedOrder.Add(guid);
-            }
-
-            while (_expandedOrder.Count > MaxExpandedHistory)
-            {
-                _expandedFields.Remove(_expandedOrder[0]);
-                _expandedOrder.RemoveAt(0);
-            }
-
-            GUI.changed = true;
-        }
-
-        bool TryGetExpandedHeader_BAK(object item, HeaderState[] headers, out HeaderState header)
-        {
-            if (!DBResolver.GetGUID(item, out var guid)
-                || !_expandedFields.TryGetValue(guid, out var field))
-            {
-                header = null;
-                return false;
-            }
-
-            foreach (var h in headers)
-            {
-                if (h.Title == field)
-                {
-                    header = h;
-                    return true;
-                }
-            }
-
-            header = null;
-            return false;
-        }
-
         bool OnExpandedGui_BAK(int left, HeaderState[] headers, object item)
         {
             var changed = false;
-            if (TryGetExpandedHeader_BAK(item, headers, out var header))
+            //if (TryGetExpandedHeader_BAK(item, headers, out var header))
             {
-                switch (header)
-                {
-                    case ListHeaderState listHeader:
-                        {
-                            //OnHeadersGui(left + header.Left, listHeader.Headers);
-                            var list = listHeader.Field.GetValue(item);
-                            //changed |= OnItemsGui_BAK(
-                            //    left + header.Left,
-                            //    listHeader.Aggregator,
-                            //    listHeader.Headers,
-                            //    listHeader.ItemType, list, null);
-                            OnPageActionsGui_BAK(left + header.Left, listHeader.Headers, list);
-                        }
-                        break;
+                //switch (header)
+                //{
+                //    case ListHeaderState listHeader:
+                //        {
+                //            //OnHeadersGui(left + header.Left, listHeader.Headers);
+                //            var list = listHeader.Field.GetValue(item);
+                //            //changed |= OnItemsGui_BAK(
+                //            //    left + header.Left,
+                //            //    listHeader.Aggregator,
+                //            //    listHeader.Headers,
+                //            //    listHeader.ItemType, list, null);
+                //            OnPageActionsGui_BAK(left + header.Left, listHeader.Headers, list);
+                //        }
+                //        break;
 
-                    default:
-                        {
-                            GUILayout.Label($"Item {header.GetType().Name} can't be expand");
-                        }
-                        break;
-                }
+                //    default:
+                //        {
+                //            GUILayout.Label($"Item {header.GetType().Name} can't be expand");
+                //        }
+                //        break;
+                //}
             }
 
             return changed;
@@ -293,7 +243,7 @@ namespace FDB.Editor
                         });
                         menu.AddSeparator("");
                         menu.AddItem(new GUIContent("Delete"), false, () => {
-                            index.Remove(itemIndex);
+                            index.RemoveAt(itemIndex);
                             MakeDirty();
                         });
                     }

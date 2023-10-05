@@ -58,7 +58,7 @@ namespace FDB.Editor
         public abstract object Get(object config, int? collectionIndex);
         public abstract void Set(object config, int? collectionIndex, object value);
 
-        public void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
+        public virtual void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
         {
             var lineRect = rect;
             lineRect.height = GUIConst.RowFieldHeight;

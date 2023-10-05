@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Reflection;
+using UnityEngine;
 
 namespace FDB.Editor
 {
@@ -21,12 +22,24 @@ namespace FDB.Editor
 
         public override object Get(object config, int? collectionIndex)
         {
-            throw new NotImplementedException();
+            return Field.GetValue(config);
         }
 
         public override void Set(object config, int? collectionIndex, object value)
         {
-            throw new NotImplementedException();
+            Field.SetValue(config, value);
+            GUI.changed = true;
+        }
+
+        public override void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
+        {
+            var lineRect = rect;
+            lineRect.height = GUIConst.RowFieldHeight;
+
+            if (GUI.Button(lineRect, "[...]"))
+            {
+                context.Inspector.ToggleExpandedState(config, this);
+            }
         }
     }
 }

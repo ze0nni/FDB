@@ -6,6 +6,7 @@ namespace FDB.Editor
 {
     public readonly struct PageContext
     {
+        public readonly IInspector Inspector;
         public readonly IInput Input;
         public readonly object DB;
         public readonly DBResolver Resolver;
@@ -13,12 +14,14 @@ namespace FDB.Editor
         public readonly Action MakeDirty;
         public readonly int WindowLevel;
         public PageContext(
+            IInspector inspector,
             IInput input,
             object db,
             DBResolver resolver,
             Action repaint,
             Action makeDirty)
         {
+            Inspector = inspector;
             Input = input;
             DB = db;
             Resolver = resolver;
@@ -28,6 +31,7 @@ namespace FDB.Editor
         }
 
         PageContext(
+            IInspector inspector,
             IInput input,
             object db,
             DBResolver resolver,
@@ -35,6 +39,7 @@ namespace FDB.Editor
             Action makeDirty,
             int windowLevel)
         {
+            Inspector = inspector;
             Input = input;
             DB = db;
             Resolver = resolver;
@@ -47,6 +52,7 @@ namespace FDB.Editor
         {
             var baseRepaint = Repaint;
             return new PageContext(
+                Inspector,
                 Input,
                 DB,
                 Resolver,
@@ -75,7 +81,7 @@ namespace FDB.Editor
             var db = EditorDB<T>.DB;
             var resolver = EditorDB<T>.Resolver;
             var index = (Index)state.ResolveModel(db);
-            var context = new PageContext(Input, db, resolver, this.Repaint, EditorDB<T>.SetDirty);
+            var context = new PageContext(this, Input, db, resolver, this.Repaint, EditorDB<T>.SetDirty);
 
             Render.Render(in context, state.Headers, index);
 

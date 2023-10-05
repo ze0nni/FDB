@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace FDB
 {
-    public interface Index
+    public interface Index : IEnumerable, IList
     {
         Type ConfigType { get; }
 
@@ -17,14 +17,11 @@ namespace FDB
         IReadOnlyList<string> Warnings { get; }
         
         bool TryGet(string kind, out object config);
-        bool Contains(object config);
-        void Add(object item);
-        void Insert(int index, object item);
         void Swap(int i0, int i1);
-        void Remove(int index);
     }
 
-    public sealed class Index<T> : Index where T : class
+    public sealed class Index<T> : Index, IEnumerable<T>
+        where T : class
     {
         readonly List<T> _list = new List<T>();
         readonly Dictionary<string, T> _map = new Dictionary<string, T>();
@@ -35,10 +32,15 @@ namespace FDB
 
         public Type ConfigType => typeof(T);
 
+        [Obsolete("foreach (config in index)")]
         public IReadOnlyList<T> All()
         {
             return _list;
         }
+
+        public List<T>.Enumerator GetEnumerator() => _list.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _list.GetEnumerator();
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => _list.GetEnumerator();
 
         public T Get(Kind<T> kind)
         {
@@ -108,7 +110,7 @@ namespace FDB
             return result;
         }
 
-        bool Index.Contains(object config)
+        bool IList.Contains(object config)
         {
             Invalidate();
             return _configs.Contains(config);
@@ -119,16 +121,55 @@ namespace FDB
             return _list;
         }
 
-        void Index.Add(object item)
+        bool ICollection.IsSynchronized => false;
+        object ICollection.SyncRoot => this;
+        void ICollection.CopyTo(Array array, int index) => throw new NotImplementedException();
+
+        object IList.this[int index]
+        {
+            get => _list[index];
+            set {
+                _list[index] = (T)value;
+                ((Index)this).SetDirty();
+            }
+        }
+
+        bool IList.IsFixedSize => false;
+        bool IList.IsReadOnly => false;
+
+        int IList.Add(object item)
         {
             item = DBResolver.WrapObj(item);
             _list.Add((T)item);
             ((Index)this).SetDirty();
+            return _list.Count;
         }
 
-        void Index.Insert(int index, object item)
+        void IList.Clear()
+        {
+            _list.Clear();
+            ((Index)this).SetDirty();
+        }
+
+        void IList.Insert(int index, object item)
         {
             _list.Insert(index, (T)item);
+            ((Index)this).SetDirty();
+        }
+
+        int IList.IndexOf(object value) => _list.IndexOf((T)value);
+
+        void IList.Remove(object value)
+        {
+            if (_list.Remove((T)value))
+            {
+                ((Index)this).SetDirty();
+            }
+        }
+
+        void IList.RemoveAt(int index)
+        {
+            _list.RemoveAt(index);
             ((Index)this).SetDirty();
         }
 
@@ -138,12 +179,6 @@ namespace FDB
             _list[i0] = _list[i1];
             _list[i1] = t;
 
-        }
-
-        void Index.Remove(int index)
-        {
-            _list.RemoveAt(index);
-            ((Index)this).SetDirty();
         }
     }
 

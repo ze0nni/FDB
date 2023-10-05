@@ -92,10 +92,10 @@ namespace FDB.Editor
             var collectionIndex = 0;
             foreach (var config in collection)
             {
-                AppendRow(in context, headers, config, collection, itemType, collectionIndex++);
+                RenderRow(in context, headers, config, collection, itemType, collectionIndex++);
             }
 
-            BeginIndend(GUIConst.ActionsColumnWidth);
+            BeginIndend(GUIConst.RowActionsColumnWidth);
             _rows.Add(new RowRender
             {
                 Type = RowType.CollectionActions,
@@ -128,7 +128,7 @@ namespace FDB.Editor
             _indent = _indents.Sum();
         }
 
-        void AppendRow(
+        void RenderRow(
             in PageContext context,
             HeaderState[] headers,
             object config,
@@ -145,7 +145,7 @@ namespace FDB.Editor
             _rows.Add(new RowRender
             {
                 Type = RowType.Row,
-                Rect = AppendRect(GUIConst.MeasureHeadersWidth(headers), height),
+                Rect = AppendRect(GUIConst.MeasureHeadersWidth(headers) + GUIConst.AfterRowSpace, height + GUIConst.RowPadding * 2),
                 Headers = headers,
                 Config = config,
                 Collection = collection,
@@ -176,6 +176,7 @@ namespace FDB.Editor
 
         public void OnGUI(in PageContext context, Rect viewRect)
         {
+            var rowIndex = 0;
             foreach (var row in _rows)
             {
                 if (viewRect.Overlaps(row.Rect))
@@ -183,9 +184,10 @@ namespace FDB.Editor
                     var rowId = GUIUtility.GetControlID(row.GetHashCode(), FocusType.Passive, row.Rect);
                     switch (row.Type) {
                         case RowType.Header:
-                            OnHeadersGUI(context.Input, row.Rect, row.Headers);
+                            OnHeadersGUI(context.Inspector, row.Rect, row.Headers);
                             break;
                         case RowType.Row:
+                            OnRowBackground(row.Rect, rowIndex++);
                             OnRowGUI(in context, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.CollectionIndex, row.Headers);
                             break;
                         case RowType.CollectionActions:
@@ -199,15 +201,27 @@ namespace FDB.Editor
             }
         }
 
-        void OnRowGUI(in PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex, HeaderState[] headers)
+        void OnRowBackground(Rect rect, int rowIndex)
         {
+            var style = rowIndex % 2 == 0
+                ? FDBEditorStyles.EvenRowStyle
+                : FDBEditorStyles.OddRowStyle;
+            GUI.Box(rect, "", style);
+        }
+
+        void OnRowGUI(in PageContext context, Rect rowRect, object config, IList collection, Type collectionItemType, int collectionIndex, HeaderState[] headers)
+        {
+            var rect = rowRect;
+            rect.y += GUIConst.RowPadding;
+            rect.height -= GUIConst.RowPadding * 2;
+
             var left = rect.x;
             var top = rect.y;
             var height = rect.height;
 
             {
-                OnRowActionsGUI(in context, new Rect(left, top, GUIConst.ActionsColumnWidth, height), config, collection, collectionItemType, collectionIndex); ;
-                left += GUIConst.ActionsColumnWidth;
+                OnRowActionsGUI(in context, new Rect(left, top, GUIConst.RowActionsColumnWidth, height), config, collection, collectionItemType, collectionIndex); ;
+                left += GUIConst.RowActionsColumnWidth;
             }
 
             foreach (var h in headers)
@@ -227,10 +241,10 @@ namespace FDB.Editor
 
         void OnRowActionsGUI(in PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex)
         {
-            var iconsWidth = FDBEditorIcons.RowAction.width;
-            var iconRect = new Rect(rect.x, rect.y, iconsWidth, rect.height);
+            var iconSize = GUIConst.RowFieldHeight;
+            var iconRect = new Rect(rect.x, rect.y, iconSize, iconSize);
             GUI.Label(iconRect, FDBEditorIcons.RowAction);
-            var labelRect = new Rect(rect.x + iconsWidth, rect.y, rect.width - iconsWidth - GUIConst.HeaderSpace, rect.height);
+            var labelRect = new Rect(rect.x + iconSize, rect.y, rect.width - iconSize - GUIConst.HeaderSpace, iconSize);
             GUI.Label(labelRect, collectionIndex.ToString(), FDBEditorStyles.RightAlignLabel);
 
             var e = Event.current;
@@ -293,11 +307,11 @@ namespace FDB.Editor
             }
         }
 
-        public static void OnHeadersGUI(IInput input, Rect rect, HeaderState[] headers)
+        public static void OnHeadersGUI(IInspector inspector, Rect rect, HeaderState[] headers)
         {
             int headersId = GUIUtility.GetControlID(headers.GetHashCode(), FocusType.Passive);
 
-            var left = rect.x + GUIConst.ActionsColumnWidth;
+            var left = rect.x + GUIConst.RowActionsColumnWidth;
             foreach (var header in headers)
             {
                 if (header.Separate)
@@ -311,30 +325,30 @@ namespace FDB.Editor
                 left += GUIConst.HeaderSpace + header.Width;
 
                 var resizeRect = new Rect(left - GUIConst.HeaderSpace, rect.y, GUIConst.HeaderSpace * 3, rect.height);
-                HandleHeaderResizeEvent(input, headersId, header, resizeRect);
+                HandleHeaderResizeEvent(inspector, headersId, header, resizeRect);
             }
         }
 
-        public static void HandleHeaderResizeEvent(IInput input, int headersId, HeaderState header, Rect resize)
+        public static void HandleHeaderResizeEvent(IInspector inspector, int headersId, HeaderState header, Rect resize)
         {
             EditorGUIUtility.AddCursorRect(resize, MouseCursor.ResizeHorizontal);
 
             var e = Event.current;
-            if (input.State == null)
+            if (inspector.InputState == null)
             {
                 if (e.type == EventType.MouseDown && e.button == 0 && resize.Contains(e.mousePosition))
                 {
                     GUIUtility.hotControl = headersId;
-                    input.Set(new InputResizeHeader(header, e.mousePosition));
+                    inspector.SetInput(new InputResizeHeader(header, e.mousePosition));
                 }
-            } else if (input.Resolve<InputResizeHeader>(out var resizeHeader) && resizeHeader.Header == header)
+            } else if (inspector.OnInput<InputResizeHeader>(out var resizeHeader) && resizeHeader.Header == header)
             {
                 var t = e.GetTypeForControl(headersId);
                 switch (t)
                 {
                     case EventType.MouseUp:
                         GUIUtility.hotControl = 0;
-                        input.Reset();
+                        inspector.ResetInput();
                         e.Use();
                         break;
                     case EventType.MouseDrag:
@@ -343,7 +357,7 @@ namespace FDB.Editor
                             GUIConst.HeaderMinWidth,
                             resizeHeader.StartWidth + e.mousePosition.x - resizeHeader.StartMouse.x);
                         header.Width = (int)newWidth;
-                        input.Repaint();
+                        inspector.Repaint();
                         e.Use();
                         break;
                 }

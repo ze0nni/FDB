@@ -65,7 +65,7 @@ namespace FDB.Editor
         readonly object _config;
         readonly Type _modelType;
         readonly List<string> _errors;
-        readonly HeaderState[] _headers;
+        readonly Header[] _headers;
         readonly AutoRefAttribute _autoRef;
         Ref _currentRef;
         readonly Action<string> _updateRef;
@@ -86,7 +86,7 @@ namespace FDB.Editor
             _config = config;
             _modelType = modelType;
             _errors = new List<string>();
-            _headers = HeaderState.Of(_modelType, 0, "", true, _errors.Add).ToArray();
+            _headers = Header.Of(_modelType, 0, "", true, _errors.Add).ToArray();
             _autoRef = autoRef;
             _currentRef = currentField;
             _updateRef = updateRef;
@@ -174,11 +174,11 @@ namespace FDB.Editor
                 {
                     foreach (var header in _headers)
                     {
-                        if (header is KindFieldHeaderState)
+                        if (header is KindHeader)
                         {
                             continue;
                         }
-                        if (header is FieldHeaderState fieldHeader)
+                        if (header is FieldHeader fieldHeader)
                         {
                             using (new GUILayout.HorizontalScope())
                             {

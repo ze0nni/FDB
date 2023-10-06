@@ -12,8 +12,8 @@ namespace FDB.Editor {
         void SetInput(InputStateBase state);
         void ResetInput();
 
-        void ToggleExpandedState(object config, HeaderState header);
-        bool TryGetExpandedHeader(object config, HeaderState[] headers, out HeaderState header, out float headerLeft);
+        void ToggleExpandedState(object config, Header header);
+        bool TryGetExpandedHeader(object config, Header[] headers, out Header header, out float headerLeft);
     }
 
     public abstract class InputStateBase
@@ -22,11 +22,11 @@ namespace FDB.Editor {
 
     public sealed class InputResizeHeader : InputStateBase
     {
-        public readonly HeaderState Header;
+        public readonly Header Header;
         public readonly float StartWidth;
         public readonly Vector2 StartMouse;
 
-        public InputResizeHeader(HeaderState header, Vector2 startMouse)
+        public InputResizeHeader(Header header, Vector2 startMouse)
         {
             Header = header;
             StartWidth = header.Width;
@@ -88,7 +88,7 @@ namespace FDB.Editor {
             return InputState != null;
         }
 
-        public void ToggleExpandedState(object config, HeaderState header)
+        public void ToggleExpandedState(object config, Header header)
         {
             if (!DBResolver.GetGUID(config, out var guid))
             {
@@ -116,7 +116,7 @@ namespace FDB.Editor {
             _needRepaint = true;
         }
 
-        public bool TryGetExpandedHeader(object config, HeaderState[] headers, out HeaderState header, out float headerLeft)
+        public bool TryGetExpandedHeader(object config, Header[] headers, out Header header, out float headerLeft)
         {
             headerLeft = 0;
             if (!DBResolver.GetGUID(config, out var guid)

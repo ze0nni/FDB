@@ -3,16 +3,16 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public abstract partial class HeaderState
+    public abstract partial class Header
     {
         public readonly string Path;
         public readonly string Title;
         public readonly bool Separate;
-        public readonly HeaderState[] Headers;
+        public readonly Header[] Headers;
 
         public int Left;
 
-        public HeaderState(string path, Attribute[] attr, string title, HeaderState[] headers)
+        public Header(string path, Attribute[] attr, string title, Header[] headers)
         {
             Path = path;
             Title = title;

@@ -22,7 +22,7 @@ namespace FDB.Editor
         public RowType Type;
         public Rect Rect;
 
-        public HeaderState[] Headers;
+        public Header[] Headers;
         public object Config;
         public IList Collection;
         public Type CollectionItemType;
@@ -62,7 +62,7 @@ namespace FDB.Editor
         private Stack<float> _indents = new Stack<float>();
         private List<RowRender> _rows = new List<RowRender>();
 
-        public void Render(in PageContext context, object config, HeaderState[] headers, Aggregator aggregator)
+        public void Render(in PageContext context, object config, Header[] headers, Aggregator aggregator)
         {
             _contentWidth = 0;
             _contentHeight = 0;
@@ -77,7 +77,7 @@ namespace FDB.Editor
             }
         }
 
-        void RenderHeaders(in PageContext context, HeaderState[] headers)
+        void RenderHeaders(in PageContext context, Header[] headers)
         {
             var width = 0f;
             foreach (var h in headers)
@@ -101,7 +101,7 @@ namespace FDB.Editor
             IList collection,
             Type itemType,
             bool primitive,
-            HeaderState[] headers,
+            Header[] headers,
             Aggregator aggregator)
         {
             aggregator.Clear();
@@ -197,7 +197,7 @@ namespace FDB.Editor
 
         void RenderRow(
             in PageContext context,
-            HeaderState[] headers,
+            Header[] headers,
             object config,
             IList collection,
             Type collectionItemType,
@@ -227,7 +227,7 @@ namespace FDB.Editor
                 BeginIndend(expandedHeaderLeft);
                 switch (expandedHeader)
                 {
-                    case ListHeaderState listHeader:
+                    case ListHeader listHeader:
                         var list = (IList)listHeader.Get(config, null);
                         RenderHeaders(in context, listHeader.Headers);
                         RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, listHeader.Aggregator);
@@ -280,7 +280,7 @@ namespace FDB.Editor
             GUI.Box(rect, "", style);
         }
 
-        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, bool primitiveCollection, int collectionIndex, HeaderState[] headers)
+        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, bool primitiveCollection, int collectionIndex, Header[] headers)
         {
             var rect = rowRect;
             rect.y += GUIConst.RowPadding;
@@ -453,7 +453,7 @@ namespace FDB.Editor
             }
         }
 
-        public static void OnHeadersGUI(IInspector inspector, Rect rect, HeaderState[] headers)
+        public static void OnHeadersGUI(IInspector inspector, Rect rect, Header[] headers)
         {
             int headersId = GUIUtility.GetControlID(headers.GetHashCode(), FocusType.Passive);
 
@@ -475,7 +475,7 @@ namespace FDB.Editor
             }
         }
 
-        public static void HandleHeaderResizeEvent(IInspector inspector, int headersId, HeaderState header, Rect resize)
+        public static void HandleHeaderResizeEvent(IInspector inspector, int headersId, Header header, Rect resize)
         {
             EditorGUIUtility.AddCursorRect(resize, MouseCursor.ResizeHorizontal);
 

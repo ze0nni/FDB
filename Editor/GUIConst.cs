@@ -16,7 +16,7 @@ namespace FDB.Editor
         public const float RowPadding = 2f;
         public static float FieldViewButtonWidth => EditorGUIUtility.singleLineHeight * 2;
 
-        public static float MeasureHeadersWidth(HeaderState[] headers)
+        public static float MeasureHeadersWidth(Header[] headers)
         {
             var width = RowActionsColumnWidth;
             foreach (var h in headers)

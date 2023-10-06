@@ -123,7 +123,7 @@ namespace FDB.Editor
                     }
 
                     var errors = new List<string>();
-                    var headers = HeaderState.Of(configType, 0, field.Name, true, errors.Add).ToArray();
+                    var headers = Header.Of(configType, 0, field.Name, true, errors.Add).ToArray();
 
                     indexList.Add(new PageState
                     {

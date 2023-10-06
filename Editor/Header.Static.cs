@@ -6,9 +6,9 @@ using UnityEngine.AddressableAssets;
 
 namespace FDB.Editor
 {
-    public abstract partial class HeaderState
+    public abstract partial class Header
     {
-        public static IEnumerable<HeaderState> Of(Type type, int depth, string rootPath, bool requestKind, Action<string> addError)
+        public static IEnumerable<Header> Of(Type type, int depth, string rootPath, bool requestKind, Action<string> addError)
         {
             if (type.IsSealed)
             {
@@ -35,18 +35,18 @@ namespace FDB.Editor
                         {
                             kindResolved = true;
                         }
-                        yield return new KindFieldHeaderState(path, field);
+                        yield return new KindHeader(path, field);
                     }
                     else if (fieldGenericType == typeof(Ref<>))
                     {
                         var modelType = field.FieldType.GetGenericArguments()[0];
-                        yield return new RefFieldHeaderState(path, field);
+                        yield return new RefHeader(path, field);
                     }
                     else if (fieldGenericType == typeof(AssetReferenceT<>))
                     {
                         var assetType = field.FieldType.GetGenericArguments()[0];
                        
-                        yield return new AssetReferenceFieldHeaderState(path, assetType, field);
+                        yield return new AssetReferenceHeader(path, assetType, field);
                     }
                     else if (fieldGenericType == typeof(List<>))
                     {
@@ -54,101 +54,101 @@ namespace FDB.Editor
                         var itemType = field.FieldType.GetGenericArguments()[0];
                         if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Ref<>))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new RefFieldHeaderState(listRoot, itemType.GetGenericArguments()[0]) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new RefHeader(listRoot, itemType.GetGenericArguments()[0]) });
                         }
                         else if (itemType.IsEnum)
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new EnumFieldHeaderState(listRoot, itemType) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new EnumHeader(listRoot, itemType) });
                         }
                         else if (itemType == typeof(bool))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new BoolFieldHeaderState(listRoot, null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new BoolHeader(listRoot, null) });
                         }
                         else if (itemType == typeof(int))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new IntFieldHeaderState(listRoot, null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new IntHeader(listRoot, null) });
                         }
                         else if (itemType == typeof(float))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new FloatFieldHeaderState(listRoot, null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new FloatHeader(listRoot, null) });
                         }
                         else if (itemType == typeof(string))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new StringFieldHeaderState(listRoot, null, null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new StringHeader(listRoot, null, null) });
                         }
                         else if (itemType == typeof(Color))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new ColorFieldHeaderState(listRoot, null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new ColorHeader(listRoot, null) });
                         }
                         else if (itemType == typeof(AnimationCurve))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new AnimationCurveFieldHeaderState(listRoot, null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new AnimationCurveHeader(listRoot, null) });
                         }
                         else if (itemType == typeof(AssetReference))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new AssetReferenceFieldHeaderState(listRoot, typeof(UnityEngine.GameObject), null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new AssetReferenceHeader(listRoot, typeof(UnityEngine.GameObject), null) });
                         }
                         else if (itemType == typeof(AssetReferenceT<>))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new AssetReferenceFieldHeaderState(listRoot, itemType.GetGenericArguments()[0], null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new AssetReferenceHeader(listRoot, itemType.GetGenericArguments()[0], null) });
                         }
                         else if (DBResolver.IsSupportedUnityType(itemType))
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, true,
-                                new[] { new UnityObjectFieldHeaderState(listRoot, itemType, null) });
+                            yield return new ListHeader(path, type, field, itemType, true,
+                                new[] { new UnityObjectHeader(listRoot, itemType, null) });
                         }
                         else
                         {
-                            yield return new ListHeaderState(path, type, field, itemType, false,
+                            yield return new ListHeader(path, type, field, itemType, false,
                                 Of(itemType, depth + 1, listRoot, false, addError).ToArray());
                         }
                     }
                 }
                 else if (field.FieldType.IsEnum)
                 {
-                    yield return new EnumFieldHeaderState(path, field);
+                    yield return new EnumHeader(path, field);
                 }
                 else if (field.FieldType == typeof(bool))
                 {
-                    yield return new BoolFieldHeaderState(path, field);
+                    yield return new BoolHeader(path, field);
                 }
                 else if (field.FieldType == typeof(int))
                 {
-                    yield return new IntFieldHeaderState(path, field);
+                    yield return new IntHeader(path, field);
                 }
                 else if (field.FieldType == typeof(float))
                 {
-                    yield return new FloatFieldHeaderState(path, field);
+                    yield return new FloatHeader(path, field);
                 }
                 else if (field.FieldType == typeof(string))
                 {
-                    yield return new StringFieldHeaderState(path, type, field);
+                    yield return new StringHeader(path, type, field);
                 }
                 else if (field.FieldType == typeof(AssetReference))
                 {
-                    yield return new AssetReferenceFieldHeaderState(path, typeof(UnityEngine.Object), field);
+                    yield return new AssetReferenceHeader(path, typeof(UnityEngine.Object), field);
                 }
                 else if (field.FieldType == typeof(Color))
                 {
-                    yield return new ColorFieldHeaderState(path, field);
+                    yield return new ColorHeader(path, field);
                 }
                 else if (field.FieldType == typeof(AnimationCurve))
                 {
-                    yield return new AnimationCurveFieldHeaderState(path, field);
+                    yield return new AnimationCurveHeader(path, field);
                 }
                 else if (DBResolver.IsSupportedUnityType(field.FieldType))
                 {
-                    yield return new UnityObjectFieldHeaderState(path, field.FieldType, field);
+                    yield return new UnityObjectHeader(path, field.FieldType, field);
                 }
             }
 

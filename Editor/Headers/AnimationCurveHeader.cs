@@ -4,17 +4,17 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class ColorFieldHeaderState : FieldHeaderState
+    public sealed class AnimationCurveHeader : FieldHeader
     {
-        public ColorFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+        public AnimationCurveHeader(string path, FieldInfo field) : base(path, field) { }
 
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
-            var c = (Color)rawValue;
+            var c = (AnimationCurve)rawValue;
 
             EditorGUI.BeginChangeCheck();
 
-            var newValue = EditorGUI.ColorField(lineRect, c);
+            var newValue = EditorGUI.CurveField(lineRect, c);
 
             if (EditorGUI.EndChangeCheck())
             {

@@ -5,11 +5,11 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public abstract class FieldHeaderState : HeaderState
+    public abstract class FieldHeader : Header
     {
         public readonly FieldInfo Field;
 
-        public FieldHeaderState(string path, FieldInfo field) : base(
+        public FieldHeader(string path, FieldInfo field) : base(
             path,
             field?.GetCustomAttributes().ToArray(),
             field?.Name ?? "Item",

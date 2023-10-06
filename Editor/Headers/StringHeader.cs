@@ -5,12 +5,12 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class StringFieldHeaderState : FieldHeaderState
+    public sealed class StringHeader : FieldHeader
     {
         private int _minLines;
         private MethodInfo _condition;
 
-        public StringFieldHeaderState(string path, Type ownerType, FieldInfo field) : base(path, field)
+        public StringHeader(string path, Type ownerType, FieldInfo field) : base(path, field)
         {
             if (field != null)
             {

@@ -68,8 +68,8 @@ namespace FDB.Editor
             }
             else
             {
-                string group0 = Inspector.ToString(groupByField.GetValue(prev));
-                string group1 = Inspector.ToString(groupByField.GetValue(config));
+                string group0 = GetText(groupByField.GetValue(prev));
+                string group1 = GetText(groupByField.GetValue(config));
                 if (groupByRegex != null)
                 {
                     group0 = groupByRegex.Match(group0).Groups[groupByRegexGroup].Value;
@@ -149,6 +149,21 @@ namespace FDB.Editor
                     acc = func.Invoke(null, _pair);
                 }
                 return acc;
+            }
+        }
+
+        public static string GetText(object obj)
+        {
+            switch (obj)
+            {
+                case null:
+                    return "";
+                case Kind kind:
+                    return kind.Value ?? "";
+                case Ref @ref:
+                    return @ref.Kind?.Value ?? "";
+                default:
+                    return obj.ToString();
             }
         }
     }

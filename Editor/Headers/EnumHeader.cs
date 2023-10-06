@@ -5,18 +5,18 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class EnumFieldHeaderState : FieldHeaderState
+    public sealed class EnumHeader : FieldHeader
     {
         public readonly Array Values;
         public readonly string[] Names;
 
-        public EnumFieldHeaderState(string path, FieldInfo field) : base(path, field)
+        public EnumHeader(string path, FieldInfo field) : base(path, field)
         {
             Values = field.FieldType.GetEnumValues();
             Names = field.FieldType.GetEnumNames();
         }
 
-        public EnumFieldHeaderState(string path, Type enumType) : base(path, null)
+        public EnumHeader(string path, Type enumType) : base(path, null)
         {
             Values = enumType.GetEnumValues();
             Names = enumType.GetEnumNames();

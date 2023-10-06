@@ -9,10 +9,10 @@ using UnityEngine.AddressableAssets;
 
 namespace FDB.Editor
 {
-    public sealed class AssetReferenceFieldHeaderState : FieldHeaderState
+    public sealed class AssetReferenceHeader : FieldHeader
     {
         public readonly Type AssetType;
-        public AssetReferenceFieldHeaderState(string path, Type assetType, FieldInfo field) : base(path, field)
+        public AssetReferenceHeader(string path, Type assetType, FieldInfo field) : base(path, field)
         {
             AssetType = assetType;
         }

@@ -5,11 +5,11 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class UnityObjectFieldHeaderState : FieldHeaderState
+    public sealed class UnityObjectHeader : FieldHeader
     {
         public readonly Type AssetType;
 
-        public UnityObjectFieldHeaderState(string path, Type assetType, FieldInfo field) : base(path, field)
+        public UnityObjectHeader(string path, Type assetType, FieldInfo field) : base(path, field)
         {
             AssetType = assetType;
         }

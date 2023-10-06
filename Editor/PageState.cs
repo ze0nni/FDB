@@ -12,7 +12,7 @@ namespace FDB.Editor
 
         public Aggregator Aggregator;
 
-        public HeaderState[] Headers;
+        public Header[] Headers;
         public List<string> Errors;
         public bool IsPaintedOnce;
     }

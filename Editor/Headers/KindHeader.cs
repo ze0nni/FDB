@@ -5,11 +5,11 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class KindFieldHeaderState : FieldHeaderState
+    public sealed class KindHeader : FieldHeader
     {
         public readonly Type ConfigType;
         public readonly Type KindType;
-        public KindFieldHeaderState(string path, FieldInfo field) : base(path, field)
+        public KindHeader(string path, FieldInfo field) : base(path, field)
         {
             ConfigType = field.FieldType.GetGenericArguments()[0];
             KindType = typeof(Kind<>).MakeGenericType(ConfigType);

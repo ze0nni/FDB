@@ -4,14 +4,14 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class ListHeaderState : HeaderState
+    public sealed class ListHeader : Header
     {
         public readonly FieldInfo Field;
         public readonly Type ItemType;
         public readonly bool Primitive;
         public readonly Aggregator Aggregator;
 
-        public ListHeaderState(string path, Type ownerType, FieldInfo field, Type itemType, bool primitive, HeaderState[] headers)
+        public ListHeader(string path, Type ownerType, FieldInfo field, Type itemType, bool primitive, Header[] headers)
             : base(path, null, field.Name, headers)
         {
             Field = field;

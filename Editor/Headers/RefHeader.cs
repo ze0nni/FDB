@@ -5,19 +5,19 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class RefFieldHeaderState : FieldHeaderState
+    public sealed class RefHeader : FieldHeader
     {
         public readonly Type ConfigType;
         public readonly Type RefType;
         public readonly AutoRefAttribute AutoRef;
-        public RefFieldHeaderState(string path, FieldInfo field) : base(path, field)
+        public RefHeader(string path, FieldInfo field) : base(path, field)
         {
             ConfigType = field.FieldType.GetGenericArguments()[0];
             RefType = typeof(Ref<>).MakeGenericType(ConfigType);
             AutoRef = field.GetCustomAttribute<AutoRefAttribute>();
         }
 
-        public RefFieldHeaderState(string path, Type modelType) : base(path, null)
+        public RefHeader(string path, Type modelType) : base(path, null)
         {
             ConfigType = modelType;
             RefType = typeof(Ref<>).MakeGenericType(ConfigType);

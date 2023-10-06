@@ -4,17 +4,17 @@ using UnityEngine;
 
 namespace FDB.Editor
 {
-    public sealed class IntFieldHeaderState : FieldHeaderState
+    public sealed class BoolHeader : FieldHeader
     {
-        public IntFieldHeaderState(string path, FieldInfo field) : base(path, field) { }
+        public BoolHeader(string path, FieldInfo field) : base(path, field) { }
 
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
-            var i = (int)rawValue;
+            var b = (bool)rawValue;
 
             EditorGUI.BeginChangeCheck();
 
-            var newValue = EditorGUI.IntField(lineRect, i);
+            var newValue = EditorGUI.Toggle(lineRect, b);
 
             if (EditorGUI.EndChangeCheck())
             {

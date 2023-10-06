@@ -10,6 +10,7 @@ namespace FDB.Editor
         public const float HeaderMinWidth = 30f;
         public const float HeaderSpace = 4f;
         public const float HeaderSeparator = 20f;
+        public const float NewGroupHeight = 16f;
 
         public static float RowFieldHeight => EditorGUIUtility.singleLineHeight + 2;
         public const float RowPadding = 2f;

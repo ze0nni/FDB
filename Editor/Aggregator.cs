@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
@@ -17,16 +18,21 @@ namespace FDB.Editor
         readonly FieldInfo groupByField;
         readonly Regex groupByRegex;
         readonly int groupByRegexGroup;
+        readonly List<string> _results = new List<string>();
 
         public Aggregator(Type ownerType, FieldInfo field, Type itemType)
         {
             
             foreach (var attr in field.GetCustomAttributes<AggregateAttribute>())
             {
-                var method = ownerType.GetMethod(attr.AggregateFuncName, BindingFlags.Static | BindingFlags.NonPublic);
+                var method = itemType.GetMethod(attr.AggregateFuncName, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
                 if (method == null)
                 {
-                    Debug.LogWarning($"Aggregate method {attr.AggregateFuncName} not found in {ownerType}");
+                    method = ownerType.GetMethod(attr.AggregateFuncName, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+                }
+                if (method == null)
+                {
+                    Debug.LogWarning($"Aggregate method {attr.AggregateFuncName} not found in {ownerType} and {itemType}");
                 }
                 else
                 {
@@ -53,7 +59,7 @@ namespace FDB.Editor
             _history.Clear();
         }
 
-        public void Add(object model, out bool separate)
+        public void Add(object config, out bool separate)
         {
             var prev = _history.LastOrDefault();
             if (prev == null || groupByField == null)
@@ -63,7 +69,7 @@ namespace FDB.Editor
             else
             {
                 string group0 = Inspector.ToString(groupByField.GetValue(prev));
-                string group1 = Inspector.ToString(groupByField.GetValue(model));
+                string group1 = Inspector.ToString(groupByField.GetValue(config));
                 if (groupByRegex != null)
                 {
                     group0 = groupByRegex.Match(group0).Groups[groupByRegexGroup].Value;
@@ -79,10 +85,10 @@ namespace FDB.Editor
                 _history.Clear();
             }
 
-            _history.Add(model);
+            _history.Add(config);
         }
 
-        public void OnGUI(float left, bool end, Func<float, IDisposable> tableLineScope)
+        public string[] Fetch(bool end)
         {
             if (end)
             {
@@ -91,43 +97,29 @@ namespace FDB.Editor
             }
             if (_group.Count == 0)
             {
-                return;
+                return null;
             }
             if (_aggregators.Count == 0)
             {
-                return;
+                return null;
             }
 
-            using (tableLineScope.Invoke(left))
+            _results.Clear();
+            foreach (var a in _aggregators)
             {
-                foreach (var a in _aggregators)
+                if (a.InitialType == null)
                 {
-                    string result;
-                    if (a.InitialType == null)
-                    {
-                        result = $"{a.Name} = {Compute(_group, a.Func, a.InitialType)}";
-                    }
-                    else
-                    {
-                        result = $"{Compute(_group, a.Func, a.InitialType)}";
-                    }
-                    GUILayout.Label(result);
-                    var rect = GUILayoutUtility.GetLastRect();
-                    if (Event.current.type == EventType.ContextClick && rect.Contains(Event.current.mousePosition))
-                    {
-                        var menu = new GenericMenu();
-
-                        menu.AddItem(new GUIContent("Copy"), false, () =>
-                        {
-                            GUIUtility.systemCopyBuffer = result;
-                        });
-
-                        menu.ShowAsContext();
-                    }
+                    _results.Add($"{a.Name} = {Compute(_group, a.Func, a.InitialType)}");
+                }
+                else
+                {
+                    _results.Add($"{Compute(_group, a.Func, a.InitialType)}");
                 }
             }
 
             _group.Clear();
+
+            return _results.ToArray();
         }
 
         static readonly object[] _pair = new object[2];

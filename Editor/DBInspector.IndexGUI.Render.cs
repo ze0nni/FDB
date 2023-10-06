@@ -13,6 +13,8 @@ namespace FDB.Editor
         Row,
         CollectionActions,
         Aggregate,
+        GroupText,
+        NewGroup
     }
 
     struct RowRender
@@ -27,6 +29,8 @@ namespace FDB.Editor
         public bool PrimitiveCollection;
         public int CollectionIndex;
 
+        public string Text;
+
         public override int GetHashCode()
         {
             switch (Type) {
@@ -38,6 +42,8 @@ namespace FDB.Editor
                     return HashCode.Combine(Collection, CollectionIndex);
                 case RowType.CollectionActions:
                     return Collection.GetHashCode();
+                case RowType.GroupText:
+                    return Text.GetHashCode();
             }
 
             Debug.LogWarning($"No hash code for {Type}");
@@ -56,17 +62,17 @@ namespace FDB.Editor
         private Stack<float> _indents = new Stack<float>();
         private List<RowRender> _rows = new List<RowRender>();
 
-        public void Render(in PageContext context, HeaderState[] headers, object entry)
+        public void Render(in PageContext context, object config, HeaderState[] headers, Aggregator aggregator)
         {
             _contentWidth = 0;
             _contentHeight = 0;
             _indent = 0;
             _indents.Clear();
             _rows.Clear();
-            switch (entry)
+            switch (config)
             {
                 case Index index:
-                    RenderCollection(in context, index, index.ConfigType, false, headers);
+                    RenderCollection(in context, index, index.ConfigType, false, headers, aggregator);
                     break;
             }
         }
@@ -90,13 +96,32 @@ namespace FDB.Editor
             });
         }
 
-        void RenderCollection(in PageContext context, IList collection, Type itemType, bool primitive, HeaderState[] headers)
+        void RenderCollection(
+            in PageContext context,
+            IList collection,
+            Type itemType,
+            bool primitive,
+            HeaderState[] headers,
+            Aggregator aggregator)
         {
-            var collectionIndex = 0;
+            aggregator.Clear();
+            var collectionIndexCounter = 0;
             foreach (var config in collection)
             {
-                RenderRow(in context, headers, config, collection, itemType, primitive, collectionIndex++);
+                var collectionIndex = collectionIndexCounter++;
+                aggregator.Add(config, out var separate);
+                if (separate)
+                {
+                    RenderGroupText(aggregator.Fetch(false), headers[0].Width);
+                    _rows.Add(new RowRender
+                    {
+                        Type = RowType.NewGroup,
+                        Rect = AppendRect(0, GUIConst.NewGroupHeight)
+                    });
+                }
+                RenderRow(in context, headers, config, collection, itemType, primitive, collectionIndex);
             }
+            RenderGroupText(aggregator.Fetch(true) , headers[0].Width);
 
             BeginIndend(GUIConst.RowActionsColumnWidth);
             _rows.Add(new RowRender
@@ -106,6 +131,31 @@ namespace FDB.Editor
                 CollectionItemType = itemType,
                 Rect = AppendRect(headers[0].Width, GUIConst.RowFieldHeight)
             });
+            EndIndent();
+        }
+
+        void RenderGroupText(string[] texts, float minWidth)
+        {
+            if (texts == null || texts.Length == 0)
+            {
+                return;
+            }
+
+            BeginIndend(GUIConst.RowActionsColumnWidth);
+            foreach (var text in texts)
+            {
+                if (string.IsNullOrEmpty(text))
+                {
+                    continue;
+                }
+                var size = FDBEditorStyles.GroupTextLabel.CalcSize(new GUIContent(text));
+                _rows.Add(new RowRender
+                {
+                    Type = RowType.GroupText,
+                    Text = text,
+                    Rect = AppendRect(Math.Max(size.x, minWidth), size.y)
+                });
+            }
             EndIndent();
         }
 
@@ -180,7 +230,7 @@ namespace FDB.Editor
                     case ListHeaderState listHeader:
                         var list = (IList)listHeader.Get(config, null);
                         RenderHeaders(in context, listHeader.Headers);
-                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers);
+                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, listHeader.Aggregator);
                         break;
                 }
                 EndIndent();
@@ -205,6 +255,10 @@ namespace FDB.Editor
                             break;
                         case RowType.CollectionActions:
                             OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType);
+                            break;
+                        case RowType.GroupText:
+                            OnRowBackground(in context, row.Rect, row.Collection, row.CollectionIndex, rowIndex++);
+                            OnGroupText(in context, row.Rect, row.Text);
                             break;
                         default:
                             Debug.LogWarning(row.Type.ToString());
@@ -372,12 +426,30 @@ namespace FDB.Editor
             menu.DropDown(rect);
         }
 
-        public void OnCollectionActions(in PageContext context, Rect rect, IList collection, Type itemType)
+        private void OnCollectionActions(in PageContext context, Rect rect, IList collection, Type itemType)
         {
             if (GUI.Button(rect, "+"))
             {
                 collection.Add(DBResolver.Instantate(itemType, true));
                 context.MakeDirty();
+            }
+        }
+
+        private void OnGroupText(in PageContext context, Rect rect, string text)
+        {
+            GUI.Label(rect, text, FDBEditorStyles.GroupTextLabel);
+            var e = Event.current;
+            if (e.type == EventType.ContextClick && rect.Contains(e.mousePosition))
+            {
+                var menu = new GenericMenu();
+
+                menu.AddItem(new GUIContent("Copy"), false, () =>
+                {
+                    GUIUtility.systemCopyBuffer = text;
+                });
+
+                menu.DropDown(rect);
+                e.Use();
             }
         }
 

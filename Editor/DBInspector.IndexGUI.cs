@@ -77,7 +77,7 @@ namespace FDB.Editor
             var index = (Index)state.ResolveModel(db);
             var context = new PageContext(this, db, resolver, this.Repaint, EditorDB<T>.SetDirty);
 
-            Render.Render(in context, state.Headers, index);
+            Render.Render(in context, index, state.Headers, state.Aggregator);
 
             var contentRect = Render.Content;
             if (GetFixedContentRect(out var fixedContentRect))

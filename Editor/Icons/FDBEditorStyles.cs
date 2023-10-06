@@ -12,6 +12,7 @@ namespace FDB.Editor
         public static GUIStyle WordWrapTextArea { get; private set; }
         public static GUIStyle RichTextLabel { get; private set; }
         public static GUIStyle RightAlignLabel { get; private set; }
+        public static GUIStyle GroupTextLabel { get; private set; }
 
         static FDBEditorStyles()
         {
@@ -62,6 +63,9 @@ namespace FDB.Editor
 
             RightAlignLabel = new GUIStyle("label");
             RightAlignLabel.alignment = TextAnchor.MiddleRight;
+
+            GroupTextLabel = new GUIStyle("label");
+            GroupTextLabel.padding = new RectOffset(2, 2, 2, 2);
         }
     }
 }

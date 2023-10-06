@@ -22,8 +22,11 @@ namespace FDB.Editor
         {
             if (Field != null)
                 return Field.GetValue(config);
-            var collection = (IList)config;
-            return collection[collectionIndex.Value];
+            else
+            {
+                var collection = (IList)config;
+                return collection[collectionIndex.Value];
+            }
         }
 
         public override void Set(object config, int? collectionIndex, object value)
@@ -33,9 +36,12 @@ namespace FDB.Editor
                 Field.SetValue(config, value);
                 GUI.changed = true;
             }
-            var collection = (IList)config;
-            collection[collectionIndex.Value] = value;
-            GUI.changed = true;
+            else
+            {
+                var collection = (IList)config;
+                collection[collectionIndex.Value] = value;
+                GUI.changed = true;
+            }
         }
     }
 

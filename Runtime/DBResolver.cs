@@ -186,8 +186,28 @@ namespace FDB
             }
         }
 
+        public static bool IsNoWrap(Type type)
+        {
+            return
+                type.IsEnum
+                || type.IsPrimitive
+                || type == typeof(Ref<>)
+                || type == typeof(bool)
+                || type == typeof(int)
+                || type == typeof(float)
+                || type == typeof(string)
+                || type == typeof(AssetReference)
+                || IsSupportedUnityType(type);
+        }
+
         public static object Instantate(Type modelType, bool asNew)
         {
+            if (modelType == typeof(string))
+                return "";
+            if (modelType == typeof(Color))
+                return Color.white;
+
+
             var model = Activator.CreateInstance(Wrap(modelType));
             Instantate(model, asNew);
             if (asNew)
@@ -237,7 +257,10 @@ namespace FDB
                     {
                         foreach (var i in (IEnumerable)list)
                         {
-                            Instantate(i, asNew);
+                            if (i != null)
+                            {
+                                Instantate(i, asNew);
+                            }
                         }
                     }
                 }

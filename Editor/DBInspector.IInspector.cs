@@ -36,14 +36,17 @@ namespace FDB.Editor {
 
     public sealed class InputDragRow : InputStateBase
     {
-        public readonly object Config;
         public readonly IList Collection;
         public readonly int CollectionIndex;
-        public InputDragRow(object config, IList collection, int collectionIndex)
+        public InputDragRow(IList collection, int collectionIndex)
         {
-            Config = config;
             Collection = collection;
             CollectionIndex = collectionIndex;
+        }
+
+        public bool Match(IList collection, int collectionIndex)
+        {
+            return Collection == collection && CollectionIndex == collectionIndex;
         }
     }
 

@@ -362,6 +362,8 @@ namespace FDB
                         case JsonToken.Float:
                         case JsonToken.String:
                         case JsonToken.StartObject:
+                        case JsonToken.StartConstructor:
+                        case JsonToken.StartArray:
                             var value = ReadValue(reader, itemType);
                             add.Invoke(list, new[] { value });
                             break;

@@ -23,16 +23,19 @@ namespace FDB.Editor
         public HeaderState[] Headers;
         public object Config;
         public IList Collection;
-        public int CollectionIndex;
         public Type CollectionItemType;
+        public bool PrimitiveCollection;
+        public int CollectionIndex;
 
         public override int GetHashCode()
         {
             switch (Type) {
                 case RowType.Header:
                     return Headers.GetHashCode();
-                case RowType.Row:
+                case RowType.Row when !PrimitiveCollection:
                     return Config.GetHashCode();
+                case RowType.Row when PrimitiveCollection:
+                    return HashCode.Combine(Collection, CollectionIndex);
                 case RowType.CollectionActions:
                     return Collection.GetHashCode();
             }
@@ -63,7 +66,7 @@ namespace FDB.Editor
             switch (entry)
             {
                 case Index index:
-                    RenderCollection(in context, index, index.ConfigType, headers);
+                    RenderCollection(in context, index, index.ConfigType, false, headers);
                     break;
             }
         }
@@ -87,12 +90,12 @@ namespace FDB.Editor
             });
         }
 
-        void RenderCollection(in PageContext context, IList collection, Type itemType, HeaderState[] headers)
+        void RenderCollection(in PageContext context, IList collection, Type itemType, bool primitive, HeaderState[] headers)
         {
             var collectionIndex = 0;
             foreach (var config in collection)
             {
-                RenderRow(in context, headers, config, collection, itemType, collectionIndex++);
+                RenderRow(in context, headers, config, collection, itemType, primitive, collectionIndex++);
             }
 
             BeginIndend(GUIConst.RowActionsColumnWidth);
@@ -148,6 +151,7 @@ namespace FDB.Editor
             object config,
             IList collection,
             Type collectionItemType,
+            bool primitiveCollection,
             int collectionIndex)
         {
             var height = GUIConst.RowFieldHeight;
@@ -164,24 +168,19 @@ namespace FDB.Editor
                 Config = config,
                 Collection = collection,
                 CollectionItemType = collectionItemType,
+                PrimitiveCollection = primitiveCollection,
                 CollectionIndex = collectionIndex
             });
 
-            if (context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
+            if (!primitiveCollection && context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
             {
                 BeginIndend(expandedHeaderLeft);
                 switch (expandedHeader)
                 {
                     case ListHeaderState listHeader:
                         var list = (IList)listHeader.Get(config, null);
-                        if (!listHeader.Primitive)
-                        {
-                            RenderHeaders(in context, listHeader.Headers);
-                            RenderCollection(in context, list, listHeader.ItemType, listHeader.Headers);
-                        } else
-                        {
-
-                        }
+                        RenderHeaders(in context, listHeader.Headers);
+                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers);
                         break;
                 }
                 EndIndent();
@@ -201,8 +200,8 @@ namespace FDB.Editor
                             OnHeadersGUI(context.Inspector, row.Rect, row.Headers);
                             break;
                         case RowType.Row:
-                            OnRowBackground(in context, row.Rect, row.Config, rowIndex++);
-                            OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.CollectionIndex, row.Headers);
+                            OnRowBackground(in context, row.Rect, row.Collection, row.CollectionIndex, rowIndex++);
+                            OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.PrimitiveCollection, row.CollectionIndex, row.Headers);
                             break;
                         case RowType.CollectionActions:
                             OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType);
@@ -215,10 +214,10 @@ namespace FDB.Editor
             }
         }
 
-        void OnRowBackground(in PageContext context, Rect rect, object config, int rowIndex)
+        void OnRowBackground(in PageContext context, Rect rect, IList collection, int collectionIndex, int rowIndex)
         {
             var style = 
-                context.Inspector.OnInput<InputDragRow>(out var drageRow) && drageRow.Config == config
+                context.Inspector.OnInput<InputDragRow>(out var drageRow) && drageRow.Match(collection, collectionIndex)
                     ? FDBEditorStyles.HoverRowStyle
                 :rowIndex % 2 == 0
                     ? FDBEditorStyles.EvenRowStyle
@@ -227,7 +226,7 @@ namespace FDB.Editor
             GUI.Box(rect, "", style);
         }
 
-        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, int collectionIndex, HeaderState[] headers)
+        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, bool primitiveCollection, int collectionIndex, HeaderState[] headers)
         {
             var rect = rowRect;
             rect.y += GUIConst.RowPadding;
@@ -256,7 +255,14 @@ namespace FDB.Editor
 
                 var fieldRect = new Rect(left, top, h.Width, height);
 
-                h.OnGUI(in context, fieldRect, config, null);
+                if (primitiveCollection)
+                {
+                    h.OnGUI(in context, fieldRect, collection, collectionIndex);
+                }
+                else
+                {
+                    h.OnGUI(in context, fieldRect, config, null);
+                }
 
                 left += h.Width + GUIConst.HeaderSpace;
             }
@@ -268,7 +274,7 @@ namespace FDB.Editor
             var iconRect = new Rect(rect.x, rect.y, iconSize, iconSize);
             GUI.Label(iconRect, FDBEditorIcons.RowAction);
             var labelRect = new Rect(rect.x + iconSize, rect.y, rect.width - iconSize - GUIConst.HeaderSpace, iconSize);
-            if (context.Inspector.OnInput<InputDragRow>(out var dragRow) && dragRow.Config == config)
+            if (context.Inspector.OnInput<InputDragRow>(out var dragRow) && dragRow.Match(collection, collectionIndex))
             {
                 GUI.Label(labelRect, $"{collectionIndex}<", FDBEditorStyles.RightAlignLabel);
             } else
@@ -288,13 +294,13 @@ namespace FDB.Editor
                         if (e.button == 0)
                         {
                             GUIUtility.hotControl = rowId;
-                            context.Inspector.SetInput(new InputDragRow(config, collection, collectionIndex));
+                            context.Inspector.SetInput(new InputDragRow(collection, collectionIndex));
                             e.Use();
                         }
                     }
                     break;
                 case EventType.MouseUp:
-                    if (dragRow != null && dragRow.Config == config)
+                    if (dragRow != null && dragRow.Match(collection, collectionIndex))
                     {
                         context.Inspector.ResetInput();
                         GUIUtility.hotControl = 0;
@@ -302,7 +308,7 @@ namespace FDB.Editor
                     }
                     break;
                 case EventType.MouseDrag:
-                    if (dragRow != null && dragRow.Config == config)
+                    if (dragRow != null && dragRow.Match(collection, collectionIndex))
                     {
                         if (RectFrom(e.mousePosition, out var targetRow) 
                             && targetRow.Type == RowType.Row
@@ -311,7 +317,7 @@ namespace FDB.Editor
                         {
                             collection[collectionIndex] = targetRow.Config;
                             collection[targetRow.CollectionIndex] = config;
-                            context.Inspector.SetInput(new InputDragRow(config, collection, targetRow.CollectionIndex));
+                            context.Inspector.SetInput(new InputDragRow(collection, targetRow.CollectionIndex));
                             context.MakeDirty();
                         }
                         GUIUtility.hotControl = rowId;

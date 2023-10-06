@@ -10,6 +10,11 @@ namespace FDB.Editor
     {
         public static IEnumerable<HeaderState> Of(Type type, int depth, string rootPath, bool requestKind, Action<string> addError)
         {
+            if (type.IsSealed)
+            {
+                throw new ArgumentException($"Type {type} is sealed");
+            }
+
             var kindResolved = false;
 
             foreach (var field in type.GetFields())
@@ -77,13 +82,30 @@ namespace FDB.Editor
                             yield return new ListHeaderState(path, type, field, itemType, true,
                                 new[] { new StringFieldHeaderState(listRoot, null, null) });
                         }
-                        else if (itemType == typeof(AssetReference) || itemType == typeof(AssetReferenceT<>))
+                        else if (itemType == typeof(Color))
                         {
-                            Debug.LogWarning("List of AssetReference not supported");
+                            yield return new ListHeaderState(path, type, field, itemType, true,
+                                new[] { new ColorFieldHeaderState(listRoot, null) });
+                        }
+                        else if (itemType == typeof(AnimationCurve))
+                        {
+                            yield return new ListHeaderState(path, type, field, itemType, true,
+                                new[] { new AnimationCurveFieldHeaderState(listRoot, null) });
+                        }
+                        else if (itemType == typeof(AssetReference))
+                        {
+                            yield return new ListHeaderState(path, type, field, itemType, true,
+                                new[] { new AssetReferenceFieldHeaderState(listRoot, typeof(UnityEngine.GameObject), null) });
+                        }
+                        else if (itemType == typeof(AssetReferenceT<>))
+                        {
+                            yield return new ListHeaderState(path, type, field, itemType, true,
+                                new[] { new AssetReferenceFieldHeaderState(listRoot, itemType.GetGenericArguments()[0], null) });
                         }
                         else if (DBResolver.IsSupportedUnityType(itemType))
                         {
-                            Debug.LogWarning("List of UnityEngine.Object not supported");
+                            yield return new ListHeaderState(path, type, field, itemType, true,
+                                new[] { new UnityObjectFieldHeaderState(listRoot, itemType, null) });
                         }
                         else
                         {

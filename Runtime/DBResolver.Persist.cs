@@ -62,7 +62,7 @@ namespace FDB
             {
                 return internalType;
             }
-            if (DBResolver.IsSupportedUnityType(originType))
+            if (IsNoWrap(originType))
             {
                 _internalTypes.Add(originType, originType);
                 return originType;
@@ -71,6 +71,10 @@ namespace FDB
             {
                 _internalTypes.Add(originType, originType);
                 return originType;
+            }
+            if (originType.IsSealed)
+            {
+                throw new Exception($"Type {originType} is sealed");
             }
             if (originType.GetField(__GUID) != null)
             {
@@ -88,7 +92,6 @@ namespace FDB
             typeBuilder.DefineField(__GUID,
                 typeof(string),
                 FieldAttributes.Public);
-
 
             internalType = typeBuilder.CreateType();
             _internalTypes.Add(originType, internalType);

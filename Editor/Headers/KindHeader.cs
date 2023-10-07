@@ -20,6 +20,16 @@ namespace FDB.Editor
             return (Kind)Activator.CreateInstance(KindType, value);
         }
 
+        public override bool Filter(object config, string filter)
+        {
+            var kind = (Kind)Get(config, null);
+            if (kind.Value == null)
+            {
+                return false;
+            }
+            return kind.Value.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
             var index = context.Resolver.GetIndex(ConfigType);

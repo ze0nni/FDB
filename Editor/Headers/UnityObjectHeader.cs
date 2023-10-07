@@ -14,6 +14,17 @@ namespace FDB.Editor
             AssetType = assetType;
         }
 
+        public override bool Filter(object config, string filter)
+        {
+            var uobj = (UnityEngine.Object)Get(config, null);
+            var name = uobj?.name;
+            if (name == null)
+            {
+                return false;
+            }
+            return name.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
             var uobj = (UnityEngine.Object)rawValue;

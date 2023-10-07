@@ -8,6 +8,12 @@ namespace FDB.Editor
     {
         public IntHeader(string path, FieldInfo field) : base(path, field) { }
 
+        public override bool Filter(object config, string filter)
+        {
+            var i = (int)Get(config, null);
+            return int.TryParse(filter, out var n) && i == n;
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
             var i = (int)rawValue;

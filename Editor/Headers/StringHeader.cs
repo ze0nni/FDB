@@ -52,6 +52,12 @@ namespace FDB.Editor
             return GUIConst.RowFieldHeight;
         }
 
+        public override bool Filter(object config, string filter)
+        {
+            var str = (string)Get(config, null);
+            return str.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object value)
         {
             var str = value.ToString();

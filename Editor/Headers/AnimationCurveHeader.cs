@@ -8,6 +8,11 @@ namespace FDB.Editor
     {
         public AnimationCurveHeader(string path, FieldInfo field) : base(path, field) { }
 
+        public override bool Filter(object config, string filter)
+        {
+            return false;
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
             var c = (AnimationCurve)rawValue;

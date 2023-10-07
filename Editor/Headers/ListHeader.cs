@@ -31,6 +31,11 @@ namespace FDB.Editor
             GUI.changed = true;
         }
 
+        public override bool Filter(object config, string filter)
+        {
+            return false;
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
         {
             var lineRect = rect;

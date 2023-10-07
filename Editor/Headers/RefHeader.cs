@@ -28,6 +28,17 @@ namespace FDB.Editor
             return (Ref)Activator.CreateInstance(RefType, resolver, target);
         }
 
+        public override bool Filter(object config, string filter)
+        {
+            var r = (Ref)Get(config, null);
+            var name = r?.Kind?.Value;
+            if (name == null)
+            {
+                return false;
+            }
+            return name.Contains(filter, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
             var r = (Ref)rawValue;

@@ -22,6 +22,12 @@ namespace FDB.Editor
             Names = enumType.GetEnumNames();
         }
 
+        public override bool Filter(object config, string filter)
+        {
+            var e = (Enum)Get(config, null);
+            return e.ToString().Contains(filter, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
             var index = Array.IndexOf(Values, rawValue);

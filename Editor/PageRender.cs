@@ -28,6 +28,7 @@ namespace FDB.Editor
         public Type CollectionItemType;
         public bool PrimitiveCollection;
         public int CollectionIndex;
+        public bool IsFiltered;
 
         public string Text;
 
@@ -52,7 +53,7 @@ namespace FDB.Editor
     }
 
 
-    class PageRender
+    partial class PageRender
     {
         float _contentWidth;
         float _contentHeight;
@@ -62,7 +63,7 @@ namespace FDB.Editor
         private Stack<float> _indents = new Stack<float>();
         private List<RowRender> _rows = new List<RowRender>();
 
-        public void Render(in PageContext context, object config, Header[] headers, Aggregator aggregator)
+        public void Render(in PageContext context, object config, Header[] headers, string filter, Aggregator aggregator)
         {
             _contentWidth = 0;
             _contentHeight = 0;
@@ -72,7 +73,8 @@ namespace FDB.Editor
             switch (config)
             {
                 case Index index:
-                    RenderCollection(in context, index, index.ConfigType, false, headers, aggregator);
+                    InvalidateFilter(index, filter);
+                    RenderCollection(in context, index, index.ConfigType, false, headers, filter, aggregator);
                     break;
             }
         }
@@ -102,14 +104,21 @@ namespace FDB.Editor
             Type itemType,
             bool primitive,
             Header[] headers,
+            string filter,
             Aggregator aggregator)
         {
+            var isFiltered = !string.IsNullOrEmpty(filter);
+
             aggregator.Clear();
             var collectionIndexCounter = 0;
             foreach (var config in collection)
             {
                 var collectionIndex = collectionIndexCounter++;
-                aggregator.Add(config, out var separate);
+                var separate = false;
+                if (!isFiltered)
+                {
+                    aggregator.Add(config, out separate);
+                }
                 if (separate)
                 {
                     RenderGroupText(aggregator.Fetch(false), headers[0].Width);
@@ -119,19 +128,26 @@ namespace FDB.Editor
                         Rect = AppendRect(0, GUIConst.NewGroupHeight)
                     });
                 }
-                RenderRow(in context, headers, config, collection, itemType, primitive, collectionIndex);
+                if (isFiltered && !FilterConfig(config, headers)) {
+                    continue;
+                }
+                RenderRow(in context, headers, config, collection, itemType, primitive, collectionIndex, isFiltered);
             }
-            RenderGroupText(aggregator.Fetch(true) , headers[0].Width);
-
-            BeginIndend(GUIConst.RowActionsColumnWidth);
-            _rows.Add(new RowRender
+            if (!isFiltered)
             {
-                Type = RowType.CollectionActions,
-                Collection = collection,
-                CollectionItemType = itemType,
-                Rect = AppendRect(headers[0].Width, GUIConst.RowFieldHeight)
-            });
-            EndIndent();
+                RenderGroupText(aggregator.Fetch(true), headers[0].Width);
+
+
+                BeginIndend(GUIConst.RowActionsColumnWidth);
+                _rows.Add(new RowRender
+                {
+                    Type = RowType.CollectionActions,
+                    Collection = collection,
+                    CollectionItemType = itemType,
+                    Rect = AppendRect(headers[0].Width, GUIConst.RowFieldHeight)
+                });
+                EndIndent();
+            }
         }
 
         void RenderGroupText(string[] texts, float minWidth)
@@ -202,7 +218,8 @@ namespace FDB.Editor
             IList collection,
             Type collectionItemType,
             bool primitiveCollection,
-            int collectionIndex)
+            int collectionIndex,
+            bool isFiltered)
         {
             var height = GUIConst.RowFieldHeight;
             foreach (var h in headers)
@@ -219,7 +236,8 @@ namespace FDB.Editor
                 Collection = collection,
                 CollectionItemType = collectionItemType,
                 PrimitiveCollection = primitiveCollection,
-                CollectionIndex = collectionIndex
+                CollectionIndex = collectionIndex,
+                IsFiltered = isFiltered,
             });
 
             if (!primitiveCollection && context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
@@ -230,7 +248,7 @@ namespace FDB.Editor
                     case ListHeader listHeader:
                         var list = (IList)listHeader.Get(config, null);
                         RenderHeaders(in context, listHeader.Headers);
-                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, listHeader.Aggregator);
+                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
                         break;
                 }
                 EndIndent();
@@ -251,7 +269,7 @@ namespace FDB.Editor
                             break;
                         case RowType.Row:
                             OnRowBackground(in context, row.Rect, row.Collection, row.CollectionIndex, rowIndex++);
-                            OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.PrimitiveCollection, row.CollectionIndex, row.Headers);
+                            OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.PrimitiveCollection, row.CollectionIndex, row.Headers, row.IsFiltered);
                             break;
                         case RowType.CollectionActions:
                             OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType);
@@ -280,7 +298,7 @@ namespace FDB.Editor
             GUI.Box(rect, "", style);
         }
 
-        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, bool primitiveCollection, int collectionIndex, Header[] headers)
+        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, bool primitiveCollection, int collectionIndex, Header[] headers, bool isFiltered)
         {
             var rect = rowRect;
             rect.y += GUIConst.RowPadding;
@@ -296,7 +314,8 @@ namespace FDB.Editor
                 config,
                 collection,
                 collectionItemType, 
-                collectionIndex);
+                collectionIndex,
+                isFiltered);
 
             left += GUIConst.RowActionsColumnWidth;
 
@@ -322,7 +341,7 @@ namespace FDB.Editor
             }
         }
 
-        void OnRowActionsGUI(in PageContext context, int rowId, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex)
+        void OnRowActionsGUI(in PageContext context, int rowId, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex, bool isFiltered)
         {
             var iconSize = GUIConst.RowFieldHeight;
             var iconRect = new Rect(rect.x, rect.y, iconSize, iconSize);
@@ -336,14 +355,17 @@ namespace FDB.Editor
                 GUI.Label(labelRect, collectionIndex.ToString(), FDBEditorStyles.RightAlignLabel);
             }
 
-            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeVertical);
+            if (!isFiltered)
+            {
+                EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeVertical);
+            }
 
             var e = Event.current;
             var t = e.GetTypeForControl(rowId);
             switch (t)
             {
                 case EventType.MouseDown:
-                    if (rect.Contains(e.mousePosition))
+                    if (!isFiltered && rect.Contains(e.mousePosition))
                     {
                         if (e.button == 0)
                         {
@@ -381,14 +403,14 @@ namespace FDB.Editor
                 case EventType.ContextClick:
                     if (rect.Contains(e.mousePosition))
                     {
-                        ShowRowActionsMenu(context, rect, config, collection, collectionItemType, collectionIndex);
+                        ShowRowActionsMenu(context, rect, config, collection, collectionItemType, collectionIndex, isFiltered);
                         e.Use();
                     }
                     break;
             }
         }
 
-        void ShowRowActionsMenu(PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex)
+        void ShowRowActionsMenu(PageContext context, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex, bool isFiltered)
         {
             var menu = new GenericMenu();
 
@@ -400,23 +422,30 @@ namespace FDB.Editor
                 collection[i1] = o0;
             }
 
-            menu.AddItem(new GUIContent("Move up"), false, () => {
-                swap(collectionIndex, collectionIndex - 1);
-                context.MakeDirty();
-            });
-            menu.AddItem(new GUIContent("Move down"), false, () => {
-                swap(collectionIndex, collectionIndex + 1);
-                context.MakeDirty();
-            });
-            menu.AddSeparator("");
-            menu.AddItem(new GUIContent("Insert above"), false, () => {
-                collection.Insert(collectionIndex, DBResolver.Instantate(collectionItemType, true));
-                context.MakeDirty();
-            });
-            menu.AddItem(new GUIContent("Insert belove"), false, () => {
-                collection.Insert(collectionIndex + 1, DBResolver.Instantate(collectionItemType, true));
-                context.MakeDirty();
-            });
+            if (!isFiltered)
+            {
+                menu.AddItem(new GUIContent("Move up"), false, () =>
+                {
+                    swap(collectionIndex, collectionIndex - 1);
+                    context.MakeDirty();
+                });
+                menu.AddItem(new GUIContent("Move down"), false, () =>
+                {
+                    swap(collectionIndex, collectionIndex + 1);
+                    context.MakeDirty();
+                });
+                menu.AddSeparator("");
+                menu.AddItem(new GUIContent("Insert above"), false, () =>
+                {
+                    collection.Insert(collectionIndex, DBResolver.Instantate(collectionItemType, true));
+                    context.MakeDirty();
+                });
+                menu.AddItem(new GUIContent("Insert belove"), false, () =>
+                {
+                    collection.Insert(collectionIndex + 1, DBResolver.Instantate(collectionItemType, true));
+                    context.MakeDirty();
+                });
+            }
             menu.AddSeparator("");
             menu.AddItem(new GUIContent("Delete"), false, () => {
                 collection.RemoveAt(collectionIndex);

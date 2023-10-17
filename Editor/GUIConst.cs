@@ -9,6 +9,7 @@ namespace FDB.Editor
         public const float HeaderHeight = 24f;
         public const float HeaderMinWidth = 30f;
         public const float HeaderSpace = 4f;
+        public const float FieldsSpace = 2f;
         public const float HeaderSeparator = 20f;
         public const float NewGroupHeight = 16f;
 

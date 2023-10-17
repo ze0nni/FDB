@@ -12,7 +12,7 @@ namespace FDB.Editor
         public readonly Aggregator Aggregator;
 
         public ListHeader(string path, Type ownerType, FieldInfo field, Type itemType, bool primitive, Header[] headers)
-            : base(path, null, field.Name, headers)
+            : base(field.FieldType, path, null, field.Name, headers)
         {
             Field = field;
             ItemType = itemType;
@@ -36,11 +36,8 @@ namespace FDB.Editor
             return false;
         }
 
-        public override void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
+        public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
-            var lineRect = rect;
-            lineRect.height = GUIConst.RowFieldHeight;
-
             if (GUI.Button(lineRect, "[...]"))
             {
                 context.Inspector.ToggleExpandedState(config, this);

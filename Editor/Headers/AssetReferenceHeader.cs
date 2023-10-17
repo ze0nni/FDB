@@ -12,7 +12,7 @@ namespace FDB.Editor
     public sealed class AssetReferenceHeader : FieldHeader
     {
         public readonly Type AssetType;
-        public AssetReferenceHeader(string path, Type assetType, FieldInfo field) : base(path, field)
+        public AssetReferenceHeader(string path, Type assetType, FieldInfo field) : base(assetType, path, field)
         {
             AssetType = assetType;
         }

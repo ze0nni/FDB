@@ -6,7 +6,7 @@ namespace FDB.Editor
 {
     public sealed class FloatHeader : FieldHeader
     {
-        public FloatHeader(string path, FieldInfo field) : base(path, field) { }
+        public FloatHeader(string path, FieldInfo field) : base(typeof(float), path, field) { }
 
         public override bool Filter(object config, string filter)
         {

@@ -10,7 +10,7 @@ namespace FDB.Editor
         private int _minLines;
         private MethodInfo _condition;
 
-        public StringHeader(string path, Type ownerType, FieldInfo field) : base(path, field)
+        public StringHeader(string path, Type ownerType, FieldInfo field) : base(typeof(string), path, field)
         {
             if (field != null)
             {

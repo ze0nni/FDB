@@ -6,7 +6,7 @@ namespace FDB.Editor
 {
     public sealed class IntHeader : FieldHeader
     {
-        public IntHeader(string path, FieldInfo field) : base(path, field) { }
+        public IntHeader(string path, FieldInfo field) : base(typeof(int), path, field) { }
 
         public override bool Filter(object config, string filter)
         {

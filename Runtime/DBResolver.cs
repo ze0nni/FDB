@@ -192,6 +192,7 @@ namespace FDB
                 type.IsEnum
                 || type.IsPrimitive
                 || type == typeof(Ref<>)
+                || typeof(UnionBase).IsAssignableFrom(type)
                 || type == typeof(bool)
                 || type == typeof(int)
                 || type == typeof(float)
@@ -206,7 +207,6 @@ namespace FDB
                 return "";
             if (modelType == typeof(Color))
                 return Color.white;
-
 
             var model = Activator.CreateInstance(Wrap(modelType));
             Instantate(model, asNew);
@@ -277,6 +277,11 @@ namespace FDB
                 if (field.FieldType == typeof(AnimationCurve) && field.GetValue(model) == null)
                 {
                     field.SetValue(model, new AnimationCurve());
+                }
+
+                if (typeof(UnionBase).IsAssignableFrom(field.FieldType) && field.GetValue(model) == null)
+                {
+                    field.SetValue(model, Activator.CreateInstance(field.FieldType));
                 }
 
                 if (asNew)

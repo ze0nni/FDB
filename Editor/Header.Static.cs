@@ -114,6 +114,11 @@ namespace FDB.Editor
                         }
                     }
                 }
+                else if (UnionHeader.TryGetUnionType(field.FieldType, out var unionBaseType, out var unionTagType))
+                {
+                    yield return new UnionHeader(path, field, unionBaseType, unionTagType, 
+                        Header.Of(field.FieldType, depth + 1, $"{path}/{field.Name}", false, addError).ToArray());
+                }
                 else if (field.FieldType.IsEnum)
                 {
                     yield return new EnumHeader(path, field);

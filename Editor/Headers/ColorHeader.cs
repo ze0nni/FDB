@@ -6,7 +6,7 @@ namespace FDB.Editor
 {
     public sealed class ColorHeader : FieldHeader
     {
-        public ColorHeader(string path, FieldInfo field) : base(path, field) { }
+        public ColorHeader(string path, FieldInfo field) : base(typeof(Color), path, field) { }
 
         public override bool Filter(object config, string filter)
         {

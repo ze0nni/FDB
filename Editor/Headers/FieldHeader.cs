@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Linq;
 using System.Reflection;
@@ -9,7 +10,8 @@ namespace FDB.Editor
     {
         public readonly FieldInfo Field;
 
-        public FieldHeader(string path, FieldInfo field) : base(
+        public FieldHeader(Type headerType, string path, FieldInfo field) : base(
+            headerType,
             path,
             field?.GetCustomAttributes().ToArray(),
             field?.Name ?? "Item",

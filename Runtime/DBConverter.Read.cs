@@ -101,7 +101,10 @@ namespace FDB
             return index;
         }
 
-        object ReadObject(JsonReader reader, Type type)
+        object ReadObject(
+            JsonReader reader, 
+            Type type,
+            Func<JsonReader, object, string, bool> onListField = null)
         {
             type = DBResolver.Wrap(type);
             var obj = DBResolver.Instantate(type, false);
@@ -122,7 +125,8 @@ namespace FDB
                             var field = type.GetField(fieldName);
                             if (field == null)
                             {
-                                if (fieldName != DBResolver.__GUID)
+                                if (fieldName != DBResolver.__GUID 
+                                    && (onListField == null || !onListField(reader, obj, fieldName)))
                                 {
                                     Debug.LogWarning($"field {fieldName} not found in {type.FullName}");
                                 }
@@ -203,6 +207,20 @@ namespace FDB
                     reader.Skip();
                     return default;
                 }
+            } if (typeof(UnionBase).IsAssignableFrom(type))
+            {
+                return ReadObject(reader, type,
+                    onListField: (r, o, f) =>
+                    {
+                        if (o is UnionBase union && f == "@tag")
+                        {
+                            reader.Read();
+                            var tag = (string)ReadValue(reader, typeof(string));
+                            union.SetUnionTagStringSafe(tag);
+                            return true;
+                        }
+                        return false;
+                    });
             }
             else if (type.IsEnum)
             {

@@ -6,7 +6,7 @@ namespace FDB.Editor
 {
     public sealed class AnimationCurveHeader : FieldHeader
     {
-        public AnimationCurveHeader(string path, FieldInfo field) : base(path, field) { }
+        public AnimationCurveHeader(string path, FieldInfo field) : base(typeof(AnimationCurve), path, field) { }
 
         public override bool Filter(object config, string filter)
         {

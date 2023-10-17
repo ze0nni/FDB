@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
@@ -49,7 +50,11 @@ namespace FDB
             writer.WriteEndArray();
         }
 
-        void WriteObject(JsonWriter writer, object originModel)
+        void WriteObject(
+            JsonWriter writer, 
+            object originModel, 
+            Predicate<FieldInfo> fieldPredicate = null,
+            Action<JsonWriter> onStartObject = null)
         {
             if (originModel == null)
             {
@@ -67,8 +72,14 @@ namespace FDB
 
             writer.WriteStartObject();
 
+            onStartObject?.Invoke(writer);
+
             foreach (var field in model.GetType().GetFields())
             {
+                if (fieldPredicate != null && !fieldPredicate.Invoke(field))
+                {
+                    continue;
+                }
                 writer.WritePropertyName(field.Name);
                 WriteValue(writer, field.FieldType, field.GetValue(model));
             }
@@ -120,6 +131,15 @@ namespace FDB
                 {
                     writer.WriteUndefined();
                 }
+            } else if (typeof(UnionBase).IsAssignableFrom(type)) {
+                var union = (UnionBase)value;
+                WriteObject(writer, union,
+                    fieldPredicate: f => f.Name == union.UnionTagString,
+                    onStartObject: w =>
+                    {
+                        w.WritePropertyName("@tag");
+                        w.WriteValue(union.UnionTagString);
+                    });
             } else if (type.IsEnum)
             {
                 writer.WriteValue(value.ToString());

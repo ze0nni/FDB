@@ -10,13 +10,13 @@ namespace FDB.Editor
         public readonly Array Values;
         public readonly string[] Names;
 
-        public EnumHeader(string path, FieldInfo field) : base(path, field)
+        public EnumHeader(string path, FieldInfo field) : base(typeof(string), path, field)
         {
             Values = field.FieldType.GetEnumValues();
             Names = field.FieldType.GetEnumNames();
         }
 
-        public EnumHeader(string path, Type enumType) : base(path, null)
+        public EnumHeader(string path, Type enumType) : base(typeof(string), path, null)
         {
             Values = enumType.GetEnumValues();
             Names = enumType.GetEnumNames();

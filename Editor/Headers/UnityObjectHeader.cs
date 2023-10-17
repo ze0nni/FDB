@@ -9,7 +9,7 @@ namespace FDB.Editor
     {
         public readonly Type AssetType;
 
-        public UnityObjectHeader(string path, Type assetType, FieldInfo field) : base(path, field)
+        public UnityObjectHeader(string path, Type assetType, FieldInfo field) : base(assetType, path, field)
         {
             AssetType = assetType;
         }

@@ -5,6 +5,7 @@ namespace FDB.Editor
 {
     public abstract partial class Header
     {
+        public readonly Type HeaderType;
         public readonly string Path;
         public readonly string Title;
         public readonly bool Separate;
@@ -12,8 +13,9 @@ namespace FDB.Editor
 
         public int Left;
 
-        public Header(string path, Attribute[] attr, string title, Header[] headers)
+        public Header(Type headerType, string path, Attribute[] attr, string title, Header[] headers)
         {
+            HeaderType = headerType;
             Path = path;
             Title = title;
             Headers = headers;

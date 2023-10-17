@@ -7,7 +7,7 @@ namespace FDB.Editor
 {
     public sealed class BoolHeader : FieldHeader
     {
-        public BoolHeader(string path, FieldInfo field) : base(path, field) { }
+        public BoolHeader(string path, FieldInfo field) : base(typeof(bool), path, field) { }
 
         public override bool Filter(object config, string filter)
         {

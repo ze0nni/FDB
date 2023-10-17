@@ -9,7 +9,8 @@ namespace FDB.Editor
     {
         public readonly Type ConfigType;
         public readonly Type KindType;
-        public KindHeader(string path, FieldInfo field) : base(path, field)
+        public KindHeader(string path, FieldInfo field) 
+            : base(typeof(Kind<>).MakeGenericType(field.FieldType.GetGenericArguments()[0]), path, field)
         {
             ConfigType = field.FieldType.GetGenericArguments()[0];
             KindType = typeof(Kind<>).MakeGenericType(ConfigType);

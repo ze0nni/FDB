@@ -10,16 +10,16 @@ namespace FDB.Editor
         public readonly Type ConfigType;
         public readonly Type RefType;
         public readonly AutoRefAttribute AutoRef;
-        public RefHeader(string path, FieldInfo field) : base(path, field)
+        public RefHeader(string path, FieldInfo field) : base(field.FieldType, path, field)
         {
             ConfigType = field.FieldType.GetGenericArguments()[0];
             RefType = typeof(Ref<>).MakeGenericType(ConfigType);
             AutoRef = field.GetCustomAttribute<AutoRefAttribute>();
         }
 
-        public RefHeader(string path, Type modelType) : base(path, null)
+        public RefHeader(string path, Type configType) : base(typeof(Ref<>).MakeGenericType(configType), path, null)
         {
-            ConfigType = modelType;
+            ConfigType = configType;
             RefType = typeof(Ref<>).MakeGenericType(ConfigType);
         }
 

@@ -245,8 +245,14 @@ namespace FDB.Editor
                 BeginIndend(expandedHeaderLeft);
                 if (expandedHeader.GetExpandedList(config, null, out var list, out var listHeader))
                 {
-                    RenderHeaders(in context, listHeader.Headers);
-                    RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
+                    if (list != null)
+                    {
+                        RenderHeaders(in context, listHeader.Headers);
+                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
+                    } else
+                    {
+                        Debug.LogWarning($"Return null list from {expandedHeader}");
+                    }
                 }
                 EndIndent();
             }

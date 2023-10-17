@@ -85,6 +85,14 @@ namespace FDB.Editor
             valueLineRect.x += tagPopupRect.width + GUIConst.FieldsSpace;
             valueLineRect.width = valueWidth;
 
+            var value = valueHeader.Get(union, null);
+            if (value == null)
+            {
+                value = DBResolver.Instantate(valueHeader.HeaderType, true);
+                valueHeader.Set(union, null, value);
+                GUI.changed = true;
+            }
+
             if (valueHeader is ListHeader)
             {
                 if (GUI.Button(valueLineRect, "[...]"))
@@ -92,14 +100,6 @@ namespace FDB.Editor
                     context.Inspector.ToggleExpandedState(config, this);
                 }
             } else {
-                var value = valueHeader.Get(union, null);
-                if (value == null)
-                {
-                    value = DBResolver.Instantate(valueHeader.HeaderType, true);
-                    valueHeader.Set(union, null, value);
-                    GUI.changed = true;
-                }
-
                 valueHeader.OnGUI(in context, valueRect, valueLineRect, union, null, value);
             }
         }

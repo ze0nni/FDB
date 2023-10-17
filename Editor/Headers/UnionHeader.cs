@@ -60,7 +60,7 @@ namespace FDB.Editor
         {
             var union = (UnionBase)rawValue;
             var tagPopupSize = EditorStyles.popup.CalcSize(new GUIContent(union.UnionTagString));
-            var tagPopupRect = new Rect(lineRect.x, lineRect.y, tagPopupSize.x, lineRect.height);
+            var tagPopupRect = new Rect(lineRect.x, lineRect.y, Math.Min(lineRect.width, tagPopupSize.x), lineRect.height);
 
             var tagIndex = Array.IndexOf(_tagsNames, union.UnionTagString);
             var newTagIndex = EditorGUI.Popup(tagPopupRect, tagIndex, _tagsNames);
@@ -75,7 +75,7 @@ namespace FDB.Editor
             if (!_headers.TryGetValue(union.UnionTagString, out var valueHeader))
                 return;
 
-            var valueWidth = rect.width - tagPopupRect.width - GUIConst.FieldsSpace;
+            var valueWidth = Mathf.Max(0, rect.width - tagPopupRect.width - GUIConst.FieldsSpace);
 
             var valueRect = rect;
             valueRect.x += tagPopupRect.width + GUIConst.FieldsSpace;
@@ -99,7 +99,9 @@ namespace FDB.Editor
                 {
                     context.Inspector.ToggleExpandedState(config, this);
                 }
-            } else {
+            }
+            else
+            {
                 valueHeader.OnGUI(in context, valueRect, valueLineRect, union, null, value);
             }
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -61,6 +62,13 @@ namespace FDB.Editor
         public abstract void Set(object config, int? collectionIndex, object value);
 
         public abstract bool Filter(object config, string filter);
+
+        public virtual bool GetExpandedList(object config, int?collectionIndex, out IList list, out ListHeader listHeader)
+        {
+            list = default;
+            listHeader = default;
+            return false;
+        }
 
         public virtual void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
         {

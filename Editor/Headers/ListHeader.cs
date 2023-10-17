@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Reflection;
 using UnityEngine;
 
@@ -34,6 +35,13 @@ namespace FDB.Editor
         public override bool Filter(object config, string filter)
         {
             return false;
+        }
+
+        public override bool GetExpandedList(object config, int? collectionIndex, out IList list, out ListHeader listHeader)
+        {
+            list = (IList)Get(config, null);
+            listHeader = this;
+            return true;
         }
 
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)

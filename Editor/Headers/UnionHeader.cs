@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -41,6 +42,20 @@ namespace FDB.Editor
             _headers = headers.ToDictionary(h => h.Title);
         }
 
+        public override bool GetExpandedList(object config, int? collectionIndex, out IList listOut, out ListHeader listHeaderOut)
+        {
+            var union = (UnionBase)Get(config, null);
+            if (union.UnionTagString != null && _headers.TryGetValue(union.UnionTagString, out var header) && header is ListHeader listHeader)
+            {
+                listOut = (IList)listHeader.Get(union, null);
+                listHeaderOut = listHeader;
+                return true;
+            }
+            listOut = default;
+            listHeaderOut = default;
+            return false;
+        }
+
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
             var union = (UnionBase)rawValue;
@@ -55,18 +70,28 @@ namespace FDB.Editor
                 GUI.changed = true;
             }
 
-            if (union.UnionTagString != null && _headers.TryGetValue(union.UnionTagString, out var valueHeader))
+            if (union.UnionTagString == null)
+                return;
+            if (!_headers.TryGetValue(union.UnionTagString, out var valueHeader))
+                return;
+
+            var valueWidth = rect.width - tagPopupRect.width - GUIConst.FieldsSpace;
+
+            var valueRect = rect;
+            valueRect.x += tagPopupRect.width + GUIConst.FieldsSpace;
+            valueRect.width = valueWidth;
+
+            var valueLineRect = lineRect;
+            valueLineRect.x += tagPopupRect.width + GUIConst.FieldsSpace;
+            valueLineRect.width = valueWidth;
+
+            if (valueHeader is ListHeader)
             {
-                var valueWidth = rect.width - tagPopupRect.width - GUIConst.FieldsSpace;
-
-                var valueRect = rect;
-                valueRect.x += tagPopupRect.width + GUIConst.FieldsSpace;
-                valueRect.width = valueWidth;
-
-                var valueLineRect = lineRect;
-                valueLineRect.x += tagPopupRect.width + GUIConst.FieldsSpace;
-                valueLineRect.width = valueWidth;
-
+                if (GUI.Button(valueLineRect, "[...]"))
+                {
+                    context.Inspector.ToggleExpandedState(config, this);
+                }
+            } else {
                 var value = valueHeader.Get(union, null);
                 if (value == null)
                 {
@@ -81,7 +106,12 @@ namespace FDB.Editor
 
         public override bool Filter(object config, string filter)
         {
-            throw new NotImplementedException();
+            var union = (UnionBase)Get(config, null);
+            if (union.UnionTagString != null && _headers.TryGetValue(union.UnionTagString, out var header))
+            {
+                return header.Filter(union, filter);
+            }
+            return false;
         }
     }
 }

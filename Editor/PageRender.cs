@@ -243,13 +243,10 @@ namespace FDB.Editor
             if (!primitiveCollection && context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
             {
                 BeginIndend(expandedHeaderLeft);
-                switch (expandedHeader)
+                if (expandedHeader.GetExpandedList(config, null, out var list, out var listHeader))
                 {
-                    case ListHeader listHeader:
-                        var list = (IList)listHeader.Get(config, null);
-                        RenderHeaders(in context, listHeader.Headers);
-                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
-                        break;
+                    RenderHeaders(in context, listHeader.Headers);
+                    RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
                 }
                 EndIndent();
             }

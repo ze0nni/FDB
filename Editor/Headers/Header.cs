@@ -48,6 +48,10 @@ namespace FDB.Editor
             }
             set
             {
+                if (_width == value)
+                {
+                    return;
+                }
                 _width = value;
                 PlayerPrefs.SetInt(Path, value);
             }

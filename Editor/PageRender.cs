@@ -247,7 +247,13 @@ namespace FDB.Editor
                 {
                     if (list != null)
                     {
-                        RenderHeaders(in context, listHeader.Headers);
+                        if (listHeader.Primitive && listHeader.Headers.Length == 1)
+                        {
+                            listHeader.Headers[0].Width = expandedHeader.Width;
+                        } else
+                        {
+                            RenderHeaders(in context, listHeader.Headers);
+                        }
                         RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
                     } else
                     {

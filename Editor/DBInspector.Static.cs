@@ -26,8 +26,17 @@ namespace FDB.Editor
             if (_staticException != null)
             {
                 ok = false;
-                EditorGUILayout.HelpBox(
-                    _staticException.ToString(), MessageType.Error);
+                switch (_staticException)
+                {
+                    case SchemaException _:
+                        EditorGUILayout.HelpBox(
+                            _staticException.Message, MessageType.Warning);
+                        break;
+                    default:
+                        EditorGUILayout.HelpBox(
+                            _staticException.ToString(), MessageType.Error);
+                        break;
+                }
             }
 
             if (_errors.Count > 0)

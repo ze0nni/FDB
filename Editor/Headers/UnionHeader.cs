@@ -38,6 +38,8 @@ namespace FDB.Editor
             Type unionTagType,
             Header[] headers) : base(field.FieldType, path, field)
         {
+            UnionValidator.Validate(field.FieldType, unionTagType);
+
             _tagsNames = headers.Select(h => h.Title).ToArray();
             _headers = headers.ToDictionary(h => h.Title);
         }

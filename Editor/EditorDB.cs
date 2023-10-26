@@ -5,8 +5,8 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-namespace FDB.Editor {
-
+namespace FDB.Editor
+{
     internal static class EditorDB
     {
         public static UnityEngine.Object EditorUnityObjectsResolver(string guid, Type type)
@@ -113,10 +113,10 @@ namespace FDB.Editor {
                 }
             }
 
-            GenerateCs(MetaData.CsPath, _db);
+            GenerateCs(MetaData.CsGenPath, _db);
 
             AssetDatabase.ImportAsset(source, ImportAssetOptions.ForceUpdate);
-            AssetDatabase.ImportAsset(MetaData.CsPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(MetaData.CsGenPath, ImportAssetOptions.ForceUpdate);
 
             Version++;
             IsDirty = false;
@@ -129,7 +129,7 @@ namespace FDB.Editor {
 
         public static void GenerateCs(string path, T db)
         {
-            var sb = new StringBuilder();
+            var sb = new IndentStringBuilder();
 
             var dbType = typeof(T);
 
@@ -138,47 +138,60 @@ namespace FDB.Editor {
             {
                 sb.AppendLine($"namespace {dbType.Namespace}");
                 sb.AppendLine("{");
+                sb.BeginIndent();
             }
 
             {
-                sb.AppendLine($"\tpublic static partial class Kinds");
-                sb.AppendLine("\t{");
-                foreach (var field in dbType.GetFields())
+                sb.AppendLine($"public partial class {dbType.Name}");
+                sb.AppendLine("{");
+                sb.BeginIndent();
                 {
-                    var index = field.GetValue(db) as Index;
-                    if (index == null)
+                    sb.AppendLine($"public static partial class Kinds ");
+                    sb.AppendLine("{");
+                    sb.BeginIndent();
+                    foreach (var field in dbType.GetFields())
                     {
-                        continue;
-                    }
-                    sb.AppendLine($"\t\tpublic static class {field.Name}");
-                    sb.AppendLine("\t\t{");
-                    var modelType = index.GetType().GetGenericArguments()[0];
-                    var kindField = modelType.GetField("Kind");
-                    foreach (var config in index.All())
-                    {
-                        var kind = (Kind)kindField.GetValue(config);
-                        if (!kind.CanExport)
+                        var index = field.GetValue(db) as Index;
+                        if (index == null)
                         {
-                            sb.AppendLine($"\t\t\t// Skip kind '{kind.Value}'");
+                            continue;
                         }
-                        else if (index.IsDuplicateKind(kind.Value))
+                        sb.AppendLine($"public static partial class {field.Name}");
+                        sb.AppendLine("{");
+                        sb.BeginIndent();
+                        var modelType = index.GetType().GetGenericArguments()[0];
+                        var kindField = modelType.GetField("Kind");
+                        foreach (var config in index.All())
                         {
-                            sb.AppendLine($"\t\t\t// Skip duplicate '{kind.Value}'");
-                            Debug.LogWarning($"Skip duplicate kind='{kind.Value}' of {modelType.Name}");
+                            var kind = (Kind)kindField.GetValue(config);
+                            if (!kind.CanExport)
+                            {
+                                sb.AppendLine($"// Skip kind '{kind.Value}'");
+                            }
+                            else if (index.IsDuplicateKind(kind.Value))
+                            {
+                                sb.AppendLine($"// Skip duplicate '{kind.Value}'");
+                                Debug.LogWarning($"Skip duplicate kind='{kind.Value}' of {modelType.Name}");
+                            }
+                            else
+                            {
+                                sb.AppendLine($"public static Kind<{modelType.Name}> {kind.Value} = new Kind<{modelType.Name}>(\"{kind.Value}\");");
+                            }
                         }
-                        else
-                        {
-                            sb.AppendLine($"\t\t\tpublic static Kind<{modelType.Name}> {kind.Value} = new Kind<{modelType.Name}>(\"{kind.Value}\");");
-                        }
-                    }
-                    sb.AppendLine("\t\t}");
+                        sb.EndIndent();
+                        sb.AppendLine("}");
 
+                    }
+                    sb.EndIndent();
+                    sb.AppendLine("}");
                 }
-                sb.AppendLine("\t}");
+                sb.EndIndent();
+                sb.AppendLine("}");
             }
 
             if (!string.IsNullOrEmpty(dbType.Namespace))
             {
+                sb.EndIndent();
                 sb.AppendLine("}");
             }
 

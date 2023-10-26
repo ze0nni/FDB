@@ -6,12 +6,12 @@ namespace FDB
     public class FuryDBAttribute : Attribute
     {
         public readonly string SourcePath;
-        public readonly string CsPath;
+        public readonly string CsGenPath;
 
-        public FuryDBAttribute(string sourcePath, string csPath)
+        public FuryDBAttribute(string sourcePath, string csGenPath)
         {
             SourcePath = sourcePath;
-            CsPath = csPath;
+            CsGenPath = csGenPath;
         }
     }
 }

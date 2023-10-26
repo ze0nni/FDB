@@ -12,6 +12,7 @@ namespace FDB.Editor
 
         long _dbVersion;
         bool _needRepaint;
+        bool _hasWarnings;
 
         Action _makeDirty;
         public void MakeDirty()
@@ -101,6 +102,12 @@ namespace FDB.Editor
                     var hasWarnings =
                         EditorDB<T>.Resolver.Indexes.Any(i => i.Warnings.Count > 0)
                         || _pageStates.Any(s => s.Errors.Count > 0);
+
+                    if (hasWarnings != _hasWarnings)
+                    {
+                        _hasWarnings = _hasWarnings;
+                        GUI.changed = true;
+                    }
                     if (hasWarnings)
                     {
                         using (new GUILayout.VerticalScope(GUILayout.MaxHeight(EditorGUIUtility.singleLineHeight * 5)))

@@ -28,12 +28,15 @@ First [Install FDB](./Doc/Install/README.md). Create your database class `DB.cs`
 ```DB.cs
 using FDB;
 
-[FuryDB("Assets/Resources/DB.furydb", "Assets/Kinds.cs")]
-public class DB
+[FuryDB("Assets/Resources/DB.furydb", "Assets/DB.Gen.cs")]
+public partial class DB
 {
     
 }
 ```
+
+> [!IMPORTANT]  
+> Class DB must be partial
 
 Create folder `Editor` and then create class `Editor/DBWindow.cs`
 
@@ -62,15 +65,15 @@ Now lets reach `DB.cs` with few types
 ```DB.cs
 using FDB;
 
-[FuryDB("Assets/Resources/DB.furydb", "Assets/Kinds.cs")]
-public class DB
+[FuryDB("Assets/Resources/DB.furydb", "Assets/DB.Gen.cs")]
+public partial class DB
 {
     public Index<UnitConfig> Units;
     public Index<WeaponConfig> Weapons;
     public Index<TextConfig> Texts;
 }
 
-public class UnitConfig
+public partial class UnitConfig
 {
     public Kind<UnitConfig> Kind;
     public Ref<TextConfig> Name;
@@ -87,7 +90,7 @@ public enum WeaponType
     Range
 }
 
-public class WeaponConfig
+public partial class WeaponConfig
 {
     public Kind<WeaponConfig> Kind;
     public Ref<TextConfig> Name;
@@ -96,7 +99,7 @@ public class WeaponConfig
     public int DamageVar;
 }
 
-public class TextConfig
+public partial class TextConfig
 {
     public Kind<TextConfig> Kind;
     public string En;
@@ -119,7 +122,7 @@ This is three tables you can to edit. Every table have types: `UnitConfig` `Weap
 
 Look to class UserConfig it have following fields
 
-- `Kind<UnitConfig> Kind` - this is unique name of config. If it possible this kind exports to file `Kinds.cs`. If kind not possible to export it mark little darkness and eye icon
+- `Kind<UnitConfig> Kind` - this is unique name of config. If it possible this kind exports to file `DB.Gen.cs`. If kind not possible to export it mark little darkness and eye icon
 - `Ref<TextConfig> Name` - this mean that unit refered to config from `Index<TextConfig>` you first need goto to page `Texts` add line and after select this line in `Unit.Name` field
 - `Str` `Dex` `Int` `Chr` are `int`. This just number
 - `Ref<WeaponConfig> Weapon` - this is reference again but to table `Weapons`
@@ -145,14 +148,14 @@ class Boot {
 }
 ```
 
-You also can access for db items using `Kinds.cs`:
+You also can access for db items using `DB.Gen.cs`:
 
 ```Boot.cs
 class Boot {
     public static DB DB { get; private set; }
     void Awake() {
         DB = DBResolver.Load<DB>();
-        var rogue = DB.Units.Get(Kinds.Units.Rogue);
+        var rogue = DB.Units.Get(DB.Kinds.Units.Rogue);
     }
 }
 ```
@@ -177,7 +180,7 @@ Browse prefab in hierarchy window and turn on toggle `Addressable`
 
 Add field `Prefab` in UnitConfig
 ```
-public class UnitConfig
+public partial class UnitConfig
 {
     public Kind<UnitConfig> Kind;
     public Ref<TextConfig> Name;
@@ -207,7 +210,7 @@ class Boot : MonoBehaviour
     private async void Awake()
     {
         DB = DBResolver.Load<DB>();
-        var warrior = DB.Units[Kinds.Units.Warrior];
+        var warrior = DB.Units[DB.Kinds.Units.Warrior];
         var prefab = await warrior.Prefab.InstantiateAsync().Task;
     }
 }
@@ -254,12 +257,12 @@ When you modify some data from `EditorDB<DB>` call `EditorDB<DB>.SetDirty()`
 Union this is an object that can change its type
 
 ```
-public class DB1
+public partial class DB
 {
     public Index<PerkConfig> Perks;
 }
 
-public class PerkConfig
+public partial class PerkConfig
 {
     public Kind<PerkConfig> Kind;
     public List<VariableRecord> Variables;
@@ -285,7 +288,7 @@ You can use Union.UnionTag field for read union type
 
 ```
 var DB = DBResolver.Load<DB>();
-foreach (var variable in DB.Perks[Kinds.Perks.Perk1].Variables)
+foreach (var variable in DB.Perks[DB.Kinds.Perks.Perk1].Variables)
 {
     switch (variable.Value.UnionTag)
     {
@@ -315,7 +318,7 @@ public enum VariableUnionTag {
     Colors
 }
 
-public class VariableUnion : Union<VariableUnionTag>
+public partial class VariableUnion : Union<VariableUnionTag>
 {
     public int Int;
     public bool Bool;
@@ -339,7 +342,7 @@ switch (variable.Value.UnionTag)
 `UnityEngine.SpaceAttribyte` add vertical space between columns
 
 ```Unit.cs
-public class UnitConfig
+public partial class UnitConfig
 {
     public Kind<UnitConfig> Kind;
     public Ref<TextConfig> Name;
@@ -362,7 +365,7 @@ public class UnitConfig
 Separete lines using regexp
 
 ```DB.cs
-public class DB
+public partial class DB
 {
     //...
     [GroupBy("Kind", @"(.+?)_")]
@@ -375,7 +378,7 @@ public class DB
 ## Aggregate Attribute
 
 ```DB.cs
-public class UnitConfig
+public partial class UnitConfig
 {
     ///...
     [Aggregate("Sum")]
@@ -391,7 +394,7 @@ public class UnitConfig
 ![Text](./Doc/8a.png)
 
 ```DB.cs
-public class DB
+public partial class DB
 {
     [GroupBy("Kind", @"(.+?)_")]
     [Aggregate(nameof(CalcTextChars), typeof(TextAgg))]
@@ -421,7 +424,7 @@ public class DB
 ## MultilineText Attribute
 
 ```TextConfig.cs
-public class TextConfig
+public partial class TextConfig
 {
     public Kind<TextConfig> Kind;
     [MultilineText(MinLines = 3, Condition = "IsMultiline")]
@@ -446,7 +449,7 @@ public class TextConfig
 You have a way to quickly create links to other tables an attribute `AutoRef`:
 
 ```
-public class UnitConfig
+public partial class UnitConfig
 {
     public Kind<UnitConfig> Kind;
     [AutoRef(Prefix ="UnitName_")]
@@ -471,7 +474,7 @@ New line insert in the end of group of same lines
 You can declare filed `__GUID` in any object.
 
 ```DB.cs
-class UserConfig {
+class partial UserConfig {
     public string __GUID; // Not visible in DBWindow but work!
     public Kind<UserConfig> Kind;
 }

@@ -6,8 +6,10 @@ Static structured database for Unity. I create this project inspired by [CastleD
 
 - [Install](./Doc/Install/README.md)
 - [How to use](#how-to-use)
-- [Get prefab from config](#get-prefab-from-config)
+- [Unity objects](#unity-objects)
+- [Addressables](#addressables)
 - [Supported types](#supported-types)
+- [Unions](#unions)
 - [Editor tools](#editor-tools)
 - Attributes
     - [Space](#space-attribute)
@@ -25,10 +27,8 @@ First [Install FDB](./Doc/Install/README.md). Create your database class `DB.cs`
 
 ```DB.cs
 using FDB;
-using Newtonsoft.Json;
 
-[JsonConverter(typeof(DBConverter<DB>))]
-[FuryDB("Assets/Resources/DB.json.txt", "Assets/Kinds.cs")]
+[FuryDB("Assets/Resources/DB.furydb", "Assets/Kinds.cs")]
 public class DB
 {
     
@@ -61,10 +61,8 @@ Now lets reach `DB.cs` with few types
 
 ```DB.cs
 using FDB;
-using Newtonsoft.Json;
 
-[JsonConverter(typeof(DBConverter<DB>))]
-[FuryDB("Assets/Resources/DB.json.txt", "Assets/Kinds.cs")]
+[FuryDB("Assets/Resources/DB.furydb", "Assets/Kinds.cs")]
 public class DB
 {
     public Index<UnitConfig> Units;
@@ -159,7 +157,13 @@ class Boot {
 }
 ```
 
-# Get prefab from config
+# Unity objects
+
+You can save to config reference to unity objects: Prefabs/ScriptableObjects/Sprites/Textures/...
+
+All unity objects will add dependency of db.furydb-file. You can use it like regular unity objects
+
+# Addressables
 
 If you need attach prefab MonoBehaviour(Prefab) or ScriptableObject to your config you need [Addressables](https://docs.unity3d.com/Manual/com.unity.addressables.html) and types `AssetReference` or `AssetReferenceT<>`
 
@@ -235,8 +239,100 @@ When you modify some data from `EditorDB<DB>` call `EditorDB<DB>.SetDirty()`
 - AnimationCurve
 - List<>
 - Ref<>
+- Union<>
 - AssetReference
 - AssetReferenceT<>
+- Other unity types:
+    - Prefabs
+    - Scriptable objects
+    - Sprites
+    - Textures
+    - ...
+
+### Unions
+
+Union this is an object that can change its type
+
+```
+public class DB1
+{
+    public Index<PerkConfig> Perks;
+}
+
+public class PerkConfig
+{
+    public Kind<PerkConfig> Kind;
+    public List<VariableRecord> Variables;
+
+    public class VariableRecord
+    {
+        public string Name;
+        public VariableUnion Value;
+    }
+
+    public class VariableUnion : Union
+    {
+        public int Int;
+        public bool Bool;
+        public List<Color> Colors;
+    }
+}
+```
+
+![Text](./Doc/19.png)
+
+You can use Union.UnionTag field for read union type
+
+```
+var DB = DBResolver.Load<DB>();
+foreach (var variable in DB.Perks[Kinds.Perks.Perk1].Variables)
+{
+    switch (variable.Value.UnionTag)
+    {
+        case "Int":
+            Debug.Log($"{variable.Name} = {variable.Value.Int}");
+            break;
+        case "Bool":
+            Debug.Log($"{variable.Name} = {variable.Value.Bool}");
+            break;
+        case "Colors":
+            Debug.Log($"{variable.Name} = {variable.Value.Colors.Count}");
+            break;
+    }
+}
+
+> BoolValue = False
+> IntValue = 11
+> ColorValues = 3
+```
+
+For more safety use enum
+
+```
+public enum VariableUnionTag {
+    Int,
+    Bool,
+    Colors
+}
+
+public class VariableUnion : Union<VariableUnionTag>
+{
+    public int Int;
+    public bool Bool;
+    public List<Color> Colors;
+}
+
+...
+switch (variable.Value.UnionTag)
+{
+    case VariableUnionTag.Int:
+        ...
+    case VariableUnionTag.Bool:
+        ...
+    case VariableUnionTag.Colors:
+        ...
+}
+```
 
 ## Space Attribute
 

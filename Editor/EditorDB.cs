@@ -1,6 +1,8 @@
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -113,10 +115,25 @@ namespace FDB.Editor
                 }
             }
 
+            var generatesFiles = new List<string>();
             GenerateCs(MetaData.CsGenPath, _db);
+            generatesFiles.Add(MetaData.CsGenPath);
 
-            AssetDatabase.ImportAsset(source, ImportAssetOptions.ForceUpdate);
-            AssetDatabase.ImportAsset(MetaData.CsGenPath, ImportAssetOptions.ForceUpdate);
+            foreach (var ga in typeof(T)
+                .GetCustomAttributes(typeof(FuryGeneratorAttribute), false)
+                .Cast<FuryGeneratorAttribute>())
+            {
+                var sb = new IndentStringBuilder();
+                var generator = (IFuryGenerator<T>)Activator.CreateInstance(ga.GeneratorType);
+                generator.Execute(sb, _db);
+                File.WriteAllText(ga.CsPath, sb.ToString());
+                generatesFiles.Add(ga.CsPath);
+            }
+
+            foreach (var f in generatesFiles)
+            {
+                AssetDatabase.ImportAsset(f, ImportAssetOptions.ForceUpdate);
+            }
 
             Version++;
             IsDirty = false;

@@ -17,6 +17,7 @@ Static structured database for Unity. I create this project inspired by [CastleD
     - [Aggregate](#aggregate-attribute)
     - [MultilineText](#multilinetext-attribute)
     - [AutoRef](#autoref-attribute)
+    - [FuryGenerator](#fury-generator)
 - [__GUID field](#__guid-field)
 - [In the plans](#in-the-plans)
 - [FuryDB Components](#furydb-components)
@@ -469,6 +470,34 @@ New line insert in the end of group of same lines
 
 ![Text](./Doc/14.png)
 
+## FuryGenerator Attribute
+
+Helps to generate cs-files on save
+
+```
+[FuryDB("Assets/Resources/DB.furydb", "Assets/DB.Gen.cs")]
+[FuryGenerator("Assets/Perks.Gen.cs", typeof(PerkClassGenerator))]
+public partial class DB
+{
+    public Index<PerkConfig> Perks;
+}
+
+public class PerkClassGenerator : IFuryGenerator<DB>
+{
+    public void Execute(IndentStringBuilder sb, DB1 db)
+    {
+        foreach (var perk in db.Perks)
+        {
+            sb.AppendLine($"public static partial class {perk.Kind.Value}");
+            sb.AppendLine("{");
+            sb.BeginIndent();
+            // 
+            sb.EndIndent();
+            sb.AppendLine("{");
+        }
+    }
+}
+```
 ## __GUID field
 
 You can declare filed `__GUID` in any object.

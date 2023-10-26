@@ -1,9 +1,14 @@
 using System;
 using System.Text;
 
-namespace FDB.Editor
+namespace FDB
 {
-    internal sealed class IndentStringBuilder
+    public interface IFuryGenerator<TDB>
+    {
+        void Execute(IndentStringBuilder sb, TDB db);
+    }
+
+    public sealed class IndentStringBuilder
     {
         readonly StringBuilder _sb = new StringBuilder();
 

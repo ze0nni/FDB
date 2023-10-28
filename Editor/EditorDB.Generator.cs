@@ -9,6 +9,9 @@ namespace FDB.Editor
     {
         public  static IEnumerable<(string, IFuryGenerator<T>)> ResolveGenerators()
         {
+            var patches = new HashSet<string>();
+
+            patches.Add(MetaData.CsGenPath);
             yield return (MetaData.CsGenPath, new DefaultGenerator());
 
             foreach (var ga in typeof(T)
@@ -27,6 +30,10 @@ namespace FDB.Editor
                 {
                     Debug.LogError($"Error when create generator {ga.GeneratorType} => {ga.CsPath}");
                     throw;
+                }
+                if (!patches.Add(ga.CsPath))
+                {
+                    throw new ArgumentException($"Duplicates FuryGenerator's path {ga.CsPath}");
                 }
                 yield return (ga.CsPath, generator);
             }

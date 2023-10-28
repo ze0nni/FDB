@@ -45,11 +45,20 @@ namespace FDB.Editor
             GUILayout.Space(20);
             using (new GUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.ExpandWidth(true)))
             {
-                if (GUILayout.Button("Display all", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
+                if (GUILayout.Button("All", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
                 {
                     foreach (var s in _inspector._persistantPageStates)
                     {
                         s.Hidden = false;
+                    }
+                    _inspector.UpdateVisiblePages();
+                }
+
+                if (GUILayout.Button("None", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
+                {
+                    foreach (var s in _inspector._persistantPageStates)
+                    {
+                        s.Hidden = true;
                     }
                     _inspector.UpdateVisiblePages();
                 }

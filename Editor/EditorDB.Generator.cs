@@ -23,7 +23,7 @@ namespace FDB.Editor
                 {
                     if (!typeof(IFuryGenerator<T>).IsAssignableFrom(ga.GeneratorType))
                     {
-                        throw new ArgumentException($"Generator {ga.GeneratorType} must implements IFuryGenerator<{typeof(T)}>");
+                        throw new SchemaException($"Generator {ga.GeneratorType} must implements IFuryGenerator<{typeof(T)}>");
                     }
                     generator = (IFuryGenerator<T>)Activator.CreateInstance(ga.GeneratorType);
                 } catch
@@ -33,7 +33,7 @@ namespace FDB.Editor
                 }
                 if (!patches.Add(ga.CsPath))
                 {
-                    throw new ArgumentException($"Duplicates FuryGenerator's path {ga.CsPath}");
+                    throw new SchemaException($"Duplicates FuryGenerator's path {ga.CsPath}");
                 }
                 yield return (ga.CsPath, generator);
             }

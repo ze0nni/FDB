@@ -30,12 +30,16 @@ namespace FDB.Editor
                 {
                     case SchemaException _:
                         EditorGUILayout.HelpBox(
-                            _staticException.Message, MessageType.Warning);
+                            _staticException.Message, MessageType.Error);
                         break;
                     default:
                         EditorGUILayout.HelpBox(
                             _staticException.ToString(), MessageType.Error);
                         break;
+                }
+                if (GUILayout.Button("Reload"))
+                {
+                    _staticException = null;
                 }
             }
 
@@ -86,7 +90,7 @@ namespace FDB.Editor
                 } catch (Exception exc)
                 {
                     ok = false;
-                    EditorGUILayout.HelpBox($"Error when load {_fdbAttr.SourcePath}\n {exc.Message}", MessageType.Error);
+                    _staticException = exc;
                     Debug.LogException(exc);
                 }
             }

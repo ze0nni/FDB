@@ -97,6 +97,7 @@ namespace FDB.Editor
                             config,
                             ConfigType,
                             AutoRef,
+                            index.IsReadOnly,
                             r,
                             str =>
                             {

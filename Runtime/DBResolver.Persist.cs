@@ -26,20 +26,37 @@ namespace FDB
             return guidField != null;
         }
 
-        static public bool GetGUID(object obj, out string guid)
+        static public bool GetGUID(object obj, bool showWarnd, out string guid)
         {
             GetGUIDField(obj, out var guidField);
-            if (guidField == null && _warnAboutGUIDField.Add(obj.GetType()))
+            if (guidField == null && showWarnd && _warnAboutGUIDField.Add(obj.GetType()))
             {
                 Debug.LogWarning($"Type {obj.GetType().Name} has no field {__GUID}");
             }
-            if (guidField == null)
+            if (guidField != null)
             {
-                guid = default;
-                return false;
+                guid = (string)guidField.GetValue(obj);
+                return guid != null;
             }
-            guid = (string)guidField.GetValue(obj);
-            return guid != null;
+            guid = default;
+            return false;
+        }
+
+        static public bool GetObjectPersistKey(object obj, out string key)
+        {
+            if (GetGUID(obj, false, out var guid))
+            {
+                key = guid;
+                return true;
+            }
+            var kindField = obj.GetType().GetField("Kind");
+            if (kindField != null)
+            {
+                key = kindField.GetValue(obj).ToString();
+                return true;
+            }
+            key = default;
+            return false;
         }
 
         static ModuleBuilder _moduleBuilder;

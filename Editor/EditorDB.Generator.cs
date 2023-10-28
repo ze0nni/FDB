@@ -73,7 +73,7 @@ namespace FDB.Editor
                             sb.BeginIndent();
                             var modelType = index.GetType().GetGenericArguments()[0];
                             var kindField = modelType.GetField("Kind");
-                            foreach (var config in index.All())
+                            foreach (var config in index)
                             {
                                 var kind = (Kind)kindField.GetValue(config);
                                 if (!kind.CanExport)

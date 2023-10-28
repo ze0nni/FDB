@@ -37,7 +37,7 @@ namespace FDB.Editor
 
                 using (var reader = new StreamReader(ctx.assetPath))
                 {
-                    db = DBResolver.LoadInternal(dbType, reader, EditorDB.EditorUnityObjectsResolver, out resolver);
+                    db = DBResolver.LoadInternal(true, dbType, reader, EditorDB.EditorUnityObjectsResolver, out resolver);
                 }
 
                 dbAsset.Entries = new List<FuryDBEntryAsset>();

@@ -97,10 +97,13 @@ namespace FDB.Editor
 
             if (valueHeader is ListHeader)
             {
+                var e = GUI.enabled;
+                GUI.enabled = true;
                 if (GUI.Button(valueLineRect, "[...]"))
                 {
                     context.Inspector.ToggleExpandedState(config, this);
                 }
+                GUI.enabled = e;
             }
             else
             {

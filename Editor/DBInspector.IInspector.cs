@@ -90,7 +90,7 @@ namespace FDB.Editor {
 
         public void ToggleExpandedState(object config, Header header)
         {
-            if (!DBResolver.GetGUID(config, out var guid))
+            if (!DBResolver.GetObjectPersistKey(config, out var guid))
             {
                 return;
             }
@@ -119,7 +119,7 @@ namespace FDB.Editor {
         public bool TryGetExpandedHeader(object config, Header[] headers, out Header header, out float headerLeft)
         {
             headerLeft = 0;
-            if (!DBResolver.GetGUID(config, out var guid)
+            if (!DBResolver.GetObjectPersistKey(config, out var guid)
                 || !_expandedFields.TryGetValue(guid, out var field))
             {
                 header = null;

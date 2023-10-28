@@ -123,33 +123,31 @@ namespace FDB.Editor
                         continue;
                     }
                     var genericType = fieldType.GetGenericTypeDefinition();
-                    if (genericType != typeof(Index<>))
+                    if (genericType == typeof(Index<>) || genericType == typeof(IndexSource<,>))
                     {
-                        continue;
+                        var configType = fieldType.GetGenericArguments()[0];
+                        if (_indexes.ContainsKey(configType))
+                        {
+                            _errors.Add($"Fields {_indexes[configType].Name} and {field.Name} has same type Index<{configType.Name}> ");
+                            continue;
+                        }
+
+                        var errors = new List<string>();
+                        var headers = Header.Of(configType, 0, field.Name, true, errors.Add).ToArray();
+
+                        indexList.Add(new PageState
+                        {
+                            Title = field.Name,
+                            IndexType = fieldType,
+                            ModelType = configType,
+                            ResolveModel = x => field.GetValue(x),
+                            Headers = headers,
+                            Errors = errors,
+                            Aggregator = new Aggregator(typeof(T), field, configType)
+                        });
+
+                        _indexes.Add(configType, field);
                     }
-
-                    var configType = fieldType.GetGenericArguments()[0];
-                    if (_indexes.ContainsKey(configType))
-                    {
-                        _errors.Add($"Fields {_indexes[configType].Name} and {field.Name} has same type Index<{configType.Name}> ");
-                        continue;
-                    }
-
-                    var errors = new List<string>();
-                    var headers = Header.Of(configType, 0, field.Name, true, errors.Add).ToArray();
-
-                    indexList.Add(new PageState
-                    {
-                        Title = field.Name,
-                        IndexType = fieldType,
-                        ModelType = configType,
-                        ResolveModel = x => field.GetValue(x),
-                        Headers = headers,
-                        Errors = errors,
-                        Aggregator = new Aggregator(typeof(T), field, configType)
-                    });
-
-                    _indexes.Add(configType, field);
                 }
 
                 _pageNames = indexList.Select(x => x.Title).ToArray();

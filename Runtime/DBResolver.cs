@@ -15,9 +15,16 @@ namespace FDB
     {
         public const string DBExt = ".furydb";
 
-        public static T New<T>(out DBResolver resolver)
+        public readonly bool IsPlayMode;
+
+        internal DBResolver(bool isPlayMode)
         {
-            return LoadInternal<T>(new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), null, out resolver);
+            IsPlayMode = isPlayMode;
+        }
+
+        internal static T New<T>(out DBResolver resolver)
+        {
+            return LoadInternal<T>(false, new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("{}"))), null, out resolver);
         }
 
         public static T LoadInternal<T>(
@@ -25,10 +32,23 @@ namespace FDB
             DBConverter.UnityResolverDelegate unityResolver,
             out DBResolver resolver)
         {
-            resolver = new DBResolver();
+            return LoadInternal<T>(true, tReader, unityResolver, out resolver);
+        }
+
+        internal static T LoadInternal<T>(
+            bool isPlayMode,
+            StreamReader tReader,
+            DBConverter.UnityResolverDelegate unityResolver,
+            out DBResolver resolver)
+        {
+            resolver = new DBResolver(isPlayMode);
             using (var jReader = new JsonTextReader(tReader))
             {
-                var dbConverter = new DBConverter(typeof(T), resolver, unityResolver);
+                var dbConverter = new DBConverter(
+                    isPlayMode,
+                    typeof(T),
+                    resolver,
+                    unityResolver);
                 jReader.Read();
                 return (T)dbConverter.Read(jReader);
             }
@@ -81,7 +101,9 @@ namespace FDB
 
         public static T Load<T>(TextAsset textAsset)
         {
-            return (T) LoadInternal(typeof(T),
+            return (T) LoadInternal(
+                true,
+                typeof(T),
                 new StreamReader(new MemoryStream(textAsset.bytes)),
                 null,
                 out _);
@@ -89,22 +111,25 @@ namespace FDB
 
         public static T Load<T>(FuryDBAsset fdbAsset)
         {
-            return (T)LoadInternal(typeof(T),
+            return (T)LoadInternal(
+                true,
+                typeof(T),
                 new StreamReader(new MemoryStream(fdbAsset.JsonData)),
                 fdbAsset.ResolveDependency,
                 out _);
         }
 
         public static object LoadInternal(
+            bool isPlayMode,
             Type dbType,
             StreamReader tReader,
             DBConverter.UnityResolverDelegate unityResolver,
             out DBResolver resolver)
         {
-            resolver = new DBResolver();
+            resolver = new DBResolver(isPlayMode);
             using (var jReader = new JsonTextReader(tReader))
             {
-                var dbConverter = new DBConverter(dbType, resolver, unityResolver);
+                var dbConverter = new DBConverter(isPlayMode, dbType, resolver, unityResolver);
                 jReader.Read();
                 return dbConverter.Read(jReader);
             }
@@ -137,8 +162,23 @@ namespace FDB
                         field.SetValue(db, index);
                     }
 
-                    var modelType = field.FieldType.GetGenericArguments()[0];
-                    _indexByType[modelType] = index;
+                    var configType = field.FieldType.GetGenericArguments()[0];
+                    _indexByType[configType] = index;
+                    _indexes.Add(index);
+                    _indexeNames.Add(field.Name);
+                }
+                if (field.FieldType.IsGenericType
+                    && field.FieldType.GetGenericTypeDefinition() == typeof(IndexSource<,>))
+                {
+                    var index = (Index)field.GetValue(db);
+                    if (index == null)
+                    {
+                        index = (Index)Activator.CreateInstance(field.FieldType, IsPlayMode, field);
+                        field.SetValue(db, index);
+                    }
+                    field.SetValue(db, index);
+                    var configType = field.FieldType.GetGenericArguments()[0];
+                    _indexByType[configType] = index;
                     _indexes.Add(index);
                     _indexeNames.Add(field.Name);
                 }
@@ -333,7 +373,7 @@ namespace FDB
 
             foreach (var index in _indexByType.Values)
             {
-                foreach (var m in index.All())
+                foreach (var m in index)
                 {
                     Instantate(m, false);
                 }
@@ -365,7 +405,10 @@ namespace FDB
         {
             foreach (var i in _indexByType.Values)
             {
-                i.SetDirty();
+                if (!i.IsReadOnly)
+                {
+                    i.SetDirty();
+                }
             }
         }
 

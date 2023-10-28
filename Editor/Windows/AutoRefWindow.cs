@@ -30,27 +30,28 @@ namespace FDB.Editor
             object config,
             Type modelType,
             AutoRefAttribute autoRef,
+            bool isReadOnly,
             Ref currentField,
             Action<string> updateRef)
         {
             switch (context.WindowLevel)
             {
-                case 0: return new AutoRefWindow<NL0>(context, config, modelType, autoRef, currentField, updateRef);
-                case 1: return new AutoRefWindow<NL1>(context, config, modelType, autoRef, currentField, updateRef);
-                case 2: return new AutoRefWindow<NL2>(context, config, modelType, autoRef, currentField, updateRef);
-                case 3: return new AutoRefWindow<NL3>(context, config, modelType, autoRef, currentField, updateRef);
-                case 4: return new AutoRefWindow<NL4>(context, config, modelType, autoRef, currentField, updateRef);
-                case 5: return new AutoRefWindow<NL5>(context, config, modelType, autoRef, currentField, updateRef);
-                case 6: return new AutoRefWindow<NL6>(context, config, modelType, autoRef, currentField, updateRef);
-                case 7: return new AutoRefWindow<NL7>(context, config, modelType, autoRef, currentField, updateRef);
-                case 8: return new AutoRefWindow<NL8>(context, config, modelType, autoRef, currentField, updateRef);
-                case 9: return new AutoRefWindow<NL9>(context, config, modelType, autoRef, currentField, updateRef);
-                case 10: return new AutoRefWindow<NL10>(context, config, modelType, autoRef, currentField, updateRef);
-                case 11: return new AutoRefWindow<NL11>(context, config, modelType, autoRef, currentField, updateRef);
-                case 12: return new AutoRefWindow<NL12>(context, config, modelType, autoRef, currentField, updateRef);
-                case 13: return new AutoRefWindow<NL13>(context, config, modelType, autoRef, currentField, updateRef);
-                case 14: return new AutoRefWindow<NL14>(context, config, modelType, autoRef, currentField, updateRef);
-                case 15: return new AutoRefWindow<NL15>(context, config, modelType, autoRef, currentField, updateRef);
+                case 0: return new AutoRefWindow<NL0>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 1: return new AutoRefWindow<NL1>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 2: return new AutoRefWindow<NL2>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 3: return new AutoRefWindow<NL3>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 4: return new AutoRefWindow<NL4>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 5: return new AutoRefWindow<NL5>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 6: return new AutoRefWindow<NL6>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 7: return new AutoRefWindow<NL7>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 8: return new AutoRefWindow<NL8>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 9: return new AutoRefWindow<NL9>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 10: return new AutoRefWindow<NL10>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 11: return new AutoRefWindow<NL11>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 12: return new AutoRefWindow<NL12>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 13: return new AutoRefWindow<NL13>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 14: return new AutoRefWindow<NL14>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
+                case 15: return new AutoRefWindow<NL15>(context, config, modelType, autoRef, isReadOnly, currentField, updateRef);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -67,6 +68,7 @@ namespace FDB.Editor
         readonly List<string> _errors;
         readonly Header[] _headers;
         readonly AutoRefAttribute _autoRef;
+        readonly bool _isReadOnly;
         Ref _currentRef;
         readonly Action<string> _updateRef;
 
@@ -79,6 +81,7 @@ namespace FDB.Editor
             object config,
             Type modelType,
             AutoRefAttribute autoRef,
+            bool isReadOnly,
             Ref currentField,
             Action<string> updateRef)
         {
@@ -88,6 +91,7 @@ namespace FDB.Editor
             _errors = new List<string>();
             _headers = Header.Of(_modelType, 0, "", true, _errors.Add).ToArray();
             _autoRef = autoRef;
+            _isReadOnly = isReadOnly;
             _currentRef = currentField;
             _updateRef = updateRef;
 
@@ -142,7 +146,7 @@ namespace FDB.Editor
             {
                 GUILayout.Label(_targetKind);
                 GUILayout.FlexibleSpace();
-                if (_currentRef.Config == null && resolvedConfig == null)
+                if (_currentRef.Config == null && resolvedConfig == null && !_isReadOnly)
                 {
                     if (GUILayout.Button("Create"))
                     {
@@ -188,7 +192,9 @@ namespace FDB.Editor
                                 var fieldRect = GUILayoutUtility.GetRect(0, fieldHeight, GUILayout.ExpandWidth(true));
 
                                 EditorGUI.BeginChangeCheck();
+                                GUI.enabled = !_isReadOnly;
                                 header.OnGUI(in _context, fieldRect, config, null);
+                                GUI.enabled = true;
                                 if (EditorGUI.EndChangeCheck())
                                 {
                                     _context.MakeDirty();

@@ -39,13 +39,35 @@ namespace FDB
                             }
 
                             var fieldType = field.FieldType;
-                            if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(Index<>))
+                            if (fieldType.IsGenericType 
+                                && fieldType.GetGenericTypeDefinition() == typeof(Index<>))
                             {
                                 reader.Read();
                                 _currentReadedEntry = field.Name;
-                                field.SetValue(db, ReadIndex(reader, fieldType));
+                                var configType = fieldType.GetGenericArguments()[0];
+                                var index = (Index)Activator.CreateInstance(fieldType);
+                                field.SetValue(db, ReadIndex(reader, configType, index));
                                 _currentReadedEntry = "";
                                 break;
+                            }
+
+                            if (fieldType.IsGenericType 
+                                && fieldType.GetGenericTypeDefinition() == typeof(IndexSource<,>))
+                            {
+                                if (_resolver.IsPlayMode)
+                                {
+                                    reader.Read();
+                                    _currentReadedEntry = field.Name;
+                                    var configType = fieldType.GetGenericArguments()[0];
+                                    var index = (Index)Activator.CreateInstance(fieldType, true, field);
+                                    field.SetValue(db, ReadIndex(reader, configType, index));
+                                    _currentReadedEntry = "";
+                                    break;
+                                } else
+                                {
+                                    reader.Skip();
+                                    break;
+                                }
                             }
 
                             Debug.LogWarning($"field {fieldName} in {_dbType.FullName} skipped");
@@ -71,11 +93,8 @@ namespace FDB
             return db;
         }
 
-        object ReadIndex(JsonReader reader, Type indexType)
+        object ReadIndex(JsonReader reader, Type configType, Index index)
         {
-            var modelType = indexType.GetGenericArguments()[0];
-            var index = (Index)Activator.CreateInstance(indexType);
-
             Contract.Assert(reader.TokenType == JsonToken.StartArray);
             while (reader.Read())
             {
@@ -83,7 +102,7 @@ namespace FDB
                 {
                     case JsonToken.StartObject:
                         {
-                            index.Add(ReadObject(reader, modelType));
+                            index.Add(ReadObject(reader, configType));
                         }
                         break;
 
@@ -106,7 +125,7 @@ namespace FDB
             Type type,
             Func<JsonReader, object, string, bool> onListField = null)
         {
-            type = DBResolver.Wrap(type);
+            type = _resolver.IsPlayMode ? type : DBResolver.Wrap(type);
             var obj = DBResolver.Instantate(type, false);
             
             if (reader.TokenType == JsonToken.Null || reader.TokenType == JsonToken.Undefined)

@@ -102,7 +102,7 @@ namespace FDB.Editor
             {
                 using (var reader = new StreamReader(fileReader))
                 {
-                    return DBResolver.LoadInternal<T>(reader, EditorDB.EditorUnityObjectsResolver, out resolver);
+                    return DBResolver.LoadInternal<T>(false, reader, EditorDB.EditorUnityObjectsResolver, out resolver);
                 }
             }
         }
@@ -118,7 +118,7 @@ namespace FDB.Editor
             var source = MetaData.SourcePath;
             Directory.CreateDirectory(Path.GetDirectoryName(source));
 
-            var dbConverter = new DBConverter(typeof(T), null, null);
+            var dbConverter = new DBConverter(false, typeof(T), null, null);
             using (var tWriter = File.CreateText(source))
             {
                 using (var jWriter = new JsonTextWriter(tWriter))

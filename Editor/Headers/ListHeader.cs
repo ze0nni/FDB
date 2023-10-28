@@ -46,10 +46,13 @@ namespace FDB.Editor
 
         public override void OnGUI(in PageContext context, Rect rect, Rect lineRect, object config, int? collectionIndex, object rawValue)
         {
+            var e = GUI.enabled;
+            GUI.enabled = true;
             if (GUI.Button(lineRect, "[...]"))
             {
                 context.Inspector.ToggleExpandedState(config, this);
             }
+            GUI.enabled = e;
         }
     }
 }

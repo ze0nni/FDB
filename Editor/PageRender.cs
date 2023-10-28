@@ -29,6 +29,7 @@ namespace FDB.Editor
         public bool PrimitiveCollection;
         public int CollectionIndex;
         public bool IsFiltered;
+        public bool IsReadonly;
 
         public string Text;
 
@@ -62,6 +63,7 @@ namespace FDB.Editor
         private float _indent;
         private Stack<float> _indents = new Stack<float>();
         private List<RowRender> _rows = new List<RowRender>();
+        private int _readonlyLevel = 0;
 
         public void Render(in PageContext context, object config, Header[] headers, string filter, Aggregator aggregator)
         {
@@ -70,6 +72,7 @@ namespace FDB.Editor
             _indent = 0;
             _indents.Clear();
             _rows.Clear();
+            _readonlyLevel = 0;
             switch (config)
             {
                 case Index index:
@@ -107,6 +110,11 @@ namespace FDB.Editor
             string filter,
             Aggregator aggregator)
         {
+            if (collection.IsReadOnly)
+            {
+                _readonlyLevel++;
+            }
+
             var isFiltered = !string.IsNullOrEmpty(filter);
 
             aggregator.Clear();
@@ -144,9 +152,15 @@ namespace FDB.Editor
                     Type = RowType.CollectionActions,
                     Collection = collection,
                     CollectionItemType = itemType,
+                    IsReadonly = _readonlyLevel > 0,
                     Rect = AppendRect(headers[0].Width, GUIConst.RowFieldHeight)
                 });
                 EndIndent();
+            }
+
+            if (collection.IsReadOnly)
+            {
+                _readonlyLevel--;
             }
         }
 
@@ -238,6 +252,7 @@ namespace FDB.Editor
                 PrimitiveCollection = primitiveCollection,
                 CollectionIndex = collectionIndex,
                 IsFiltered = isFiltered,
+                IsReadonly = _readonlyLevel > 0
             });
 
             if (!primitiveCollection && context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
@@ -278,7 +293,7 @@ namespace FDB.Editor
                             break;
                         case RowType.Row:
                             OnRowBackground(in context, row.Rect, row.Collection, row.CollectionIndex, rowIndex++);
-                            OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.PrimitiveCollection, row.CollectionIndex, row.Headers, row.IsFiltered);
+                            OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.PrimitiveCollection, row.CollectionIndex, row.Headers, row.IsFiltered, row.IsReadonly);
                             break;
                         case RowType.CollectionActions:
                             OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType);
@@ -307,7 +322,7 @@ namespace FDB.Editor
             GUI.Box(rect, "", style);
         }
 
-        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, bool primitiveCollection, int collectionIndex, Header[] headers, bool isFiltered)
+        void OnRowGUI(in PageContext context, int rowId, Rect rowRect, object config, IList collection, Type collectionItemType, bool primitiveCollection, int collectionIndex, Header[] headers, bool isFiltered, bool isReadonly)
         {
             var rect = rowRect;
             rect.y += GUIConst.RowPadding;
@@ -324,7 +339,8 @@ namespace FDB.Editor
                 collection,
                 collectionItemType, 
                 collectionIndex,
-                isFiltered);
+                isFiltered,
+                isReadonly);
 
             left += GUIConst.RowActionsColumnWidth;
 
@@ -337,6 +353,7 @@ namespace FDB.Editor
 
                 var fieldRect = new Rect(left, top, h.Width, height);
 
+                GUI.enabled = !isReadonly;
                 if (primitiveCollection)
                 {
                     h.OnGUI(in context, fieldRect, collection, collectionIndex);
@@ -345,12 +362,13 @@ namespace FDB.Editor
                 {
                     h.OnGUI(in context, fieldRect, config, null);
                 }
+                GUI.enabled = true;
 
                 left += h.Width + GUIConst.HeaderSpace;
             }
         }
 
-        void OnRowActionsGUI(in PageContext context, int rowId, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex, bool isFiltered)
+        void OnRowActionsGUI(in PageContext context, int rowId, Rect rect, object config, IList collection, Type collectionItemType, int collectionIndex, bool isFiltered, bool isReadonly)
         {
             var iconSize = GUIConst.RowFieldHeight;
             var iconRect = new Rect(rect.x, rect.y, iconSize, iconSize);
@@ -364,7 +382,7 @@ namespace FDB.Editor
                 GUI.Label(labelRect, collectionIndex.ToString(), FDBEditorStyles.RightAlignLabel);
             }
 
-            if (!isFiltered)
+            if (!isFiltered && !isReadonly)
             {
                 EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeVertical);
             }
@@ -373,7 +391,7 @@ namespace FDB.Editor
             var t = e.GetTypeForControl(rowId);
             switch (t)
             {
-                case EventType.MouseDown:
+                case EventType.MouseDown when !isReadonly:
                     if (!isFiltered && rect.Contains(e.mousePosition))
                     {
                         if (e.button == 0)
@@ -384,7 +402,7 @@ namespace FDB.Editor
                         }
                     }
                     break;
-                case EventType.MouseUp:
+                case EventType.MouseUp when !isReadonly:
                     if (dragRow != null && dragRow.Match(collection, collectionIndex))
                     {
                         context.Inspector.ResetInput();
@@ -392,7 +410,7 @@ namespace FDB.Editor
                         e.Use();
                     }
                     break;
-                case EventType.MouseDrag:
+                case EventType.MouseDrag when !isReadonly:
                     if (dragRow != null && dragRow.Match(collection, collectionIndex))
                     {
                         if (RectFrom(e.mousePosition, out var targetRow) 
@@ -409,7 +427,7 @@ namespace FDB.Editor
                         e.Use();
                     }
                     break;
-                case EventType.ContextClick:
+                case EventType.ContextClick when !isReadonly:
                     if (rect.Contains(e.mousePosition))
                     {
                         ShowRowActionsMenu(context, rect, config, collection, collectionItemType, collectionIndex, isFiltered);
@@ -466,7 +484,7 @@ namespace FDB.Editor
 
         private void OnCollectionActions(in PageContext context, Rect rect, IList collection, Type itemType)
         {
-            if (GUI.Button(rect, "+"))
+            if (!collection.IsReadOnly && GUI.Button(rect, "+"))
             {
                 collection.Add(DBResolver.Instantate(itemType, true));
                 context.MakeDirty();

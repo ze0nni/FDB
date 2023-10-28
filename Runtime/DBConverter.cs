@@ -11,6 +11,7 @@ namespace FDB
         private UnityResolverDelegate _unityObjectsResolver;
 
         public DBConverter(
+            bool isPlayMode,
             Type dbType,
             DBResolver resolver,
             UnityResolverDelegate unityObjectsResolver

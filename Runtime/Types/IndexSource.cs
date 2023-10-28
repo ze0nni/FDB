@@ -1,28 +1,17 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
 
 namespace FDB
 {
-    public interface Index : IEnumerable, IList
-    {
-        Type ConfigType { get; }
-        bool Readonly { get; }
-
-        void SetDirty();
-        void Invalidate();
-
-        bool IsDuplicateKind(string kind);
-        IReadOnlyList<string> Warnings { get; }
-        
-        bool TryGet(string kind, out object config);
-        void Swap(int i0, int i1);
-    }
-
-    public sealed class Index<T> : Index, IEnumerable<T>
+    public class IndexSource<T, G> : Index, IEnumerable<T>
         where T : class
+        where G : IIndexSourceGenerator<T>
     {
+        readonly bool _isPlayMode;
+        readonly IIndexSourceGenerator<T> _generator;
+
         readonly List<T> _list = new List<T>();
         readonly Dictionary<string, T> _map = new Dictionary<string, T>();
         readonly HashSet<T> _configs = new HashSet<T>();
@@ -30,8 +19,20 @@ namespace FDB
         readonly List<string> _warnings = new List<string>();
         readonly HashSet<string> _duplicates = new HashSet<string>();
 
+        bool _isValid = false;
+
+        public IndexSource(bool isPlayMode, FieldInfo field)
+        {
+            _isPlayMode = isPlayMode;
+            if (!isPlayMode)
+            {
+                _generator = (IIndexSourceGenerator<T>)Activator.CreateInstance(typeof(G));
+                _generator.Setup(field);
+            }
+        }
+
         public Type ConfigType => typeof(T);
-        public bool Readonly => false;
+        public bool Readonly => true;
 
         public List<T>.Enumerator GetEnumerator() => _list.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => _list.GetEnumerator();
@@ -60,8 +61,22 @@ namespace FDB
 
         public void Invalidate()
         {
-            if (_map.Count > 0)
+            if (_isValid)
+            {
                 return;
+            }
+
+            if (!_isPlayMode)
+            {
+                _list.Clear();
+                foreach (var i in _generator.Generate())
+                {
+                    _list.Add(i);
+                }
+            }
+
+            _map.Clear();
+            _configs.Clear();
             _warnings.Clear();
             _duplicates.Clear();
 
@@ -80,12 +95,13 @@ namespace FDB
                 _map[kind.Value] = config;
                 _configs.Add(config);
             }
+
+            _isValid = true;
         }
 
         void Index.SetDirty()
         {
-            _map.Clear();
-            _configs.Clear();
+            throw new NotImplementedException();
         }
 
         IReadOnlyList<string> Index.Warnings => _warnings;
@@ -108,7 +124,7 @@ namespace FDB
         bool IList.Contains(object config)
         {
             Invalidate();
-            return _configs.Contains(config);
+            return _configs.Contains((T)config);
         }
 
         bool ICollection.IsSynchronized => false;
@@ -118,68 +134,35 @@ namespace FDB
         object IList.this[int index]
         {
             get => _list[index];
-            set {
+            set
+            {
                 _list[index] = (T)value;
                 ((Index)this).SetDirty();
             }
         }
 
-        bool IList.IsFixedSize => false;
-        bool IList.IsReadOnly => false;
-
-        int IList.Add(object item)
-        {
-            item = DBResolver.WrapObj(item);
-            _list.Add((T)item);
-            ((Index)this).SetDirty();
-            return _list.Count;
-        }
-
-        void IList.Clear()
-        {
-            _list.Clear();
-            ((Index)this).SetDirty();
-        }
-
-        void IList.Insert(int index, object item)
-        {
-            _list.Insert(index, (T)item);
-            ((Index)this).SetDirty();
-        }
+        bool IList.IsFixedSize => true;
+        bool IList.IsReadOnly => true;
 
         int IList.IndexOf(object value) => _list.IndexOf((T)value);
 
-        void IList.Remove(object value)
+        int IList.Add(object item)
         {
-            if (_list.Remove((T)value))
+            if (_isPlayMode)
             {
-                ((Index)this).SetDirty();
+                _isValid = false;
+                _list.Add((T)item);
+                return _list.Count;
+            }
+            else
+            {
+                throw new NotImplementedException();
             }
         }
-
-        void IList.RemoveAt(int index)
-        {
-            _list.RemoveAt(index);
-            ((Index)this).SetDirty();
-        }
-
-        void Index.Swap(int i0, int i1)
-        {
-            var t = _list[i0];
-            _list[i0] = _list[i1];
-            _list[i1] = t;
-
-        }
-    }
-
-    public static class IndexExtentions
-    {
-        public static IEnumerable<string> GetKinds(this Index index)
-        {
-            var itemType = index.GetType().GetGenericArguments()[0];
-            var kindField = itemType.GetField("Kind");
-
-            return index.Cast<object>().Select(x => ((Kind)kindField.GetValue(x)).Value);
-        }
+        void IList.Clear() => throw new NotImplementedException();
+        void IList.Insert(int index, object item) => throw new NotImplementedException();
+        void IList.Remove(object value) => throw new NotImplementedException();
+        void IList.RemoveAt(int index) => throw new NotImplementedException();
+        void Index.Swap(int i0, int i1) => throw new NotImplementedException();
     }
 }

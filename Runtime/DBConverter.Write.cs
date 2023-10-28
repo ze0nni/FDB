@@ -19,6 +19,7 @@ namespace FDB
         }
 #else
         public bool HasChanges { get; private set; }
+        bool _isReadonlyIndex;
 
         public void Write(JsonWriter writer, object db)
         {
@@ -29,7 +30,8 @@ namespace FDB
                 if (fieldType.IsGenericType)
                 {
                     var genericFieldType = fieldType.GetGenericTypeDefinition();
-                    if (genericFieldType == typeof(Index<>))
+                    if (genericFieldType == typeof(Index<>) 
+                        || genericFieldType == (typeof(IndexSource<,>)))
                     {
                         writer.WritePropertyName(field.Name);
                         WriteIndex(writer, (Index)field.GetValue(db));
@@ -43,7 +45,8 @@ namespace FDB
         void WriteIndex(JsonWriter writer, Index index)
         {
             writer.WriteStartArray();
-            foreach (var model in index.All())
+            _isReadonlyIndex = index.IsReadOnly;
+            foreach (var model in index)
             {
                 WriteObject(writer, model);
             }
@@ -52,7 +55,7 @@ namespace FDB
 
         void WriteObject(
             JsonWriter writer, 
-            object originModel, 
+            object originModel,
             Predicate<FieldInfo> fieldPredicate = null,
             Action<JsonWriter> onStartObject = null)
         {
@@ -62,7 +65,7 @@ namespace FDB
                 return;
             }
 
-            var model = DBResolver.WrapObj(originModel);
+            var model = _isReadonlyIndex ? originModel : DBResolver.WrapObj(originModel);
             var changed = DBResolver.Invalidate(model);
 
             if (model != originModel || changed)

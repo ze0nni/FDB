@@ -34,9 +34,9 @@ namespace FDB
         public Type ConfigType => typeof(T);
         public bool Readonly => true;
 
-        public List<T>.Enumerator GetEnumerator() => _list.GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => _list.GetEnumerator();
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => _list.GetEnumerator();
+        public List<T>.Enumerator GetEnumerator() { Invalidate();  return _list.GetEnumerator(); }
+        IEnumerator IEnumerable.GetEnumerator() { Invalidate(); return _list.GetEnumerator(); }
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() { Invalidate(); return _list.GetEnumerator(); }
 
         public T Get(Kind<T> kind)
         {
@@ -55,8 +55,8 @@ namespace FDB
             return _map.TryGetValue(kind.Value, out e);
         }
 
-        public int Count => _list.Count;
-        public T this[int index] => _list[index];
+        public int Count { get { Invalidate(); return _list.Count; } }
+        public T this[int index] { get { Invalidate(); return _list[index]; } }
         public T this[Kind<T> kind] => Get(kind);
 
         public void Invalidate()

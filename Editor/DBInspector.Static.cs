@@ -16,7 +16,7 @@ namespace FDB.Editor
         bool _isCorrenExt;
         Type _loadedModelType;
         FuryDBAttribute _fdbAttr;
-        string[] _pageNames;
+        string[] _allPageNames;
         PageState[] _pageStates;
         Dictionary<Type, FieldInfo> _indexes = new Dictionary<Type, FieldInfo>();
 
@@ -150,7 +150,7 @@ namespace FDB.Editor
                     }
                 }
 
-                _pageNames = indexList.Select(x => x.Title).ToArray();
+                _allPageNames = indexList.Select(x => x.Title).ToArray();
                 _pageStates = indexList.ToArray();
             }
             catch (Exception exc)

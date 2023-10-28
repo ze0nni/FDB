@@ -138,6 +138,7 @@ namespace FDB
         private List<Index> _indexes = new List<Index>();
         private List<string> _indexeNames = new List<string>();
         private Dictionary<Type, Index> _indexByType = new Dictionary<Type, Index>();
+        private Dictionary<string, Index> _indexByName = new Dictionary<string, Index>();
         readonly List<(object Model, FieldInfo Field, string RefValue)> _fields = new List<(object, FieldInfo, string)>();
         readonly Dictionary<object, List<string>> _listRef = new Dictionary<object, List<string>>();
         public object DB { get; private set; }
@@ -164,6 +165,7 @@ namespace FDB
 
                     var configType = field.FieldType.GetGenericArguments()[0];
                     _indexByType[configType] = index;
+                    _indexByName[field.Name] = index;
                     _indexes.Add(index);
                     _indexeNames.Add(field.Name);
                 }
@@ -179,6 +181,7 @@ namespace FDB
                     field.SetValue(db, index);
                     var configType = field.FieldType.GetGenericArguments()[0];
                     _indexByType[configType] = index;
+                    _indexByName[field.Name] = index;
                     _indexes.Add(index);
                     _indexeNames.Add(field.Name);
                 }
@@ -378,6 +381,15 @@ namespace FDB
                     Instantate(m, false);
                 }
             }
+        }
+
+        public bool IsGeneratedEntry(string entryName)
+        {
+            if (_indexByName.TryGetValue(entryName, out var index))
+            {
+                return index.IsReadOnly;
+            }
+            return false;
         }
 
         public Index GetIndex(Type indexType)

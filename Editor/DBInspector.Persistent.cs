@@ -13,7 +13,10 @@ namespace FDB.Editor
 
         [SerializeField] bool _autoSave = true;
 
-        [SerializeField] List<PersistantPageState> _persistantPageStates = new List<PersistantPageState>();
+        [SerializeField] internal bool _displayGenerated;
+
+        [SerializeField] internal List<PersistantPageState> _persistantPageStates = new List<PersistantPageState>();
+        internal Dictionary<string, PersistantPageState> _persistantPageStatesMap = new Dictionary<string, PersistantPageState>();
         [SerializeField] List<PersistantExpendedField> _persistantExpendedFields = new List<PersistantExpendedField>();
         Dictionary<string, string> _expandedFields = new Dictionary<string, string>();
         List<string> _expandedOrder = new List<string>();
@@ -21,7 +24,7 @@ namespace FDB.Editor
 
         void InitPersistanceData()
         {
-            if (_pageNames == null)
+            if (_allPageNames == null)
             {
                 return;
             }
@@ -29,7 +32,7 @@ namespace FDB.Editor
             _persistantExpendedFields = _persistantExpendedFields ?? new List<PersistantExpendedField>();
 
             var stateByName = _persistantPageStates.ToDictionary(x => x.Name, x => x);
-            _persistantPageStates = _pageNames.Select(name =>
+            _persistantPageStates = _allPageNames.Select(name =>
             {
                 if (stateByName.TryGetValue(name, out var state))
                 {
@@ -41,11 +44,15 @@ namespace FDB.Editor
                 };
             }).ToList();
 
+            _persistantPageStatesMap = _persistantPageStates.ToDictionary(x => x.Name);
+
             _expandedOrder = _persistantExpendedFields
                 .Select(x => x.GUID)
                 .ToList();
             _expandedFields = _persistantExpendedFields
                 .ToDictionary(x => x.GUID, x => x.Field);
+
+            UpdateVisiblePages();
         }
 
         public void OnAfterDeserialize()
@@ -70,12 +77,65 @@ namespace FDB.Editor
                 .ToList();
         }
 
+        string[] _visiblePagesNames;
+        HashSet<string> _visiblePagesMap;
+
+        internal void UpdateVisiblePages()
+        {
+            _visiblePagesNames = _persistantPageStates
+                .Where(s => !s.Hidden)
+                .Where(s => _displayGenerated || !EditorDB<T>.Resolver.IsGeneratedEntry(s.Name))
+                .Select(s => s.Name)
+                .ToArray();
+
+            _visiblePagesMap = new HashSet<string>(_visiblePagesNames);
+
+            _needRepaint = true;
+        }
+
         int PageIndex
         {
-            get => _pageNames.Length == 0 ? -1 : Mathf.Clamp(_pageIndex, 0, _pageNames.Length - 1);
+            get {
+                _pageIndex = _allPageNames.Length == 0 ? -1 : Mathf.Clamp(_pageIndex, 0, _allPageNames.Length - 1);
+                if (!_visiblePagesMap.Contains(_allPageNames[_pageIndex]))
+                {
+                    var firstVisible = _visiblePagesNames.FirstOrDefault();
+                    if (firstVisible == null)
+                    {
+                        _pageIndex = -1;
+                    } else
+                    {
+                        _pageIndex = Array.IndexOf(_allPageNames, firstVisible);
+                    }
+                }
+                return _pageIndex;
+            }
             set {
-                _pageIndex = Mathf.Clamp(value, 0, _pageNames.Length - 1);
-                _selectedPageName = _pageNames[_pageIndex];
+                _pageIndex = Mathf.Clamp(value, 0, _allPageNames.Length - 1);
+                _selectedPageName = _allPageNames[_pageIndex];
+            }
+        }
+
+        int VisiblePageIndex
+        {
+            get
+            {
+                if (PageIndex == -1)
+                {
+                    return -1;
+                }
+                return Array.IndexOf(_visiblePagesNames, _allPageNames[PageIndex]);
+            }
+            set
+            {
+                if (value == -1)
+                {
+                    PageIndex = -1;
+                }
+                else
+                {
+                    PageIndex = Array.IndexOf(_allPageNames, _visiblePagesNames[value]);
+                }
             }
         }
     }
@@ -86,6 +146,7 @@ namespace FDB.Editor
         public string Name;
         public string Filter;
         public Vector2 Position;
+        public bool Hidden;
     }
 
     [Serializable]

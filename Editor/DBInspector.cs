@@ -77,7 +77,12 @@ namespace FDB.Editor
             if (_pageStates == null || _pageStates.Length == 0)
             {
                 EditorGUILayout.HelpBox("No indexes", MessageType.Info);
-            } else
+            }
+            else if (_visiblePagesNames.Length == 0)
+            {
+                EditorGUILayout.HelpBox("No visible indexes\nOpen view menu", MessageType.Info);
+            }
+            else 
             {
                 var page = _pageStates[PageIndex];
                 var pagePersist = _persistantPageStates[PageIndex];
@@ -139,6 +144,7 @@ namespace FDB.Editor
                 }
 
                 var pages = _pageStates
+                    .Where(s => _visiblePagesMap.Contains(s.Title))
                     .Select(s =>
                     {
                         var index = EditorDB<T>.Resolver.GetIndex(s.ModelType);
@@ -152,14 +158,17 @@ namespace FDB.Editor
                         };
                     }).ToArray();
 
-                var newPageIndex = GUILayout.Toolbar(PageIndex, pages);
-                if (PageIndex != newPageIndex)
+                if (pages.Length > 0)
                 {
-                    PageIndex = newPageIndex;
-                    ResetInput();
-                    GUIUtility.hotControl = 0;
-                    GUI.FocusControl(null);
-                    GUI.changed = true;
+                    var newPageIndex = GUILayout.Toolbar(VisiblePageIndex, pages);
+                    if (VisiblePageIndex != newPageIndex)
+                    {
+                        VisiblePageIndex = newPageIndex;
+                        ResetInput();
+                        GUIUtility.hotControl = 0;
+                        GUI.FocusControl(null);
+                        GUI.changed = true;
+                    }
                 }
 
                 if (Event.current.type == EventType.Repaint)
@@ -170,6 +179,8 @@ namespace FDB.Editor
             OnActionsGui();
         }
 
+        Rect _viewButtonRect;
+
         void OnToolbarGui()
         {
             var e = Event.current;
@@ -179,6 +190,16 @@ namespace FDB.Editor
                 if (GuiButton("Save", EditorDB<T>.IsDirty, EditorStyles.toolbarButton))
                 {
                     Invoke("Save", () => EditorDB<T>.Save());
+                }
+                if (GUILayout.Button("View", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
+                {
+                    PopupWindow.Show(
+                        _viewButtonRect,
+                        new InspectorViewMenu<T>(this));
+                }
+                if (Event.current.type == EventType.Repaint)
+                {
+                    _viewButtonRect = GUILayoutUtility.GetLastRect();
                 }
 
                 //if (GuiButton("Undo", Undo.CanUndo))

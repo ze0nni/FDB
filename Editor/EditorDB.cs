@@ -146,6 +146,7 @@ namespace FDB.Editor
                 }
             }
 
+            AssetDatabase.ImportAsset(MetaData.SourcePath, ImportAssetOptions.ForceUpdate);
             foreach (var f in generatesFiles)
             {
                 AssetDatabase.ImportAsset(f, ImportAssetOptions.ForceUpdate);

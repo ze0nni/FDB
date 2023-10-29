@@ -154,6 +154,10 @@ namespace FDB.Editor
                 else if (DBResolver.IsSupportedUnityType(field.FieldType))
                 {
                     yield return new UnityObjectHeader(path, field.FieldType, field);
+                } else if (field.FieldType.IsClass)
+                {
+                    yield return new ObjectHeader(field.FieldType, path, field, 
+                        Of(field.FieldType, depth + 1, $"{path}/{field.Name}", false, addError).ToArray());
                 }
             }
 

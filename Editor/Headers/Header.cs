@@ -74,6 +74,13 @@ namespace FDB.Editor
             return false;
         }
 
+        public virtual bool GetExpandedObject(object config, out object obj, out Header[] headers)
+        {
+            obj = default;
+            headers = default;
+            return false;
+        }
+
         public virtual void OnGUI(in PageContext context, Rect rect, object config, int? collectionIndex)
         {
             var lineRect = rect;

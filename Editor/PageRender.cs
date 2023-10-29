@@ -11,6 +11,7 @@ namespace FDB.Editor
     {
         Header,
         Row,
+        ObjectField,
         CollectionActions,
         Aggregate,
         GroupText,
@@ -23,6 +24,7 @@ namespace FDB.Editor
         public Rect Rect;
 
         public Header[] Headers;
+        public Header Header;
         public object Config;
         public IList Collection;
         public Type CollectionItemType;
@@ -42,6 +44,8 @@ namespace FDB.Editor
                     return Config.GetHashCode();
                 case RowType.Row when PrimitiveCollection:
                     return HashCode.Combine(Collection, CollectionIndex);
+                case RowType.ObjectField:
+                    return Config.GetHashCode();
                 case RowType.CollectionActions:
                     return Collection.GetHashCode();
                 case RowType.GroupText:
@@ -189,6 +193,25 @@ namespace FDB.Editor
             EndIndent();
         }
 
+        void RenderObject(in PageContext context, object obj, Header header, Header[] headers)
+        {
+            foreach (var h in headers)
+            {
+                h.Width = header.Width;
+                _rows.Add(new RowRender
+                {
+                    Type = RowType.ObjectField,
+                    Config = obj,
+                    Header = h,
+                    Rect = AppendRect(header.Width, GUIConst.RowFieldHeight),
+                    IsReadonly = _readonlyLevel > 0
+                });
+                BeginIndend(h.Width / 3);
+                RenderExpanded(in context, obj, headers, h);
+                EndIndent();
+            }
+        }
+
         Rect AppendRect(float width, float height)
         {
             var rect = new Rect(_indent, _contentHeight, width, height);
@@ -255,28 +278,56 @@ namespace FDB.Editor
                 IsReadonly = _readonlyLevel > 0
             });
 
-            if (!primitiveCollection && context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
+            if (!primitiveCollection)
             {
-                BeginIndend(expandedHeaderLeft);
-                if (expandedHeader.GetExpandedList(config, null, out var list, out var listHeader))
+                RenderExpanded(in context, config, headers);
+            }
+        }
+
+        void RenderExpanded(
+            in PageContext context,
+            object config,
+            Header[] headers,
+            Header mathObjectHeader = null
+        )
+        {
+            if (!context.Inspector.TryGetExpandedHeader(config, headers, out var expandedHeader, out var expandedHeaderLeft))
+            {
+                return;
+            }
+
+            if (mathObjectHeader != null && expandedHeader != mathObjectHeader)
+            {
+                return;
+            }
+
+            BeginIndend(mathObjectHeader == null ? expandedHeaderLeft : 0);
+            if (expandedHeader.GetExpandedList(config, null, out var list, out var listHeader))
+            {
+                if (list != null)
                 {
-                    if (list != null)
+                    if (listHeader.Primitive && listHeader.Headers.Length == 1)
                     {
-                        if (listHeader.Primitive && listHeader.Headers.Length == 1)
-                        {
-                            listHeader.Headers[0].Width = expandedHeader.Width;
-                        } else
-                        {
-                            RenderHeaders(in context, listHeader.Headers);
-                        }
-                        RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
-                    } else
-                    {
-                        Debug.LogWarning($"Return null list from {expandedHeader}");
+                        listHeader.Headers[0].Width = expandedHeader.Width;
                     }
+                    else
+                    {
+                        RenderHeaders(in context, listHeader.Headers);
+                    }
+                    RenderCollection(in context, list, listHeader.ItemType, listHeader.Primitive, listHeader.Headers, null, listHeader.Aggregator);
                 }
+                else
+                {
+                    Debug.LogWarning($"Return null list from {expandedHeader}");
+                }
+            }
+            else if (expandedHeader.GetExpandedObject(config, out var obj, out var objHeaders))
+            {
+                BeginIndend(GUIConst.RowActionsColumnWidth);
+                RenderObject(in context, obj, expandedHeader, objHeaders);
                 EndIndent();
             }
+            EndIndent();
         }
 
         public void OnGUI(in PageContext context, Rect viewRect)
@@ -295,6 +346,10 @@ namespace FDB.Editor
                             OnRowBackground(in context, row.Rect, row.Collection, row.CollectionIndex, rowIndex++);
                             OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.PrimitiveCollection, row.CollectionIndex, row.Headers, row.IsFiltered, row.IsReadonly);
                             break;
+                        case RowType.ObjectField:
+                            OnRowBackground(in context, row.Rect, null, -1, rowIndex++);
+                            OnObjectFieldGUI(in context, rowId, row.Rect, row.Config, row.Header, row.IsReadonly);
+                            break;
                         case RowType.CollectionActions:
                             OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType, row.IsReadonly);
                             break;
@@ -312,8 +367,9 @@ namespace FDB.Editor
 
         void OnRowBackground(in PageContext context, Rect rect, IList collection, int collectionIndex, int rowIndex)
         {
-            var style = 
-                context.Inspector.OnInput<InputDragRow>(out var drageRow) && drageRow.Match(collection, collectionIndex)
+            var style =
+                collection != null
+                && context.Inspector.OnInput<InputDragRow>(out var drageRow) && drageRow.Match(collection, collectionIndex)
                     ? FDBEditorStyles.HoverRowStyle
                 :rowIndex % 2 == 0
                     ? FDBEditorStyles.EvenRowStyle
@@ -507,6 +563,20 @@ namespace FDB.Editor
                 menu.DropDown(rect);
                 e.Use();
             }
+        }
+
+        private void OnObjectFieldGUI(in PageContext context, int rowId, Rect rect, object obj, Header header, bool isReadonly)
+        {
+            var labelRect = new Rect(rect.left, rect.top, rect.width / 3, GUIConst.RowFieldHeight);
+            GUI.Label(labelRect, header.Title);
+
+            var contentRect = rect;
+            contentRect.x += labelRect.width;
+            contentRect.width -= labelRect.width;
+
+            GUI.enabled = !isReadonly;
+            header.OnGUI(in context, contentRect, obj, null);
+            GUI.enabled = true;
         }
 
         public static void OnHeadersGUI(IInspector inspector, Rect rect, Header[] headers)

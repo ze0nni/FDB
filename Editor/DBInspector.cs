@@ -179,6 +179,7 @@ namespace FDB.Editor
             OnActionsGui();
         }
 
+        Rect _dbButtonRect;
         Rect _viewButtonRect;
 
         void OnToolbarGui()
@@ -191,6 +192,15 @@ namespace FDB.Editor
                 {
                     Invoke("Save", () => EditorDB<T>.Save());
                 }
+                if (GUILayout.Button("DB", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
+                {
+                    ShowDBMenu(_dbButtonRect);
+                }
+                if (Event.current.type == EventType.Repaint)
+                {
+                    _dbButtonRect = GUILayoutUtility.GetLastRect();
+                }
+
                 if (GUILayout.Button("View", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
                 {
                     PopupWindow.Show(
@@ -231,18 +241,6 @@ namespace FDB.Editor
                         }
                     }
                 }
-
-                _autoSave = GUILayout.Toggle(_autoSave, "Auto save", GUILayout.ExpandWidth(false));
-
-                PushGuiColor(Color.red);
-                if (GuiButton("Reload", true, EditorStyles.toolbarButton))
-                {
-                    Invoke("Reload", () =>
-                    {
-                        EditorDB<T>.Load();
-                    });
-                }
-                PopGuiColor();
             }
 
             if (e.type == EventType.KeyDown
@@ -260,6 +258,21 @@ namespace FDB.Editor
         void OnPageGUI()
         {
 
+        }
+
+        void ShowDBMenu(Rect rect)
+        {
+            var menu = new GenericMenu();
+
+            menu.AddItem(new GUIContent("Save all"), false, () => EditorDB<T>.Save(true));
+            menu.AddItem(new GUIContent("Reload"), false, () => Invoke("Reload", () => EditorDB<T>.Load()));
+
+            menu.AddItem(new GUIContent(""), false, null);
+
+            menu.AddItem(new GUIContent("Auto save"), _autoSave, () => _autoSave = !_autoSave);
+            
+
+            menu.DropDown(rect);
         }
     }
 }

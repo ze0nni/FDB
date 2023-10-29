@@ -108,7 +108,7 @@ namespace FDB.Editor
             }
         }
 
-        public static void Save()
+        public static void Save(bool saveAll = false)
         {
             if (_db == null)
             {
@@ -158,7 +158,8 @@ namespace FDB.Editor
 
                     generatesHash.Add(hash);
 
-                    if (!File.Exists(ga.Path) 
+                    if (!File.Exists(ga.Path)
+                        || saveAll
                         || cache.GeneratorHash == null 
                         || !cache.GeneratorHash.Contains(hash))
                     {

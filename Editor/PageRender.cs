@@ -296,7 +296,7 @@ namespace FDB.Editor
                             OnRowGUI(in context, rowId, row.Rect, row.Config, row.Collection, row.CollectionItemType, row.PrimitiveCollection, row.CollectionIndex, row.Headers, row.IsFiltered, row.IsReadonly);
                             break;
                         case RowType.CollectionActions:
-                            OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType);
+                            OnCollectionActions(in context, row.Rect, row.Collection, row.CollectionItemType, row.IsReadonly);
                             break;
                         case RowType.GroupText:
                             OnRowBackground(in context, row.Rect, row.Collection, row.CollectionIndex, rowIndex++);
@@ -482,9 +482,9 @@ namespace FDB.Editor
             menu.DropDown(rect);
         }
 
-        private void OnCollectionActions(in PageContext context, Rect rect, IList collection, Type itemType)
+        private void OnCollectionActions(in PageContext context, Rect rect, IList collection, Type itemType, bool isReadOnly)
         {
-            if (!collection.IsReadOnly && GUI.Button(rect, "+"))
+            if (!isReadOnly && GUI.Button(rect, "+"))
             {
                 collection.Add(DBResolver.Instantate(itemType, true));
                 context.MakeDirty();

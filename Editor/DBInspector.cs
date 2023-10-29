@@ -265,7 +265,13 @@ namespace FDB.Editor
             var menu = new GenericMenu();
 
             menu.AddItem(new GUIContent("Save all"), false, () => EditorDB<T>.Save(true));
-            menu.AddItem(new GUIContent("Reload"), false, () => Invoke("Reload", () => EditorDB<T>.Load()));
+            menu.AddItem(new GUIContent("Reload"), false, () =>
+            {
+                if (EditorUtility.DisplayDialog("Reload database?", "All unsaved data will be lost", "Ok", "Cancel"))
+                {
+                    Invoke("Reload", () => EditorDB<T>.Load());
+                }
+            });
 
             menu.AddItem(new GUIContent(""), false, null);
 

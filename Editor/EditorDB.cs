@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace FDB.Editor
@@ -115,6 +116,17 @@ namespace FDB.Editor
                 return;
             }
 
+            var cachePath = $"Library/{nameof(FuryDBCache)}.{typeof(T).FullName}.asset";
+            FuryDBCache cache = null;
+            try
+            {
+                cache = (FuryDBCache)InternalEditorUtility.LoadSerializedFileAndForget(cachePath)[0];
+            } catch
+            {
+
+            }
+            cache = cache ?? ScriptableObject.CreateInstance<FuryDBCache>();
+
             var source = MetaData.SourcePath;
             Directory.CreateDirectory(Path.GetDirectoryName(source));
 
@@ -128,8 +140,8 @@ namespace FDB.Editor
                 }
             }
 
+            var generatesHash = new List<string>();
             var generatesFiles = new List<string>();
-            generatesFiles.Add(MetaData.CsGenPath);
 
             foreach (var ga in _generators)
             {
@@ -137,8 +149,22 @@ namespace FDB.Editor
                 {
                     var sb = new IndentStringBuilder();
                     ga.Generator.Execute(sb, _db);
-                    File.WriteAllText(ga.Path, sb.ToString());
-                    generatesFiles.Add(ga.Path);
+                    var content = sb.ToString();
+
+                    var hash128 = new Hash128();
+                    hash128.Append(ga.Path);
+                    hash128.Append(content);
+                    var hash = hash128.ToString();
+
+                    generatesHash.Add(hash);
+
+                    if (!File.Exists(ga.Path) 
+                        || cache.GeneratorHash == null 
+                        || !cache.GeneratorHash.Contains(hash))
+                    {
+                        File.WriteAllText(ga.Path, sb.ToString());
+                        generatesFiles.Add(ga.Path);
+                    }
                 } catch (Exception exc)
                 {
                     Debug.LogError($"Error when execute generator {ga.Generator} => {ga.Path}");
@@ -151,6 +177,10 @@ namespace FDB.Editor
             {
                 AssetDatabase.ImportAsset(f, ImportAssetOptions.ForceUpdate);
             }
+
+            cache.GeneratorHash = generatesHash;
+
+            InternalEditorUtility.SaveToSerializedFileAndForget(new UnityEngine.Object[] { cache }, cachePath, true);
 
             Version++;
             IsDirty = false;

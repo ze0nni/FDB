@@ -87,7 +87,7 @@ namespace FDB.Editor
                                 }
                                 else
                                 {
-                                    sb.AppendLine($"public static Kind<{modelType.Name}> {kind.Value} = new Kind<{modelType.Name}>(\"{kind.Value}\");");
+                                    sb.AppendLine($"public static readonly Kind<{modelType.Name}> {kind.Value} = new Kind<{modelType.Name}>(\"{kind.Value}\");");
                                 }
                             }
                             sb.EndIndent();

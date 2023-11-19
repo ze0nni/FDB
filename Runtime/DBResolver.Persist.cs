@@ -155,7 +155,7 @@ namespace FDB
 {
     public sealed partial class DBResolver
     {
-        public const string __GUID = "--GUID";
+        public const string __GUID = "__GUID";
 
         static public bool GetGUID(object obj, out string guid)
         {

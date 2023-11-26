@@ -3,15 +3,28 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
 namespace FDB.Editor
 {
-    internal static class EditorDB
+    public static class EditorDB
     {
-        public static UnityEngine.Object EditorUnityObjectsResolver(string guid, Type type)
+        public static Dictionary<Type, PropertyInfo> _resolversMap = new Dictionary<Type, PropertyInfo>();
+
+        public static DBResolver ResolverOf(Type dbType)
+        {
+            if (!_resolversMap.TryGetValue(dbType, out var resolverProp))
+            {
+                resolverProp = typeof(EditorDB<>).MakeGenericType(dbType).GetProperty("Resolver", BindingFlags.Public | BindingFlags.Static);
+                _resolversMap.Add(dbType, resolverProp);
+            }
+            return (DBResolver)resolverProp.GetValue(null);
+        }
+
+        internal static UnityEngine.Object EditorUnityObjectsResolver(string guid, Type type)
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
             return AssetDatabase.LoadAssetAtPath(path, type);
